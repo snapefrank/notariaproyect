@@ -1,0 +1,83 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 240 10% 97%; /* EAE7DC Alabaster (aproximado) */
+    --foreground: 240 5% 20%; /* 5D4E49 Umber (para texto principal) */
+    --card: 240 10% 100%; /* Blanco para tarjetas */
+    --card-foreground: 240 5% 20%;
+    --popover: 240 10% 100%;
+    --popover-foreground: 240 5% 20%;
+    --primary: 30 10% 37%; /* 81756E Gray (como primario) */
+    --primary-foreground: 240 10% 97%; /* EAE7DC Alabaster (para texto sobre primario) */
+    --secondary: 40 8% 76%; /* C7C1B8 Silver (como secundario) */
+    --secondary-foreground: 30 10% 37%; /* 81756E Gray (para texto sobre secundario) */
+    --muted: 40 8% 85%; /* A49B93 Battleship gray (como muted) */
+    --muted-foreground: 240 5% 40%; 
+    --accent: 40 8% 76%; /* C7C1B8 Silver (como accent) */
+    --accent-foreground: 30 10% 37%;
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 8% 80%; /* Un tono entre Silver y Battleship gray */
+    --input: 40 8% 85%; /* A49B93 Battleship gray (para inputs) */
+    --ring: 30 10% 37%; /* 81756E Gray (para focus rings) */
+    --radius: 0.5rem;
+
+    /* Colores específicos de la paleta */
+    --color-alabaster: #EAE7DC;
+    --color-silver: #C7C1B8;
+    --color-battleship-gray: #A49B93;
+    --color-gray: #81756E;
+    --color-umber: #5D4E49;
+  }
+
+  .dark {
+    /* Mantendremos los colores claros por ahora según la imagen, 
+       se puede definir un tema oscuro más adelante si es necesario */
+    --background: 240 5% 15%; 
+    --foreground: 240 10% 97%;
+    --card: 240 5% 20%;
+    --card-foreground: 240 10% 97%;
+    --popover: 240 5% 20%;
+    --popover-foreground: 240 10% 97%;
+    --primary: 30 10% 45%; 
+    --primary-foreground: 240 5% 15%;
+    --secondary: 40 8% 30%;
+    --secondary-foreground: 240 10% 97%;
+    --muted: 40 8% 25%;
+    --muted-foreground: 240 5% 60%;
+    --accent: 40 8% 30%;
+    --accent-foreground: 240 10% 97%;
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 40 8% 20%;
+    --input: 40 8% 25%;
+    --ring: 30 10% 45%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+    font-family: 'Inter', sans-serif; /* Usaremos Inter como fuente base, similar a la imagen */
+  }
+}
+
+/* Estilos adicionales basados en la imagen */
+.top-nav-item {
+  @apply text-sm font-medium text-foreground hover:text-primary transition-colors px-3 py-2 rounded-md;
+}
+
+.top-nav-item-active {
+  @apply text-primary bg-primary/10;
+}
+
+.dashboard-card-item {
+  @apply bg-card p-4 rounded-lg shadow-md hover:shadow-lg transition-shadow;
+}

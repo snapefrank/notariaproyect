@@ -1,0 +1,151 @@
+import React from 'react';
+import { motion } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
+import {
+  Building, PaintBucket, Package, Calendar,
+  DollarSign, MapPin, Edit, Trash
+} from 'lucide-react';
+import {
+  Card, CardHeader, CardTitle, CardDescription,
+  CardContent, CardFooter
+} from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { formatDate, formatCurrency } from '@/lib/utils';
+
+const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
+  const location = useLocation();
+
+  const getIcon = () => {
+    switch (assetType) {
+      case 'property': return <Building className="h-5 w-5" />;
+      case 'artwork': return <PaintBucket className="h-5 w-5" />;
+      case 'other': return <Package className="h-5 w-5" />;
+      default: return <Package className="h-5 w-5" />;
+    }
+  };
+
+  const getTitle = () => {
+    switch (assetType) {
+      case 'property': return asset.name;
+      case 'artwork': return asset.title;
+      case 'other': return asset.name;
+      default: return '';
+    }
+  };
+
+  const getSubtitle = () => {
+    switch (assetType) {
+      case 'property': return asset.address;
+      case 'artwork': return `${asset.artist}, ${asset.year}`;
+      case 'other':
+        return asset.type === 'collection' ? 'Colección' :
+          asset.type === 'vehicle' ? 'Vehículo' :
+            asset.type === 'jewelry' ? 'Joyería' :
+              asset.type === 'furniture' ? 'Mobiliario' : 'Otro';
+      default: return '';
+    }
+  };
+
+  const getTypeLabel = () => {
+    if (assetType === 'property') {
+      return asset.type === 'residential' ? 'Residencial' :
+        asset.type === 'commercial' ? 'Comercial' :
+          asset.type === 'industrial' ? 'Industrial' : 'Terreno';
+    }
+    return '';
+  };
+
+  const getLocation = () => {
+    switch (assetType) {
+      case 'property': return asset.address;
+      case 'artwork':
+      case 'other': return asset.location;
+      default: return '';
+    }
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -5 }}
+      className="document-card"
+    >
+      <Card className="h-full overflow-hidden border-t-4 shadow-md hover:shadow-lg transition-shadow">
+        <CardHeader className="pb-2">
+          <div className="flex justify-between items-start">
+            <div className="flex-1">
+              {assetType === 'property' && (
+                <Badge variant="outline" className="mb-2">
+                  {getTypeLabel()}
+                </Badge>
+              )}
+              <div className="flex items-center gap-2">
+                {getIcon()}
+                <CardTitle className="text-xl line-clamp-1">{getTitle()}</CardTitle>
+              </div>
+              <CardDescription className="mt-1">{getSubtitle()}</CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+
+        <CardContent className="pb-2">
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            <div className="flex items-center gap-1">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span>
+                {asset.acquisitionDate ? formatDate(asset.acquisitionDate) : 'Fecha no disponible'}
+              </span>
+            </div>
+            <div className="flex items-center gap-1">
+              <DollarSign className="h-4 w-4 text-muted-foreground" />
+              <span>
+                {asset.value !== undefined ? formatCurrency(asset.value) : '$ no disponible'}
+              </span>
+            </div>
+          </div>
+
+          {getLocation() && (
+            <div className="flex items-center gap-1 mt-2 text-sm">
+              <MapPin className="h-4 w-4 text-muted-foreground" />
+              <span className="line-clamp-1">{getLocation()}</span>
+            </div>
+          )}
+
+          {asset.description && (
+            <p className="mt-3 text-sm text-gray-600 line-clamp-2">{asset.description}</p>
+          )}
+        </CardContent>
+
+        <CardFooter className="flex justify-between pt-2">
+          <div>
+            {assetType === 'property' && (
+              <Link to={`/properties/${asset.id}`}>
+                <Button variant="ghost" size="sm">
+                  Ver Inmueble
+                </Button>
+              </Link>
+            )}
+          </div>
+
+          <div className="flex gap-1">
+            {onEdit && (
+              <Button variant="ghost" size="icon" onClick={() => onEdit(asset)}>
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button variant="ghost" size="icon" onClick={() => onDelete(asset.id)}>
+                <Trash className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </CardFooter>
+      </Card>
+    </motion.div>
+  );
+};
+
+export default AssetCard;

@@ -55,7 +55,7 @@ const ArtworkDetails = () => {
 
       if (!foundArtwork) {
         try {
-          const response = await axios.get(`http://localhost:5000/api/artworks/${id}`);
+          const response = await axios.get(`/api/artworks/${id}`);
           foundArtwork = response.data;
         } catch (error) {
           console.error('Error al obtener la obra de arte desde el backend:', error);
@@ -72,8 +72,9 @@ const ArtworkDetails = () => {
       } else if (foundArtwork.ownerId && foundArtwork.ownerType) {
         try {
           const endpoint = foundArtwork.ownerType === 'PhysicalPerson'
-            ? `http://localhost:5000/api/physical-persons/${foundArtwork.ownerId}`
-            : `http://localhost:5000/api/moral-persons/${foundArtwork.ownerId}`;
+            ? `/api/physical-persons/${foundArtwork.ownerId}`
+            : `/api/moral-persons/${foundArtwork.ownerId}`;
+
 
           const response = await axios.get(endpoint);
           const person = response.data;

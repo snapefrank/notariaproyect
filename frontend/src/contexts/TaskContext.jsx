@@ -12,7 +12,8 @@ export const TaskContextProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
 
   // Cambia esta URL si usas otra ruta o dominio
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/tasks';
+  const API_URL = import.meta.env.VITE_API_URL || '/api/tasks';
+
 
   // Obtener todas las tareas del backend
   const fetchTasks = async () => {

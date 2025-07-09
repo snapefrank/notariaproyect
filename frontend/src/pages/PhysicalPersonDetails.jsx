@@ -42,7 +42,7 @@ const PhysicalPersonDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
 
 
   useEffect(() => {

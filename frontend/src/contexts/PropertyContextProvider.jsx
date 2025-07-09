@@ -8,7 +8,8 @@ export const AssetProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const API_URL = 'http://localhost:5000/api/properties';
+  const API_URL = '/api/properties';
+
 
   useEffect(() => {
     const loadProperties = async () => {

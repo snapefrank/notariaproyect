@@ -132,7 +132,7 @@ const OwnerDashboard = () => {
   const moralPersons = moralPersonData?.moralPersons || [];
   const physicalPersons = physicalPersonData?.physicalPersons || [];
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiBase = import.meta.env.VITE_API_URL || '/api';
 
   // Función helper para convertir valores a número seguro
   const safeNumber = (value) => {
@@ -290,60 +290,7 @@ const OwnerDashboard = () => {
 
   // Imágenes de ejemplo si no hay datos reales
   const exampleImages = [
-    {
-      src: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?w=400&h=300&fit=crop',
-      title: 'Casa Moderna',
-      type: 'Inmueble',
-      value: 2500000
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1541961017774-22349e4a1262?w=400&h=300&fit=crop',
-      title: 'Pintura Abstracta',
-      type: 'Obra de Arte',
-      value: 150000
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-      title: 'Apartamento Lujoso',
-      type: 'Inmueble',
-      value: 3200000
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=300&fit=crop',
-      title: 'Casa Contemporánea',
-      type: 'Inmueble',
-      value: 2800000
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=300&fit=crop',
-      title: 'Edificio Residencial',
-      type: 'Inmueble',
-      value: 5200000
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1564013799919-ab600027ffc6?w=400&h=300&fit=crop',
-      title: 'Apartamento Lujoso',
-      type: 'Inmueble',
-      value: 3200000
-    },
-    {
-      src: 'https://images.unsplash.com/photo-1582407947304-fd86f028f716?w=400&h=300&fit=crop',
-      title: 'Torre de Oficinas',
-      type: 'Inmueble',
-      value: 4500000
-    },
-    {
-      src: 'http://localhost:5000/uploads/artworks/photos/Fernando-Botero-Mona-Lisa-1978-183-x-166-cm_1751288538976.jpg',
-      title: 'Torre de Oficinas',
-      type: 'Inmueble',
-      value: 4500000
-    },
-    {
-      src: 'http://localhost:5000/uploads/artworks/photos/R_1751288538946.png',
-      title: 'Torre de Oficinas',
-      type: 'Inmueble',
-      value: 4500000
-    },
+
   ];
 
   const allImages = [...artworkImages, ...propertyImages].length > 0 ? [...artworkImages, ...propertyImages] : exampleImages;

@@ -10,7 +10,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const fetchArtworks = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/artworks');
+      const response = await axios.get('/api/artworks');
       setArtworks(response.data);
     } catch (error) {
       console.error('Error al obtener las piezas de arte:', error);
@@ -19,7 +19,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const addArtwork = async (newArtwork) => {
     try {
-      const response = await axios.post('http://localhost:5000/api/artworks', newArtwork);
+      const response = await axios.post('/api/artworks', newArtwork);
       setArtworks(prev => [...prev, response.data]);
     } catch (error) {
       console.error('Error al agregar la pieza de arte:', error);
@@ -28,7 +28,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const updateArtwork = async (id, updatedArtwork) => {
     try {
-      const response = await axios.put(`http://localhost:5000/api/artworks/${id}`, updatedArtwork);
+      const response = await axios.put(`/api/artworks/${id}`, updatedArtwork);
       setArtworks(prev =>
         prev.map(art => (art._id === id ? response.data : art))
       );
@@ -39,7 +39,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const deleteArtwork = async (id) => {
     try {
-      await axios.delete(`http://localhost:5000/api/artworks/${id}`);
+      await axios.delete(`/api/artworks/${id}`);
       setArtworks(prev => prev.filter(artwork => artwork._id !== id));
     } catch (error) {
       console.error('Error al eliminar la pieza de arte:', error);

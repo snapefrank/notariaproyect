@@ -9,7 +9,8 @@ export const useTasks = () => useContext(TaskContext);
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
 
-  const API_URL = 'http://localhost:5000/api/tasks'; // Asegúrate de que esta URL sea correcta
+  const API_URL = '/api/tasks';
+ 
 
   const addTask = async (newTask) => {
     try {

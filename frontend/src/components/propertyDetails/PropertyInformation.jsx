@@ -33,7 +33,7 @@ const PropertyInformation = ({ property }) => {
     photos = [],
   } = property;
 
-  const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
+  const apiBase = import.meta.env.VITE_API_URL || '/api';
   const [selectedImage, setSelectedImage] = useState(null);
   const [pdfData, setPdfData] = useState({ url: null, title: null });
   const ownerName = typeof owner === 'object'

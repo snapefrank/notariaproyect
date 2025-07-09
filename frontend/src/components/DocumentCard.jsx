@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
 
 const DocumentCard = ({ document, onEdit, onDelete }) => {
   const { _id, title, description, type, category, createdAt, tags, fileUrl } = document;

@@ -10,6 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
   const { user } = useAuth();
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -21,92 +22,111 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
     artworkId: '',
     assetId: '',
     clientId: '',
+    status: 'activo', // ✅ agregar
     createdBy: user?.username || 'unknown'
   });
-  
+
+  const [file, setFile] = useState(null);
   const [tagInput, setTagInput] = useState('');
-  
+
   useEffect(() => {
     if (initialData) {
-      setFormData({
-        ...initialData
-      });
+      setFormData({ ...initialData });
     }
   }, [initialData]);
-  
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleSelectChange = (name, value) => {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
-  
+
   const handleAddTag = () => {
-    if (tagInput.trim() && !formData.tags.includes(tagInput.trim())) {
+    const tag = tagInput.trim();
+    if (tag && !formData.tags.includes(tag)) {
       setFormData(prev => ({
         ...prev,
-        tags: [...prev.tags, tagInput.trim()]
+        tags: [...prev.tags, tag]
       }));
       setTagInput('');
     }
   };
-  
+
   const handleRemoveTag = (tagToRemove) => {
     setFormData(prev => ({
       ...prev,
       tags: prev.tags.filter(tag => tag !== tagToRemove)
     }));
   };
-  
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    onSubmit(formData);
-  };
-  
+
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       handleAddTag();
     }
   };
-  
+
+  const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  try {
+    const formToSend = { ...formData };
+    delete formToSend.id;
+    delete formToSend._id;
+
+    if (file) {
+      formToSend.file = file; // solo se agrega como propiedad para que el context lo maneje
+    }
+
+    onSubmit(formToSend); // el contexto se encarga de guardar
+  } catch (error) {
+    console.error('Error al procesar el documento:', error);
+    alert('Error al procesar el documento');
+  }
+};
+
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
+      className="p-4 space-y-6 max-h-[80vh] overflow-y-auto"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="title">Título del Documento</Label>
-          <Input
-            id="title"
-            name="title"
-            value={formData.title}
-            onChange={handleChange}
-            placeholder="Ingrese el título del documento"
-            required
-          />
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="description">Descripción</Label>
-          <Textarea
-            id="description"
-            name="description"
-            value={formData.description}
-            onChange={handleChange}
-            placeholder="Ingrese una descripción del documento"
-            rows={3}
-            required
-          />
-        </div>
-        
+      <form onSubmit={handleSubmit} className="space-y-6">
+
+        {/* DATOS PRINCIPALES */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="space-y-2">
+          <div>
+            <Label htmlFor="title">Título del Documento</Label>
+            <Input
+              id="title"
+              name="title"
+              value={formData.title}
+              onChange={handleChange}
+              placeholder="Ingrese el título del documento"
+              required
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="description">Descripción</Label>
+            <Textarea
+              id="description"
+              name="description"
+              value={formData.description}
+              onChange={handleChange}
+              placeholder="Ingrese una descripción"
+              rows={3}
+              required
+            />
+          </div>
+
+          <div>
             <Label htmlFor="type">Tipo de Activo</Label>
             <Select
               value={formData.type}
@@ -122,8 +142,8 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
               </SelectContent>
             </Select>
           </div>
-          
-          <div className="space-y-2">
+
+          <div>
             <Label htmlFor="category">Categoría</Label>
             <Select
               value={formData.category}
@@ -140,88 +160,83 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
               </SelectContent>
             </Select>
           </div>
-        </div>
-        
-        {formData.type === 'property' && (
-          <div className="space-y-2">
-            <Label htmlFor="propertyId">ID de Propiedad (opcional)</Label>
-            <Input
-              id="propertyId"
-              name="propertyId"
-              value={formData.propertyId}
-              onChange={handleChange}
-              placeholder="Ingrese el ID de la propiedad relacionada"
-            />
-          </div>
-        )}
-        
-        {formData.type === 'artwork' && (
-          <div className="space-y-2">
-            <Label htmlFor="artworkId">ID de Obra de Arte (opcional)</Label>
-            <Input
-              id="artworkId"
-              name="artworkId"
-              value={formData.artworkId}
-              onChange={handleChange}
-              placeholder="Ingrese el ID de la obra de arte relacionada"
-            />
-          </div>
-        )}
-        
-        {formData.type === 'other' && (
-          <div className="space-y-2">
-            <Label htmlFor="assetId">ID de Activo (opcional)</Label>
-            <Input
-              id="assetId"
-              name="assetId"
-              value={formData.assetId}
-              onChange={handleChange}
-              placeholder="Ingrese el ID del activo relacionado"
-            />
-          </div>
-        )}
-        
-        <div className="space-y-2">
-          <Label htmlFor="tags">Etiquetas</Label>
-          <div className="flex">
-            <Input
-              id="tagInput"
-              value={tagInput}
-              onChange={(e) => setTagInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Agregar etiqueta"
-              className="rounded-r-none"
-            />
-            <Button 
-              type="button" 
-              onClick={handleAddTag}
-              className="rounded-l-none"
-            >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          {formData.tags.length > 0 && (
-            <div className="flex flex-wrap gap-2 mt-2">
-              {formData.tags.map((tag, index) => (
-                <div 
-                  key={index}
-                  className="flex items-center bg-secondary text-secondary-foreground px-2 py-1 rounded-full text-sm"
-                >
-                  {tag}
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="ml-1 text-secondary-foreground/70 hover:text-secondary-foreground"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
-              ))}
+
+
+          {formData.type === 'artwork' && (
+            <div className="md:col-span-2">
+              <Label htmlFor="artworkId">ID de Obra de Arte (opcional)</Label>
+              <Input
+                id="artworkId"
+                name="artworkId"
+                value={formData.artworkId}
+                onChange={handleChange}
+              />
             </div>
           )}
+
+          {formData.type === 'other' && (
+            <div className="md:col-span-2">
+              <Label htmlFor="assetId">ID de Activo (opcional)</Label>
+              <Input
+                id="assetId"
+                name="assetId"
+                value={formData.assetId}
+                onChange={handleChange}
+              />
+            </div>
+          )}
+
+          {/* ETIQUETAS */}
+          <div className="md:col-span-2">
+            <Label htmlFor="tags">Etiquetas</Label>
+            <div className="flex mb-2">
+              <Input
+                id="tagInput"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Agregar etiqueta"
+                className="rounded-r-none"
+              />
+              <Button type="button" onClick={handleAddTag} className="rounded-l-none">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+
+            {formData.tags.length > 0 && (
+              <div className="flex flex-wrap gap-2">
+                {formData.tags.map((tag, index) => (
+                  <div
+                    key={index}
+                    className="flex items-center bg-secondary text-secondary-foreground px-2 py-1 rounded-full text-sm"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveTag(tag)}
+                      className="ml-1 text-secondary-foreground/70 hover:text-secondary-foreground"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* ARCHIVO */}
+          <div className="md:col-span-2">
+            <Label htmlFor="file">Archivo (PDF o imagen)</Label>
+            <Input
+              type="file"
+              id="file"
+              accept=".pdf,image/jpeg,image/png"
+              onChange={(e) => setFile(e.target.files[0])}
+            />
+          </div>
         </div>
-        
+
+        {/* BOTONES */}
         <div className="flex justify-end space-x-2 pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>
             Cancelar

@@ -3,7 +3,7 @@ import { Routes, Route, useNavigate, useLocation } from 'react-router-dom';
 import ArtworkForm from '@/components/ArtworkForm';
 import ArtworkDetails from '@/pages/ArtworkDetails';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogDescription, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import SearchBar from '@/components/SearchBar';
 import { Plus, Filter, Edit, Trash } from 'lucide-react';
 import { motion } from 'framer-motion';
@@ -96,6 +96,9 @@ const ArtworksPage = () => {
                 <DialogContent className="sm:max-w-[600px]">
                   <DialogHeader>
                     <DialogTitle>Agregar Pieza de Arte</DialogTitle>
+                    <DialogDescription>
+                      Complete el formulario para registrar una nueva pieza de arte.
+                    </DialogDescription>
                   </DialogHeader>
                   <ArtworkForm onSubmit={handleAddArtwork} onCancel={() => setIsAddDialogOpen(false)} />
                 </DialogContent>

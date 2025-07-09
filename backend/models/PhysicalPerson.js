@@ -10,6 +10,13 @@ const physicalPersonSchema = new mongoose.Schema({
   nss: { type: String, required: true },
   direccion: { type: String, required: true },
   sexo: { type: String, enum: ['M', 'F'], required: true },
+
+  documentos: {
+    rfc: { type: String },
+    curp: { type: String },
+    nss: { type: String }
+  },
+
   datosMedicos: {
     tipoSangre: { type: String },
     aseguradora: { type: String },
@@ -18,8 +25,28 @@ const physicalPersonSchema = new mongoose.Schema({
     fechaInicioVigencia: { type: Date },
     fechaVencimiento: { type: Date },
     numeroPoliza: { type: String },
-    prima: { type: String }, // Mensual/Anual
+    prima: { type: String }
   },
+
+  credito: {
+    institucionFinanciera: { type: String },
+    montoCredito: { type: Number },
+    plazoMeses: { type: Number },
+    tasaInteresAnual: { type: Number },
+    pagoMensual: { type: Number },
+    tieneInmuebleGarantia: { type: Boolean },
+    tipoInmueble: { type: String },
+    direccionInmueble: { type: String },
+    valorComercial: { type: Number },
+    observaciones: { type: String },
+    inmuebleGarantia: {
+      documentos: {
+        escritura: { type: String },
+        adicional: { type: String }
+      }
+    }
+  },
+
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }
 });

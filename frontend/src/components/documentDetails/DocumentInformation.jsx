@@ -3,6 +3,8 @@ import { Tag, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 const DocumentInformation = ({ document }) => {
   return (
     <Card>
@@ -14,7 +16,7 @@ const DocumentInformation = ({ document }) => {
           <h3 className="text-sm font-medium text-muted-foreground mb-1">Descripción</h3>
           <p className="text-base">{document.description}</p>
         </div>
-        
+
         {document.tags && document.tags.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Etiquetas</h3>
@@ -28,7 +30,7 @@ const DocumentInformation = ({ document }) => {
             </div>
           </div>
         )}
-        
+
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-2">Información Adicional</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -42,7 +44,7 @@ const DocumentInformation = ({ document }) => {
             </div>
           </div>
         </div>
-        
+
         {document.fileUrl && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Archivo</h3>
@@ -51,7 +53,15 @@ const DocumentInformation = ({ document }) => {
                 <FileText className="h-5 w-5 text-primary mr-2" />
                 <span>Documento adjunto</span>
               </div>
-              <Button variant="outline" size="sm">Ver archivo</Button>
+              <a
+                href={`${BACKEND_URL}${document.fileUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <Button variant="outline" size="sm">
+                  Ver archivo
+                </Button>
+              </a>
             </div>
           </div>
         )}

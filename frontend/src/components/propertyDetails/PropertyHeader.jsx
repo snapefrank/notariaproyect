@@ -5,10 +5,10 @@ import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 
 const typeColors = {
-  house: 'bg-blue-100 text-blue-800',
-  apartment: 'bg-purple-100 text-purple-800',
-  land: 'bg-green-100 text-green-800',
-  other: 'bg-amber-100 text-amber-800',
+  residential: 'bg-blue-100 text-blue-800',
+  commercial: 'bg-green-100 text-green-800',
+  industrial: 'bg-yellow-100 text-yellow-800',
+  other: 'bg-gray-200 text-gray-800',
 };
 
 const statusColors = {
@@ -22,13 +22,15 @@ const PropertyHeader = ({ property, onEdit, onDelete }) => {
       <div>
         <div className="flex flex-wrap gap-2 mb-2">
           <Badge variant="outline" className={typeColors[property.type] || 'bg-gray-100'}>
-            {property.type === 'house'
-              ? 'Casa'
-              : property.type === 'apartment'
-              ? 'Departamento'
-              : property.type === 'land'
-              ? 'Terreno'
-              : 'Otro'}
+            {property.type === 'residential'
+              ? 'Residencial'
+              : property.type === 'commercial'
+                ? 'Comercial'
+                : property.type === 'industrial'
+                  ? 'Industrial'
+                  : property.type
+                    ? property.type.charAt(0).toUpperCase() + property.type.slice(1)
+                    : 'Otros'}
           </Badge>
           <Badge variant="outline" className={statusColors[property.status] || 'bg-gray-100'}>
             {property.status === 'active' ? 'Activo' : 'Vendido'}

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger
@@ -80,6 +81,9 @@ const MoralPersonsPage = () => {
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Agregar Persona Moral</DialogTitle>
+              <DialogDescription>
+                Complete el formulario para registrar una Persona Moral
+              </DialogDescription>
             </DialogHeader>
             <MoralPersonForm
               onSubmit={handleAddPerson}

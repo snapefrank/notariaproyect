@@ -25,10 +25,38 @@ exports.getMoralPersonById = async (req, res) => {
 
 // Crear una nueva persona moral
 exports.createMoralPerson = async (req, res) => {
-  const person = new MoralPerson(req.body);
   try {
-    const newPerson = await person.save();
-    res.status(201).json(newPerson);
+    const body = req.body;
+
+    const newPerson = new MoralPerson({
+      nombre: body.nombre,
+      rfc: body.rfc,
+      regimenFiscal: body.regimenFiscal,
+      domicilioFiscal: body.domicilioFiscal,
+      fechaConstitucion: body.fechaConstitucion,
+
+      credito: {
+        institucionFinanciera: body['credito.institucionFinanciera'],
+        montoCredito: body['credito.montoCredito'],
+        plazoMeses: body['credito.plazoMeses'],
+        tasaInteresAnual: body['credito.tasaInteresAnual'],
+        pagoMensual: body['credito.pagoMensual'],
+        tieneInmuebleGarantia: body['credito.tieneInmuebleGarantia'] === 'true',
+        inmuebleGarantia: {
+          tipoInmueble: body['credito.tipoInmueble'],
+          direccionInmueble: body['credito.direccionInmueble'],
+          valorComercial: body['credito.valorComercial'],
+          documentos: {
+            escritura: req.files?.escritura?.[0]?.path || '',
+            adicional: req.files?.adicional?.[0]?.path || ''
+          }
+        },
+        observaciones: body['credito.observaciones']
+      }
+    });
+
+    const saved = await newPerson.save();
+    res.status(201).json(saved);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }
@@ -37,12 +65,38 @@ exports.createMoralPerson = async (req, res) => {
 // Actualizar una persona moral
 exports.updateMoralPerson = async (req, res) => {
   try {
-    const updatedPerson = await MoralPerson.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      { new: true }
-    );
-    res.json(updatedPerson);
+    const person = await MoralPerson.findById(req.params.id);
+    if (!person) return res.status(404).json({ message: 'Persona no encontrada' });
+
+    const body = req.body;
+
+    person.nombre = body.nombre || person.nombre;
+    person.rfc = body.rfc || person.rfc;
+    person.regimenFiscal = body.regimenFiscal || person.regimenFiscal;
+    person.domicilioFiscal = body.domicilioFiscal || person.domicilioFiscal;
+    person.fechaConstitucion = body.fechaConstitucion || person.fechaConstitucion;
+
+    person.credito = {
+      institucionFinanciera: body['credito.institucionFinanciera'],
+      montoCredito: body['credito.montoCredito'],
+      plazoMeses: body['credito.plazoMeses'],
+      tasaInteresAnual: body['credito.tasaInteresAnual'],
+      pagoMensual: body['credito.pagoMensual'],
+      tieneInmuebleGarantia: body['credito.tieneInmuebleGarantia'] === 'true',
+      inmuebleGarantia: {
+        tipoInmueble: body['credito.tipoInmueble'],
+        direccionInmueble: body['credito.direccionInmueble'],
+        valorComercial: body['credito.valorComercial'],
+        documentos: {
+          escritura: req.files?.escritura?.[0]?.path || person.credito?.inmuebleGarantia?.documentos?.escritura || '',
+          adicional: req.files?.adicional?.[0]?.path || person.credito?.inmuebleGarantia?.documentos?.adicional || ''
+        }
+      },
+      observaciones: body['credito.observaciones']
+    };
+
+    const updated = await person.save();
+    res.json(updated);
   } catch (err) {
     res.status(400).json({ message: err.message });
   }

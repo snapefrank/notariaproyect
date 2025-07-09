@@ -43,6 +43,7 @@ const ArtworkDetails = () => {
   } = useArtworks();
 
   const [artwork, setArtwork] = useState(null);
+  const [ownerName, setOwnerName] = useState('');
   const [relatedDocument, setRelatedDocument] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -64,6 +65,27 @@ const ArtworkDetails = () => {
       }
 
       setArtwork(foundArtwork);
+
+      // Determinar el nombre del propietario
+      if (foundArtwork.ownerExternalName) {
+        setOwnerName(foundArtwork.ownerExternalName);
+      } else if (foundArtwork.ownerId && foundArtwork.ownerType) {
+        try {
+          const endpoint = foundArtwork.ownerType === 'PhysicalPerson'
+            ? `http://localhost:5000/api/physical-persons/${foundArtwork.ownerId}`
+            : `http://localhost:5000/api/moral-persons/${foundArtwork.ownerId}`;
+
+          const response = await axios.get(endpoint);
+          const person = response.data;
+
+          setOwnerName(person.name || 'Propietario sin nombre');
+        } catch (error) {
+          console.error('No se pudo obtener el nombre del propietario:', error);
+          setOwnerName('Propietario no encontrado');
+        }
+      } else {
+        setOwnerName('No especificado');
+      }
 
       if (foundArtwork.documentId) {
         const doc = getDocumentById(foundArtwork.documentId);
@@ -112,7 +134,7 @@ const ArtworkDetails = () => {
           transition={{ duration: 0.3 }}
           className="lg:col-span-2"
         >
-          <ArtworkInformation artwork={artwork} />
+          <ArtworkInformation artwork={artwork} ownerName={ownerName} />
         </motion.div>
 
         <motion.div

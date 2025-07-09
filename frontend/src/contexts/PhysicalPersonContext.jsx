@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
+import { useToast } from '@/components/ui/use-toast';
 
 const PhysicalPersonContext = createContext();
 
@@ -9,12 +10,14 @@ export const usePhysicalPersons = () => {
 
 export const PhysicalPersonProvider = ({ children }) => {
   const [physicalPersons, setPhysicalPersons] = useState([]);
+  const { toast } = useToast();
+
 
   useEffect(() => {
-    fetchPhysicalPersons();
+    fetchAllPhysicalPersons();
   }, []);
 
-  const fetchPhysicalPersons = async () => {
+  const fetchAllPhysicalPersons = async () => {
     try {
       const response = await axios.get('/api/physical-persons');
       setPhysicalPersons(response.data); // Asegúrate que aquí venga también "documents"
@@ -25,41 +28,92 @@ export const PhysicalPersonProvider = ({ children }) => {
 
   const addPhysicalPerson = async (person) => {
     try {
-      const response = await axios.post('/api/physical-persons', person);
+      const response = await axios.post('/api/physical-persons', person, {
+        headers: person instanceof FormData
+          ? { 'Content-Type': 'multipart/form-data' }
+          : { 'Content-Type': 'application/json' }
+      });
+
       setPhysicalPersons((prev) => [...prev, response.data]);
+
+      toast({
+        title: 'Persona creada',
+        description: 'La persona física ha sido registrada exitosamente.',
+      });
+
+      return response.data;
     } catch (error) {
       console.error('Error adding physical person:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo registrar la persona física.',
+        variant: 'destructive',
+      });
     }
   };
 
+
+
   const updatePhysicalPerson = async (id, updatedPerson) => {
     try {
-      const response = await axios.put(`/api/physical-persons/${id}`, updatedPerson);
+      const isFormData = updatedPerson instanceof FormData;
+
+      const response = await axios.put(`/api/physical-persons/${id}`, updatedPerson, {
+        headers: isFormData
+          ? { 'Content-Type': 'multipart/form-data' }
+          : { 'Content-Type': 'application/json' },
+      });
+
       setPhysicalPersons((prev) =>
         prev.map((person) =>
           person._id === id || person.id === id ? response.data : person
         )
       );
+
+      toast({
+        title: 'Persona actualizada',
+        description: 'Los datos de la persona fueron actualizados correctamente.',
+      });
+
     } catch (error) {
       console.error('Error updating physical person:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar la persona física.',
+        variant: 'destructive',
+      });
       throw error;
     }
   };
+
 
   const deletePhysicalPerson = async (id) => {
     try {
       await axios.delete(`/api/physical-persons/${id}`);
       setPhysicalPersons((prev) => prev.filter((person) => person._id !== id));
+
+      toast({
+        title: 'Persona eliminada',
+        description: 'La persona física ha sido eliminada del sistema.',
+        variant: 'destructive',
+      });
+
     } catch (error) {
       console.error('Error deleting physical person:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo eliminar la persona física.',
+        variant: 'destructive',
+      });
     }
   };
 
-  const getPhysicalPersonById = (id) => {
-    return physicalPersons.find(
-      (person) => person._id === id || person.id === id
-    );
-  };
+const getPhysicalPersonById = (id) => {
+  return physicalPersons.find(
+    (person) => person._id === id || person.id === id
+  );
+};
+
 
   return (
     <PhysicalPersonContext.Provider
@@ -69,6 +123,7 @@ export const PhysicalPersonProvider = ({ children }) => {
         updatePhysicalPerson,
         deletePhysicalPerson,
         getPhysicalPersonById,
+        fetchAllPhysicalPersons
       }}
     >
       {children}

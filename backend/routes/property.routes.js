@@ -40,6 +40,9 @@ folders.forEach(folder => {
 
 // GET: Todas las propiedades
 router.get('/', controller.getAllProperties);
+// GET: Obtener propiedad por ID
+router.get('/:id', controller.getPropertyById);
+
 
 // POST: Crear nueva propiedad con todos los archivos (propiedad + locales)
 router.post(
@@ -104,5 +107,29 @@ router.post('/:id/upload-rent-contract', upload.single('contract'), async (req, 
     res.status(500).json({ message: 'Error al guardar el contrato', error: err.message });
   }
 });
+
+// POST: Agregar un nuevo local a una propiedad existente
+router.post(
+  '/:propertyId/locals',
+  upload.fields([
+    { name: 'contract', maxCount: 1 },
+    { name: 'localPhotos', maxCount: 10 },
+  ]),
+  controller.addLocalToProperty
+);
+
+// PUT: Actualizar local específico por índice
+router.put(
+  '/:propertyId/locals/:index',
+  upload.fields([
+    { name: 'contract', maxCount: 1 },
+    { name: 'localPhotos', maxCount: 10 },
+  ]),
+  controller.updateLocalInProperty
+);
+
+// DELETE: Eliminar local por índice
+router.delete('/:propertyId/locals/:index', controller.deleteLocalFromProperty);
+
 
 module.exports = router;

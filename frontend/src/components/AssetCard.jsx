@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { Link, useLocation } from 'react-router-dom';
 import {
   Building, PaintBucket, Package, Calendar,
-  DollarSign, MapPin, Edit, Trash
+  DollarSign, MapPin, Edit, Trash, ImageIcon
 } from 'lucide-react';
 import {
   Card, CardHeader, CardTitle, CardDescription,
@@ -37,7 +37,7 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
   const getSubtitle = () => {
     switch (assetType) {
       case 'property': return asset.address;
-      case 'artwork': return `${asset.artist}, ${asset.year}`;
+      case 'artwork': return `${asset.artist || 'Artista desconocido'}, ${asset.year || 'Año no especificado'}`;
       case 'other':
         return asset.type === 'collection' ? 'Colección' :
           asset.type === 'vehicle' ? 'Vehículo' :
@@ -49,9 +49,16 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
 
   const getTypeLabel = () => {
     if (assetType === 'property') {
-      return asset.type === 'residential' ? 'Residencial' :
-        asset.type === 'commercial' ? 'Comercial' :
-          asset.type === 'industrial' ? 'Industrial' : 'Terreno';
+      switch (asset.type) {
+        case 'residential': return 'Residencial';
+        case 'commercial': return 'Comercial';
+        case 'industrial': return 'Industrial';
+        case 'land': return 'Terreno';
+        default: return '';
+      }
+    }
+    if (assetType === 'artwork') {
+      return asset.type || 'Tipo no especificado';
     }
     return '';
   };
@@ -77,7 +84,7 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
         <CardHeader className="pb-2">
           <div className="flex justify-between items-start">
             <div className="flex-1">
-              {assetType === 'property' && (
+              {(assetType === 'property' || assetType === 'artwork') && (
                 <Badge variant="outline" className="mb-2">
                   {getTypeLabel()}
                 </Badge>
@@ -92,21 +99,64 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
         </CardHeader>
 
         <CardContent className="pb-2">
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            <div className="flex items-center gap-1">
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {asset.acquisitionDate ? formatDate(asset.acquisitionDate) : 'Fecha no disponible'}
-              </span>
+          {/* Miniatura de imagen para artwork */}
+          {assetType === 'artwork' && asset.photoPaths?.length > 0 && (
+            <div className="mb-3">
+              <img
+                src={`/${asset.photoPaths[0]}`}
+                alt="Miniatura obra"
+                className="w-full h-40 object-cover rounded-md"
+              />
             </div>
-            <div className="flex items-center gap-1">
-              <DollarSign className="h-4 w-4 text-muted-foreground" />
-              <span>
-                {asset.value !== undefined ? formatCurrency(asset.value) : '$ no disponible'}
-              </span>
-            </div>
-          </div>
+          )}
+          {assetType === 'property' && (
+            <div className="mt-2 text-sm space-y-1 text-muted-foreground">
+              {asset.propietario?.nombres && (
+                <div className="flex items-center gap-1">
+                  <span className="font-semibold">Propietario:</span>
+                  <span>
+                    {`${asset.propietario.nombres} ${asset.propietario.apellidoPaterno} ${asset.propietario.apellidoMaterno}`.trim()}
+                  </span>
+                </div>
+              )}
 
+              {asset.notary && (
+                <div className="flex items-baseline gap-1">
+                  <span className="font-semibold">Notaría:</span>
+                  <span>{asset.notary}</span>
+                </div>
+              )}
+              {Array.isArray(asset.locals) && (
+                <div className="flex items-baseline gap-1">
+                  <span className="font-semibold">Locales:</span>
+                  <span>{asset.locals.length}</span>
+                </div>
+              )}
+              {asset.deedDate || asset.acquisitionDate ? (
+                <div className="flex items-baseline gap-1">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-semibold">Fecha:</span>
+                  <span>
+                    {asset.deedDate
+                      ? formatDate(asset.deedDate)
+                      : formatDate(asset.acquisitionDate)}
+                  </span>
+                </div>
+              ) : null}
+              {(asset.valor_total || asset.value) ? (
+                <div className="flex items-baseline gap-1">
+                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-semibold">Valor:</span>
+                  <span>
+                    {formatCurrency(asset.valor_total || asset.value)}
+                  </span>
+                </div>
+              ) : null}
+            </div>
+          )}
+
+
+          {/* Ubicación */}
           {getLocation() && (
             <div className="flex items-center gap-1 mt-2 text-sm">
               <MapPin className="h-4 w-4 text-muted-foreground" />
@@ -114,6 +164,7 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
             </div>
           )}
 
+          {/* Descripción */}
           {asset.description && (
             <p className="mt-3 text-sm text-gray-600 line-clamp-2">{asset.description}</p>
           )}
@@ -122,10 +173,13 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
         <CardFooter className="flex justify-between pt-2">
           <div>
             {assetType === 'property' && (
-              <Link to={`/properties/${asset.id}`}>
-                <Button variant="ghost" size="sm">
-                  Ver Inmueble
-                </Button>
+              <Link to={`/properties/${asset._id}`}>
+                <Button variant="ghost" size="sm">Ver Inmueble</Button>
+              </Link>
+            )}
+            {assetType === 'artwork' && (
+              <Link to={`/artworks/${asset.id}`}>
+                <Button variant="ghost" size="sm">Ver Obra</Button>
               </Link>
             )}
           </div>
@@ -137,7 +191,7 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
               </Button>
             )}
             {onDelete && (
-              <Button variant="ghost" size="icon" onClick={() => onDelete(asset.id)}>
+              <Button variant="ghost" size="icon" onClick={() => onDelete(asset._id)}>
                 <Trash className="h-4 w-4" />
               </Button>
             )}

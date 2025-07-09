@@ -11,6 +11,8 @@ import { PhysicalPersonProvider } from '@/contexts/PhysicalPersonContext';
 import { MoralPersonProvider } from '@/contexts/MoralPersonContext';
 import { ArtworkProvider } from '@/contexts/ArtworkContext';
 import { AssociationProvider } from './contexts/AssociationContext';
+import 'leaflet/dist/leaflet.css';
+
 // Importa otros contextos si es necesario
 
 const root = createRoot(document.getElementById('root'));

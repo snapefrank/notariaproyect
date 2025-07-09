@@ -14,7 +14,18 @@ const localSchema = new mongoose.Schema({
 
 const propertySchema = new mongoose.Schema({
   name: { type: String, required: true },                // Nombre de la propiedad
-  owner: { type: String, required: true },               // Propietario
+  propietario: {
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'tipoPropietario',
+    required: true
+  },
+  tipoPropietario: {
+    type: String,
+    enum: ['PhysicalPerson', 'MoralPerson'],
+    required: true
+  },
+  owner: { type: String }, // Puedes dejarlo para mostrar el nombre directamente si quieres
+  valor_total: { type: Number },                         // Valor total del inmueble
   usufruct: { type: String },                            // Usufructo
   deedNumber: { type: String, required: true },          // Número de escritura
   deedDate: { type: Date, required: true },              // Fecha de escritura
@@ -22,7 +33,12 @@ const propertySchema = new mongoose.Schema({
   notary: { type: String, required: true },              // Notaría
   cadastralKey: { type: String, required: true },        // Clave catastral
   location: { type: String, required: true },            // Ubicación
+  latitude: { type: Number },
+  longitude: { type: Number },
+
   totalArea: { type: Number, required: true },           // Superficie total
+
+  type: { type: String, enum: ['residential', 'commercial', 'industrial', 'land'], required: true },
 
   // Gravamen
   hasEncumbrance: { type: Boolean, default: false },
@@ -56,4 +72,8 @@ const propertySchema = new mongoose.Schema({
   updatedAt: { type: Date, default: Date.now }
 });
 
+delete mongoose.connection.models['Property'];
+
+
 module.exports = mongoose.model('Property', propertySchema);
+

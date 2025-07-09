@@ -13,19 +13,19 @@ const toastStore = {
     toasts: [],
   },
   listeners: [],
-  
+
   getState: () => toastStore.state,
-  
+
   setState: (nextState) => {
     if (typeof nextState === 'function') {
       toastStore.state = nextState(toastStore.state)
     } else {
       toastStore.state = { ...toastStore.state, ...nextState }
     }
-    
+
     toastStore.listeners.forEach(listener => listener(toastStore.state))
   },
-  
+
   subscribe: (listener) => {
     toastStore.listeners.push(listener)
     return () => {
@@ -53,7 +53,11 @@ export const toast = ({ ...props }) => {
   toastStore.setState((state) => ({
     ...state,
     toasts: [
-      { ...props, id, dismiss },
+      {
+        ...props,
+        id,
+        _internalDismiss: dismiss // oculta al render, pero accesible internamente
+      },
       ...state.toasts,
     ].slice(0, TOAST_LIMIT),
   }))
@@ -67,15 +71,15 @@ export const toast = ({ ...props }) => {
 
 export function useToast() {
   const [state, setState] = useState(toastStore.getState())
-  
+
   useEffect(() => {
     const unsubscribe = toastStore.subscribe((state) => {
       setState(state)
     })
-    
+
     return unsubscribe
   }, [])
-  
+
   useEffect(() => {
     const timeouts = []
 
@@ -85,7 +89,7 @@ export function useToast() {
       }
 
       const timeout = setTimeout(() => {
-        toast.dismiss()
+        toast._internalDismiss?.()
       }, toast.duration || 5000)
 
       timeouts.push(timeout)

@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import axios from 'axios';
+
 
 const PropertyInformation = ({ property }) => {
+  console.log("✅ PROPERTY COMPLETA:", property);
   const {
     name,
-    owner,
+    propietario,
     usufruct,
     deedNumber,
     deedDate,
@@ -33,6 +36,10 @@ const PropertyInformation = ({ property }) => {
   const apiBase = import.meta.env.VITE_API_URL || 'http://localhost:5000';
   const [selectedImage, setSelectedImage] = useState(null);
   const [pdfData, setPdfData] = useState({ url: null, title: null });
+  const ownerName = typeof owner === 'object'
+    ? owner.nombre || owner.name || 'Propietario no identificado'
+    : 'No especificado';
+
 
   return (
     <Card>
@@ -43,7 +50,25 @@ const PropertyInformation = ({ property }) => {
       <CardContent className="space-y-6 text-sm">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <Info label="Nombre de la Propiedad" value={name} />
-          <Info label="Propietario" value={owner} />
+          <Info
+            label="Propietario"
+            value={
+              propietario
+                ? `${propietario.nombres} ${propietario.apellidoPaterno} ${propietario.apellidoMaterno}`
+                : 'No especificado'
+            }
+          />
+          <Info
+            label="Valor Total del Inmueble"
+            value={property.valor_total
+              ? Number(property.valor_total).toLocaleString('es-MX', {
+                style: 'currency',
+                currency: 'MXN',
+              })
+              : 'No especificado'}
+          />
+
+
           <Info label="Usufructo" value={usufruct} />
           <Info label="Número de Escritura" value={deedNumber} />
           <Info label="Fecha de Escritura" value={deedDate && new Date(deedDate).toLocaleDateString()} />
@@ -69,8 +94,22 @@ const PropertyInformation = ({ property }) => {
               <Info label="Arrendatario" value={tenant} />
               <Info label="Superficie rentada" value={`${rentedArea} m²`} />
               <Info label="Costo mensual" value={`$${rentCost}`} />
-              <Info label="Inicio de renta" value={rentStart && new Date(rentStart).toLocaleDateString()} />
-              <Info label="Fin de renta" value={rentEnd && new Date(rentEnd).toLocaleDateString()} />
+              <Info
+                label="Inicio de renta"
+                value={
+                  rentStart
+                    ? new Date(rentStart).toLocaleDateString('es-MX', { dateStyle: 'medium' })
+                    : 'No especificado'
+                }
+              />
+              <Info
+                label="Fin de renta"
+                value={
+                  rentEnd
+                    ? new Date(rentEnd).toLocaleDateString('es-MX', { dateStyle: 'medium' })
+                    : 'No especificado'
+                }
+              />
             </div>
           </div>
         )}
@@ -135,18 +174,18 @@ const PropertyInformation = ({ property }) => {
         </DialogContent>
       </Dialog>
 
-        {selectedImage && (
-  <div
-    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
-    onClick={() => setSelectedImage(null)}
-  >
-    <img
-      src={selectedImage}
-      alt="Vista ampliada del inmueble"
-      className="max-w-full max-h-full rounded shadow-lg"
-    />
-  </div>
-)}
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <img
+            src={selectedImage}
+            alt="Vista ampliada del inmueble"
+            className="max-w-full max-h-full rounded shadow-lg"
+          />
+        </div>
+      )}
     </Card>
   );
 };

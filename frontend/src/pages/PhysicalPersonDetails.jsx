@@ -26,8 +26,8 @@ import PhysicalPersonInformation from '@/components/PhysicalPersonDetails/Physic
 import LoadingSpinner from '@/components/documentDetails/LoadingSpinner';
 import NotFoundMessage from '@/components/documentDetails/NotFoundMessage';
 import PhysicalPersonForm from '@/components/PhysicalPersonForm';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// ✅ IMPORTAR FUNCIONES DESDE EL ARCHIVO API
 import {
   fetchPhysicalPersonById,
   updatePhysicalPerson,
@@ -42,6 +42,8 @@ const PhysicalPersonDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 
   useEffect(() => {
     const fetchPerson = async () => {
@@ -60,8 +62,12 @@ const PhysicalPersonDetails = () => {
   const handleUpdate = async (formData) => {
     try {
       await updatePhysicalPerson(id, formData);
-      setPerson(prev => ({ ...prev, ...formData }));
+
+      // Volver a cargar los datos actualizados desde backend:
+      const updated = await fetchPhysicalPersonById(id);
+      setPerson(updated);
       setIsEditDialogOpen(false);
+
     } catch (error) {
       console.error('Error al actualizar:', error);
     }
@@ -87,19 +93,18 @@ const PhysicalPersonDetails = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Personas
         </Button>
-        <PhysicalPersonHeader 
-          person={person} 
-          onEdit={() => setIsEditDialogOpen(true)} 
-          onDelete={() => setIsDeleteDialogOpen(true)} 
+        <PhysicalPersonHeader
+          person={person}
+          onEdit={() => setIsEditDialogOpen(true)}
+          onDelete={() => setIsDeleteDialogOpen(true)}
         />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="lg:col-span-2"
         >
           <PhysicalPersonInformation person={person} />
         </motion.div>
@@ -109,7 +114,52 @@ const PhysicalPersonDetails = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
         >
-          {/* Aquí puedes agregar documentos relacionados si deseas */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Crédito Financiero</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {person?.credito ? (
+                <div className="text-base space-y-3 leading-relaxed">
+                  <p><strong>Institución:</strong> {person.credito.institucionFinanciera || 'N/A'}</p>
+                  <p><strong>Monto:</strong> ${person.credito.montoCredito?.toLocaleString() || 'N/A'}</p>
+                  <p><strong>Plazo:</strong> {person.credito.plazoMeses || 'N/A'} meses</p>
+                  <p><strong>Interés Anual:</strong> {person.credito.tasaInteresAnual || 'N/A'}%</p>
+                  <p><strong>Pago Mensual:</strong> ${person.credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
+
+                  <p><strong>Tiene inmueble en garantía:</strong> {person.credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
+
+                  {person.credito.tieneInmuebleGarantia && (
+                    <>
+                      <p><strong>Tipo de Inmueble:</strong> {person.credito.inmuebleGarantia?.tipoInmueble || 'N/A'}</p>
+                      <p><strong>Dirección:</strong> {person.credito.inmuebleGarantia?.direccionInmueble || 'N/A'}</p>
+                      <p><strong>Valor Comercial:</strong> ${person.credito.inmuebleGarantia?.valorComercial?.toLocaleString() || 'N/A'}</p>
+                      <p><strong>Folio o Escritura:</strong> {person.credito.inmuebleGarantia?.escrituraFolio || 'N/A'}</p>
+
+                      <div className="pt-2 space-y-1">
+                        {person.credito.inmuebleGarantia?.documentos?.escritura && (
+                          <a
+                            href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.escritura}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-blue-600 hover:underline"
+                          >
+                            Ver Escritura (PDF)
+                          </a>
+                        )}
+                      </div>
+                    </>
+                  )}
+
+                  {person.credito.observaciones && (
+                    <p><strong>Observaciones:</strong> {person.credito.observaciones}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No se ha registrado información de crédito.</p>
+              )}
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
 
@@ -132,12 +182,15 @@ const PhysicalPersonDetails = () => {
           <AlertDialogHeader>
             <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. La persona será eliminada permanentementekkk.
+              Esta acción no se puede deshacer. La persona será eliminada permanentemente.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

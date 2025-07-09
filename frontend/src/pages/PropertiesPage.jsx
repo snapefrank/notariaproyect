@@ -64,7 +64,7 @@ const PropertiesPage = () => {
   };
 
   const handleUpdateProperty = (formData) => {
-    updateProperty(currentProperty.id, formData);
+    updateProperty(currentProperty._id, formData);
     setIsEditDialogOpen(false);
     setCurrentProperty(null);
   };
@@ -144,7 +144,7 @@ const PropertiesPage = () => {
             <DialogHeader>
               <DialogTitle>Crear Nuevo Inmueble</DialogTitle>
               <DialogDescription>
-                Complete el formulario para registrar un nuevo inmueble en el sistema.
+                Complete el formulario para registrar un nuevo inmueble en el sistema
               </DialogDescription>
             </DialogHeader>
             <AssetForm
@@ -186,13 +186,13 @@ const PropertiesPage = () => {
         >
           {filteredProperties().map((property) => (
             <AssetCard
-              key={property.id}
+              key={property._id}
               asset={property}
               assetType="property"
               onEdit={handleEditProperty}
               onDelete={handleDeleteClick}
               extraActions={
-                <Button onClick={() => handleSellProperty(property.id)}>
+                <Button onClick={() => handleSellProperty(property._id)}>
                   Vender
                 </Button>
               }

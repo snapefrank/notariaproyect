@@ -32,17 +32,49 @@ export const DocumentProvider = ({ children }) => {
 
   const addDocument = async (newDocument) => {
     try {
-      const response = await axios.post(API_URL, newDocument);
-      setDocuments(prev => [...prev, response.data]);
+      let responseData;
+
+      // Elimina campos problemáticos antes de enviar
+      const cleanedDoc = { ...newDocument };
+      delete cleanedDoc.id;
+      delete cleanedDoc._id;
+
+      if (cleanedDoc.file) {
+        const formData = new FormData();
+        Object.entries(cleanedDoc).forEach(([key, value]) => {
+          if (key === 'file') {
+            formData.append('file', value);
+          } else {
+            formData.append(key, Array.isArray(value) ? value.join(',') : value);
+          }
+        });
+
+        const res = await fetch(`${API_URL}/upload`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.message || 'Error al subir documento');
+        }
+
+        responseData = await res.json();
+      } else {
+        const res = await axios.post(API_URL, cleanedDoc);
+        responseData = res.data;
+      }
+
+      setDocuments(prev => [...prev, responseData]);
 
       toast({
         title: 'Documento creado',
         description: 'El documento ha sido creado exitosamente',
       });
 
-      return response.data;
+      return responseData;
     } catch (error) {
-      console.error('Error al crear documento:', error);
+      console.error('Error al crear documento:', error.message);
       toast({
         title: 'Error',
         description: 'No se pudo crear el documento.',
@@ -50,6 +82,9 @@ export const DocumentProvider = ({ children }) => {
       });
     }
   };
+
+
+
 
   const updateDocument = async (id, updatedData) => {
     try {

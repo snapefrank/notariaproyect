@@ -20,23 +20,18 @@ import {
   AlertDialogHeader,
   AlertDialogTitle
 } from '@/components/ui/alert-dialog';
-import { useMoralPersons } from '@/contexts/MoralPersonContext';
-import MoralPersonHeader from '@/components/MoralPersonDetails/MoralPersonHeader';
-import MoralPersonInformation from '@/components/MoralPersonDetails/MoralPersonInformation';
-import RelatedDocuments from '@/components/MoralPersonDetails/RelatedDocuments';
+
 import LoadingSpinner from '@/components/documentDetails/LoadingSpinner';
 import NotFoundMessage from '@/components/documentDetails/NotFoundMessage';
 import MoralPersonForm from '@/components/MoralPersonForm';
 
+// 👇 Importa funciones API
+import { getMoralPersonById, updateMoralPerson, deleteMoralPerson } from '@/lib/moralPerson.api';
+
+
 const MoralPersonDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
-  const {
-    fetchMoralPersonById,
-    updateMoralPerson,
-    deleteMoralPerson
-  } = useMoralPersons();
 
   const [person, setPerson] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -45,17 +40,23 @@ const MoralPersonDetails = () => {
 
   useEffect(() => {
     const fetchPerson = async () => {
-      const data = await fetchMoralPersonById(id);
-      if (data) setPerson(data);
-      setIsLoading(false);
+      try {
+        const data = await getMoralPersonById(id);
+        if (data) setPerson(data);
+      } catch (error) {
+        console.error('Error al obtener persona moral:', error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     fetchPerson();
-  }, [id, fetchMoralPersonById]);
+  }, [id]);
 
   const handleUpdate = async (formData) => {
     try {
       await updateMoralPerson(id, formData);
-      setPerson(prev => ({ ...prev, ...formData }));
+      const updated = await fetchMoralPersonById(id);
+      setPerson(updated);
       setIsEditDialogOpen(false);
     } catch (error) {
       console.error('Error al actualizar persona moral:', error);
@@ -82,32 +83,93 @@ const MoralPersonDetails = () => {
           <ArrowLeft className="h-4 w-4 mr-2" />
           Volver a Personas
         </Button>
-        <MoralPersonHeader 
-          person={person} 
-          onEdit={() => setIsEditDialogOpen(true)} 
-          onDelete={() => setIsDeleteDialogOpen(true)} 
-        />
+        <div className="flex justify-between items-center mb-4">
+          <h1 className="text-2xl font-bold">{person.nombre}</h1>
+          <div className="space-x-2">
+            <Button variant="default" onClick={() => setIsEditDialogOpen(true)}>Editar</Button>
+            <Button variant="destructive" onClick={() => setIsDeleteDialogOpen(true)}>Eliminar</Button>
+          </div>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Información General */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="lg:col-span-2"
+          className="lg:col-span-2 bg-white p-4 rounded-lg shadow-md"
         >
-          <MoralPersonInformation person={person} />
+          <h3 className="text-lg font-semibold text-gray-800 border-b pb-1 mb-4">Información de la Persona Moral</h3>
+          <div className="text-sm space-y-2">
+            <p><strong>Razón Social:</strong> {person.nombre}</p>
+            <p><strong>RFC:</strong> {person.rfc}</p>
+            <p><strong>Régimen Fiscal:</strong> {person.regimenFiscal || 'N/A'}</p>
+            <p><strong>Dirección:</strong> {person.domicilioFiscal || 'N/A'}</p>
+            <p><strong>Fecha de Constitución:</strong> {person.fechaConstitucion?.split('T')[0] || 'N/A'}</p>
+          </div>
         </motion.div>
 
+        {/* Crédito Financiero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
+          className="bg-white p-4 rounded-lg shadow-md space-y-4"
         >
-          {/* <RelatedDocuments person={person} /> */}
+          <h3 className="text-lg font-semibold text-gray-800 border-b pb-1">Crédito Financiero</h3>
+
+          {person?.credito ? (
+            <div className="text-sm space-y-2">
+              <p><strong>Institución:</strong> {person.credito.institucionFinanciera || 'N/A'}</p>
+              <p><strong>Monto:</strong> ${person.credito.montoCredito?.toLocaleString() || 'N/A'}</p>
+              <p><strong>Plazo:</strong> {person.credito.plazoMeses || 'N/A'} meses</p>
+              <p><strong>Interés Anual:</strong> {person.credito.tasaInteresAnual || 'N/A'}%</p>
+              <p><strong>Pago Mensual:</strong> ${person.credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
+              <p><strong>Tiene inmueble en garantía:</strong> {person.credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
+
+              {person.credito.tieneInmuebleGarantia && (
+                <>
+                  <p><strong>Tipo de Inmueble:</strong> {person.credito.inmuebleGarantia?.tipoInmueble || 'N/A'}</p>
+                  <p><strong>Dirección:</strong> {person.credito.inmuebleGarantia?.direccionInmueble || 'N/A'}</p>
+                  <p><strong>Valor Comercial:</strong> ${person.credito.inmuebleGarantia?.valorComercial?.toLocaleString() || 'N/A'}</p>
+
+                  <div className="pt-2 space-y-1">
+                    {person.credito.inmuebleGarantia?.documentos?.escritura && (
+                      <a
+                        href={`/${person.credito.inmuebleGarantia.documentos.escritura}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Ver Escritura (PDF)
+                      </a>
+                    )}
+                    {person.credito.inmuebleGarantia?.documentos?.adicional && (
+                      <a
+                        href={`/${person.credito.inmuebleGarantia.documentos.adicional}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        Ver Documento Adicional (PDF)
+                      </a>
+                    )}
+                  </div>
+                </>
+              )}
+
+              {person.credito.observaciones && (
+                <p><strong>Observaciones:</strong> {person.credito.observaciones}</p>
+              )}
+            </div>
+          ) : (
+            <p className="text-gray-500 italic">No se ha registrado información de crédito.</p>
+          )}
         </motion.div>
       </div>
 
+      {/* Diálogo de edición */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
@@ -122,6 +184,7 @@ const MoralPersonDetails = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Confirmación de eliminación */}
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -132,7 +195,10 @@ const MoralPersonDetails = () => {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <AlertDialogAction
+              onClick={handleDelete}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
               Eliminar
             </AlertDialogAction>
           </AlertDialogFooter>

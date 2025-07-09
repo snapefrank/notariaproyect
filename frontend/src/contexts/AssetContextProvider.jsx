@@ -69,13 +69,6 @@ export const AssetProvider = ({ children }) => {
     loadAssets();
   }, [initializeProperties, initializeArtworks, initializeOtherAssets]);
 
-  useEffect(() => {
-    if (!isLoading) {
-      localStorage.setItem('notaria_properties', JSON.stringify(properties));
-      localStorage.setItem('notaria_artworks', JSON.stringify(artworks));
-      localStorage.setItem('notaria_other_assets', JSON.stringify(otherAssets));
-    }
-  }, [properties, artworks, otherAssets, isLoading]);
 
   // 🔧 Conversor universal a FormData (solo si hay archivos)
   const formatFormData = (data) => {
@@ -213,13 +206,37 @@ export const AssetProvider = ({ children }) => {
 
   const getArtworkById = (id) => artworks.find((a) => a.id === id);
   const getOtherAssetById = (id) => otherAssets.find((o) => o.id === id);
+  const refreshProperty = async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}/${id}`);
+      const updatedProperty = response.data;
+      setProperties((prev) =>
+        prev.map((p) => (p._id === id ? updatedProperty : p))
+      );
+      return updatedProperty;
+    } catch (error) {
+      console.error('Error al refrescar propiedad desde el contexto:', error);
+      throw error;
+    }
+  };
+  const refreshProperties = async () => {
+    try {
+      const response = await axios.get(API_URL);
+      const loadedProperties = response.data;
+      setProperties(loadedProperties);
+      console.log('✅ Propiedades recargadas desde el backend:', loadedProperties);
+    } catch (error) {
+      console.error('❌ Error al recargar propiedades:', error);
+    }
+  };
 
   const value = {
     properties, artworks, otherAssets, isLoading,
     addProperty, updateProperty, deleteProperty, getPropertyById,
     addArtwork, updateArtwork, deleteArtwork, getArtworkById,
-    addOtherAsset, updateOtherAsset, deleteOtherAsset, getOtherAssetById
+    addOtherAsset, updateOtherAsset, deleteOtherAsset, getOtherAssetById, refreshProperty,refreshProperties,
   };
 
   return <AssetContext.Provider value={value}>{children}</AssetContext.Provider>;
+
 };

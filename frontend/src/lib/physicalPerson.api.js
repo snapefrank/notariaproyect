@@ -7,9 +7,14 @@ export const fetchPhysicalPersonById = async (id) => {
 };
 
 export const updatePhysicalPerson = async (id, data) => {
-  const res = await axios.put(`/api/physical-persons/${id}`, data);
+  const res = await axios.put(`/api/physical-persons/${id}`, data, {
+    headers: {
+      'Content-Type': 'multipart/form-data'
+    }
+  });
   return res.data;
 };
+
 
 export const deletePhysicalPerson = async (id) => {
   const res = await axios.delete(`/api/physical-persons/${id}`);

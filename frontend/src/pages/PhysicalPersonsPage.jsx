@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import PhysicalPersonForm from '@/components/PhysicalPersonForm';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger
@@ -14,6 +15,10 @@ import { Plus, Filter, Edit, Trash } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { usePhysicalPersons } from '@/contexts/PhysicalPersonContext';
 
+
+
+
+
 const PhysicalPersonsPage = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -21,12 +26,18 @@ const PhysicalPersonsPage = () => {
   const [selectedPerson, setSelectedPerson] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
-  const { physicalPersons, addPhysicalPerson, updatePhysicalPerson, deletePhysicalPerson } = usePhysicalPersons();
+  const { physicalPersons, addPhysicalPerson, updatePhysicalPerson, deletePhysicalPerson, fetchAllPhysicalPersons } = usePhysicalPersons();
   const navigate = useNavigate();
 
-  const handleAddPerson = (formData) => {
-    addPhysicalPerson({ ...formData, id: Date.now().toString() });
+  useEffect(() => {
+  fetchAllPhysicalPersons(); // 🔄 Recargar lista completa al entrar a esta página
+}, []);
+
+  const handleAddPerson = async (formData) => {
+    const savedPerson = await addPhysicalPerson(formData);
     setIsAddDialogOpen(false);
+    return savedPerson; // Esto permite que PhysicalPersonForm reciba el ID
+
   };
 
   const handleEdit = (person) => {
@@ -49,6 +60,7 @@ const PhysicalPersonsPage = () => {
   const handleDeletePerson = async (id) => {
     try {
       await deletePhysicalPerson(id);
+      await fetchAllPhysicalPersons(); // ✅ Refrescar lista tras eliminar
       setIsDeleteDialogOpen(false);
     } catch (error) {
       console.error('Error al eliminar persona:', error);
@@ -64,7 +76,8 @@ const PhysicalPersonsPage = () => {
     const term = searchTerm.toLowerCase();
     return physicalPersons.filter(person =>
       person.nombres.toLowerCase().includes(term) ||
-      person.apellidos.toLowerCase().includes(term)
+      person.apellidoMaterno.toLowerCase().includes(term) ||
+      person.apellidoPaterno.toLowerCase().includes(term)
     );
   };
 
@@ -97,9 +110,16 @@ const PhysicalPersonsPage = () => {
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
-              <DialogTitle>Agregar Persona Física</DialogTitle>
+              <DialogTitle>Agregar Persona Fisica</DialogTitle>
+              <DialogDescription>
+                Complete el formulario para registrar una Persona Fisica
+              </DialogDescription>
             </DialogHeader>
-            <PhysicalPersonForm onSubmit={handleAddPerson} onCancel={() => setIsAddDialogOpen(false)} />
+            <PhysicalPersonForm
+              type="physicalPersons"
+              onSubmit={handleAddPerson}
+              onCancel={() => setIsAddDialogOpen(false)}
+            />
           </DialogContent>
         </Dialog>
       </div>
@@ -117,7 +137,9 @@ const PhysicalPersonsPage = () => {
         >
           {filteredPersons().map((person) => (
             <div key={person._id || person.id || `${person.nombres}-${person.rfc}`} className="p-4 border rounded-md shadow-sm bg-white">
-              <h2 className="text-lg font-semibold">{person.nombres} {person.apellidos}</h2>
+              <h2 className="text-lg font-semibold">
+                {person.nombres} {person.apellidoPaterno} {person.apellidoMaterno}
+              </h2>
               <p className="text-sm text-muted-foreground">RFC: {person.rfc}</p>
               <p className="text-sm text-muted-foreground">CURP: {person.curp}</p>
               <div className="mt-2 flex justify-between items-center">

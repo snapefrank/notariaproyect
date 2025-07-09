@@ -3,7 +3,10 @@ const Property = require('../models/Property');
 // GET all properties
 exports.getAllProperties = async (req, res) => {
   try {
-    const properties = await Property.find({});
+    const properties = await Property.find().populate({
+      path: 'propietario',
+      strictPopulate: false // ← Esto evitará el error mientras Mongoose detecta el modelo actualizado
+    });
     const mapped = properties.map(p => ({ ...p.toObject(), id: p._id.toString() }));
     res.json(mapped);
   } catch (err) {
@@ -13,6 +16,7 @@ exports.getAllProperties = async (req, res) => {
 };
 
 // POST new property
+// POST new property
 exports.createProperty = async (req, res) => {
   try {
     const body = req.body;
@@ -20,10 +24,22 @@ exports.createProperty = async (req, res) => {
 
     const deedFileUrl = files?.deedFile?.[0]?.filename || '';
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || '';
-    const propertyPhotos = files?.propertyPhotos?.map(f => f.filename) || [];
     const extraDocs = files?.extraDocs?.map(f => f.filename) || [];
 
-    // Procesar locales
+    // ✅ Leer imágenes existentes si vienen (por prevención)
+    let imagenesExistentes = [];
+    try {
+      imagenesExistentes = body.imagenesExistentes
+        ? JSON.parse(body.imagenesExistentes)
+        : [];
+    } catch (e) {
+      console.warn('⚠️ imagenesExistentes mal formateadas en creación:', e.message);
+    }
+
+    const nuevasFotos = files?.propertyPhotos?.map(f => f.filename) || [];
+    const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
+
+    // ✅ Procesar locales con archivos
     const locals = JSON.parse(body.locals || '[]').map((local, index) => {
       const localPhotos = files?.[`localPhotos_${index}`]?.map(f => f.filename) || [];
       const rentContractFile = files?.[`localRentContract_${index}`]?.[0]?.filename || '';
@@ -36,7 +52,9 @@ exports.createProperty = async (req, res) => {
 
     const newProperty = new Property({
       name: body.name,
-      owner: body.owner,
+      propietario: body.propietario,
+      tipoPropietario: body.tipoPropietario,
+      valor_total: parseFloat(body.valor_total) || 0,
       usufruct: body.usufruct,
       deedNumber: body.deedNumber,
       deedDate: body.deedDate,
@@ -44,14 +62,13 @@ exports.createProperty = async (req, res) => {
       notary: body.notary,
       cadastralKey: body.cadastralKey,
       location: body.location,
+      latitude: body.latitude,
+      longitude: body.longitude,
       totalArea: body.totalArea,
       hasEncumbrance: body.hasEncumbrance,
       encumbranceInstitution: body.encumbranceInstitution,
       encumbranceAmount: body.encumbranceAmount,
       encumbranceDate: body.encumbranceDate,
-      status: body.status,
-      soldDate: body.soldDate,
-      soldNote: body.soldNote,
       isRented: body.isRented,
       tenant: body.tenant,
       rentedArea: body.rentedArea,
@@ -59,11 +76,15 @@ exports.createProperty = async (req, res) => {
       rentStartDate: body.rentStartDate,
       rentEndDate: body.rentEndDate,
       rentContractUrl,
-      photos: propertyPhotos,
+      photos: fotosFinales,
       extraDocs,
       locals,
+      status: body.status,
+      soldDate: body.soldDate,
+      soldNote: body.soldNote,
       createdAt: new Date(),
       updatedAt: new Date(),
+      type: body.type
     });
 
     await newProperty.save();
@@ -74,6 +95,7 @@ exports.createProperty = async (req, res) => {
   }
 };
 
+
 // PUT update property
 exports.updateProperty = async (req, res) => {
   try {
@@ -81,27 +103,69 @@ exports.updateProperty = async (req, res) => {
     const body = req.body;
     const files = req.files;
 
-    const deedFileUrl = files?.deedFile?.[0]?.filename || body.deedFileUrl;
-    const rentContractUrl = files?.rentContractFile?.[0]?.filename || body.rentContractUrl;
-    const propertyPhotos = files?.propertyPhotos?.map(f => f.filename) || body.photos || [];
-    const extraDocs = files?.extraDocs?.map(f => f.filename) || body.extraDocs || [];
+    console.log('🟡 req.body.imagenesExistentes:', req.body.imagenesExistentes);
+    console.log('🟡 req.files.propertyPhotos:', req.files?.propertyPhotos);
+    console.log('🟡 req.body.locals:', req.body.locals);
 
-    // Procesar locales
-    const locals = JSON.parse(body.locals || '[]').map((local, index) => {
-      const localPhotos = files?.[`localPhotos_${index}`]?.map(f => f.filename) || local.photos || [];
-      const rentContractFile = files?.[`localRentContract_${index}`]?.[0]?.filename || local.rentContractUrl || '';
+
+    const existing = await Property.findById(id);
+    if (!existing) return res.status(404).json({ message: 'Propiedad no encontrada' });
+
+    // ✅ Imágenes anteriores desde el frontend
+    let imagenesExistentes = [];
+
+    try {
+      imagenesExistentes = body.imagenesExistentes
+        ? JSON.parse(body.imagenesExistentes)
+        : existing.photos || [];
+    } catch (e) {
+      console.warn('⚠️ imagenesExistentes inválidas:', e.message);
+      imagenesExistentes = existing.photos || [];
+    }
+
+    const nuevasFotos = files?.propertyPhotos?.map(f => f.filename) || [];
+    const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
+
+
+
+
+    const extraDocs = files?.extraDocs?.map(f => f.filename) || existing.extraDocs || [];
+    const deedFileUrl = files?.deedFile?.[0]?.filename || existing.deedFileUrl || '';
+    const rentContractUrl = files?.rentContractFile?.[0]?.filename || existing.rentContractUrl || '';
+
+    // ✅ Combinar locales
+    const incomingLocals = JSON.parse(body.locals || '[]');
+    const nuevosLocales = incomingLocals.map((local, index) => {
+      const nuevasFotosLocal = files?.[`localPhotos_${index}`]?.map(f => f.filename) || [];
+
+      console.log(`🟢 Fotos actuales del local ${index}:`, existing.locals?.[index]?.photos);
+      console.log(`🟢 Fotos nuevas recibidas del local ${index}:`, nuevasFotosLocal);
+
+
+      const fotosAnteriores = existing.locals?.[index]?.photos || [];
+      const fotosFinales = Array.from(new Set([...fotosAnteriores, ...nuevasFotosLocal]));
+
+
+      const rentContractFile =
+        files?.[`localRentContract_${index}`]?.[0]?.filename ||
+        existing.locals?.[index]?.rentContractUrl ||
+        '';
+
       return {
         ...local,
-        photos: localPhotos,
+        photos: fotosFinales,
         rentContractUrl: rentContractFile
       };
     });
+
 
     const updated = await Property.findByIdAndUpdate(
       id,
       {
         name: body.name,
-        owner: body.owner,
+        propietario: body.propietario,
+        tipoPropietario: body.tipoPropietario,
+        valor_total: parseFloat(body.valor_total) || 0,
         usufruct: body.usufruct,
         deedNumber: body.deedNumber,
         deedDate: body.deedDate,
@@ -124,10 +188,13 @@ exports.updateProperty = async (req, res) => {
         rentStartDate: body.rentStartDate,
         rentEndDate: body.rentEndDate,
         rentContractUrl,
-        photos: propertyPhotos,
+        photos: fotosFinales,
         extraDocs,
-        locals,
+        locals: nuevosLocales,
         updatedAt: new Date(),
+        type: body.type,
+        latitude: body.latitude,
+        longitude: body.longitude,
       },
       { new: true }
     );
@@ -138,6 +205,7 @@ exports.updateProperty = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar propiedad', error: err.message });
   }
 };
+
 
 // DELETE property
 exports.deleteProperty = async (req, res) => {
@@ -161,3 +229,125 @@ exports.updatePropertyContract = async (id, contractPath) => {
 
   return { ...updated.toObject(), id: updated._id.toString() };
 };
+// POST: Agregar un nuevo local a un inmueble existente
+exports.addLocalToProperty = async (req, res) => {
+  try {
+    const { propertyId } = req.params;
+    const property = await Property.findById(propertyId);
+
+        console.log('🧾 Archivos recibidos al agregar local:', req.files);
+    console.log('📦 Body recibido:', req.body);
+
+    if (!property) {
+      return res.status(404).json({ message: 'Inmueble no encontrado' });
+    }
+
+    const { name, tenant, rentedArea, rentCost, rentStartDate, rentEndDate } = req.body;
+    const contractFile = req.files?.contract?.[0]?.filename;
+    const localPhotos = req.files?.localPhotos?.map(f => f.filename) || [];
+
+    const newLocal = {
+      name,
+      tenant,
+      rentedArea,
+      rentCost,
+      rentStartDate,
+      rentEndDate,
+      rentContractUrl: contractFile || '',
+      photos: localPhotos
+    };
+
+    property.locals.push(newLocal);
+    property.updatedAt = new Date();
+    await property.save();
+
+    res.status(201).json({ message: 'Local agregado exitosamente', local: newLocal });
+  } catch (error) {
+    console.error('❌ Error al agregar local al inmueble:', error);
+    res.status(500).json({ message: 'Error al agregar local', error: error.message });
+  }
+};
+// PUT: Actualizar un local existente por índice
+exports.updateLocalInProperty = async (req, res) => {
+  try {
+    const { propertyId, index } = req.params;
+    const property = await Property.findById(propertyId);
+
+    if (!property || !property.locals[index]) {
+      return res.status(404).json({ message: 'Local no encontrado' });
+    }
+
+    const files = req.files;
+    const {
+      name,
+      tenant,
+      rentedArea,
+      rentCost,
+      rentStartDate,
+      rentEndDate,
+    } = req.body;
+
+    const updatedLocal = {
+      name,
+      tenant,
+      rentedArea,
+      rentCost,
+      rentStartDate,
+      rentEndDate,
+      rentContractUrl: files?.contract?.[0]?.filename || property.locals[index].rentContractUrl,
+      photos: files?.localPhotos?.map(f => f.filename) || property.locals[index].photos,
+    };
+
+    property.locals[index] = updatedLocal;
+    property.updatedAt = new Date();
+    await property.save();
+
+    res.json({ message: 'Local actualizado exitosamente', local: updatedLocal });
+  } catch (error) {
+    console.error('❌ Error al actualizar local:', error);
+    res.status(500).json({ message: 'Error al actualizar local', error: error.message });
+  }
+};
+
+// DELETE: Eliminar un local por índice
+exports.deleteLocalFromProperty = async (req, res) => {
+  try {
+    const { propertyId, index } = req.params;
+    const localIndex = parseInt(index); // 🔧 Conversión necesaria
+
+    const property = await Property.findById(propertyId);
+
+    if (!property) {
+      return res.status(404).json({ message: 'Inmueble no encontrado' });
+    }
+
+    if (isNaN(localIndex) || localIndex < 0 || localIndex >= property.locals.length) {
+      return res.status(400).json({ message: 'Índice de local inválido' });
+    }
+
+    property.locals.splice(localIndex, 1); // elimina por índice
+    property.updatedAt = new Date();
+    await property.save();
+
+    res.json({ message: 'Local eliminado correctamente', property });
+  } catch (error) {
+    console.error('❌ Error al eliminar local:', error);
+    res.status(500).json({ message: 'Error al eliminar local', error: error.message });
+  }
+};
+// GET: Obtener inmueble por ID
+exports.getPropertyById = async (req, res) => {
+  try {
+    const property = await Property.findById(req.params.id)
+      .populate('propietario') // << ESTA LÍNEA ES CLAVE
+      .exec();
+
+    res.json(property);
+  } catch (error) {
+    console.error("Error al obtener propiedad:", error);
+    res.status(500).json({ error: 'Error al obtener la propiedad' });
+  }
+};
+
+
+

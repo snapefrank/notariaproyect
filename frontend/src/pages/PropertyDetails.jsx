@@ -27,13 +27,17 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import AssetForm from '@/components/AssetForm';
-import Accordion from '@/components/ui/Accordion'; // ✅ Solo esta importación
-import { apiBase } from '@/lib/constants'; // o desde donde lo tengas definido
+import Accordion from '@/components/ui/Accordion';
+import { apiBase } from '@/lib/constants';
+import AddLocalModal from '@/components/propertyDetails/AddLocalModal';
+import EditLocalModal from '@/components/propertyDetails/EditLocalModal';
+import PropertyForm from '@/components/PropertyForm';
+
 
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getPropertyById, updateProperty, deleteProperty } = useAssets();
+  const { getPropertyById, updateProperty, deleteProperty, refreshProperty } = useAssets();
   const { documents } = useDocuments();
 
   const [property, setProperty] = useState(null);
@@ -46,19 +50,33 @@ const PropertyDetails = () => {
   const [sellDate, setSellDate] = useState('');
   const [sellNote, setSellNote] = useState('');
   const [selectedImage, setSelectedImage] = useState(null);
+  const [showAddLocalDialog, setShowAddLocalDialog] = useState(false);
+  const [editLocalIndex, setEditLocalIndex] = useState(null);
+  const [showEditLocalDialog, setShowEditLocalDialog] = useState(false);
+  const [localToDeleteIndex, setLocalToDeleteIndex] = useState(null);
 
   useEffect(() => {
-    const foundProperty = getPropertyById(id);
-    if (foundProperty) {
-      setProperty(foundProperty);
+    const fetchProperty = async () => {
+      setIsLoading(true);
+      try {
+        const response = await fetch(`${apiBase}/api/properties/${id}`);
+        const data = await response.json();
+        setProperty(data);
 
-      const docs = documents.filter(
-        (doc) => doc.type === 'property' && doc.propertyId === id
-      );
-      setRelatedDocuments(docs);
-    }
-    setIsLoading(false);
-  }, [id, getPropertyById, documents]);
+        const docs = documents.filter(
+          (doc) => doc.type === 'property' && doc.propertyId === id
+        );
+        setRelatedDocuments(docs);
+      } catch (err) {
+        console.error('Error al cargar el inmueble:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProperty();
+  }, [id, documents]);
+
 
   const handleEdit = () => setIsEditDialogOpen(true);
 
@@ -107,24 +125,40 @@ const PropertyDetails = () => {
 
       <PropertyInformation property={property} />
 
-      {/* Visualización de locales */}
-      {property.locals && property.locals.length > 0 && (
-        <div className="space-y-4">
+      {/* Sección de locales */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
           <h2 className="text-xl font-semibold">Locales dentro del inmueble</h2>
-          {property.locals.map((local, index) => (
+          <Button
+            onClick={() => setShowAddLocalDialog(true)}
+          >
+            Agregar Local
+          </Button>
+        </div>
+
+        {property.locals && property.locals.length > 0 && property.locals.map((local, index) => {
+          console.log(`▶ Local ${index + 1}:`, local); // 👈 AQUI se imprime cada local
+          return (
             <Accordion key={index} title={`Local ${index + 1} – Arrendatario: ${local.tenant || 'Sin definir'}`}>
               <p><strong>Superficie rentada:</strong> {local.rentedArea} m²</p>
               <p><strong>Costo de renta:</strong> ${local.rentCost}</p>
               <p><strong>Inicio de renta:</strong> {local.rentStartDate?.substring(0, 10)}</p>
               <p><strong>Fin de renta:</strong> {local.rentEndDate?.substring(0, 10)}</p>
+
               {local.rentContractUrl && (
                 <p>
                   <strong>Contrato:</strong>{' '}
-                  <a href={`/uploads/locals/contracts/${local.rentContractUrl}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                  <a
+                    href={`${apiBase}/uploads/locals/${local.rentContractUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-blue-600 underline"
+                  >
                     Ver contrato
                   </a>
                 </p>
               )}
+
               {local.photos && local.photos.length > 0 && (
                 <div className="pt-4 border-t mt-4">
                   <h4 className="text-sm font-semibold mb-2">Fotos del local</h4>
@@ -145,10 +179,29 @@ const PropertyDetails = () => {
                   </div>
                 </div>
               )}
+
+              <div className="flex gap-2 mt-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => {
+                    setEditLocalIndex(index);
+                    setShowEditLocalDialog(true);
+                  }}
+                >
+                  Editar Local
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => setLocalToDeleteIndex(index)}
+                >
+                  Eliminar Local
+                </Button>
+              </div>
             </Accordion>
-          ))}
-        </div>
-      )}
+          );
+        })}
+
+      </div>
 
       <RelatedDocumentInfo
         property={property}
@@ -199,15 +252,22 @@ const PropertyDetails = () => {
             <DialogTitle>Editar Inmueble</DialogTitle>
           </DialogHeader>
           {property && (
-            <AssetForm
-              type="property"
+            <PropertyForm
               initialData={property}
-              onSubmit={(formData) => {
-                updateProperty(id, formData);
-                setIsEditDialogOpen(false);
+              onSubmit={async (formData) => {
+                try {
+                  await updateProperty(id, formData);
+                  const updated = await refreshProperty(id);
+                  setProperty(updated);
+                  setIsEditDialogOpen(false);
+                } catch (error) {
+                  console.error('Error al actualizar el inmueble:', error);
+                  alert('Ocurrió un error al actualizar el inmueble.');
+                }
               }}
               onCancel={() => setIsEditDialogOpen(false)}
             />
+
           )}
         </DialogContent>
       </Dialog>
@@ -233,18 +293,83 @@ const PropertyDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    {selectedImage && (
-  <div
-    className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
-    onClick={() => setSelectedImage(null)}
-  >
-    <img
-      src={selectedImage}
-      alt="Vista ampliada"
-      className="max-w-full max-h-full rounded shadow-lg"
-    />
-  </div>
-)}
+
+      {selectedImage && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50"
+          onClick={() => setSelectedImage(null)}
+        >
+          <img
+            src={selectedImage}
+            alt="Vista ampliada"
+            className="max-w-full max-h-full rounded shadow-lg"
+          />
+        </div>
+      )}
+
+      <AddLocalModal
+        open={showAddLocalDialog}
+        onClose={() => setShowAddLocalDialog(false)}
+        propertyId={property._id}
+        onLocalAdded={async () => {
+          try {
+            const updated = await refreshProperty(property._id);
+            setProperty(updated);
+          } catch (err) {
+            console.error('Error al refrescar inmueble desde contexto:', err);
+          }
+        }}
+      />
+
+
+      <EditLocalModal
+        open={showEditLocalDialog}
+        onClose={() => setShowEditLocalDialog(false)}
+        propertyId={property._id}
+        local={property.locals[editLocalIndex]}
+        index={editLocalIndex}
+        onLocalUpdated={(updatedProperty) => {
+          setProperty(updatedProperty);
+        }}
+      />
+
+      <AlertDialog open={localToDeleteIndex !== null} onOpenChange={() => setLocalToDeleteIndex(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro que desea eliminar este local?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El local será eliminado permanentemente del sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setLocalToDeleteIndex(null)}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={async () => {
+                try {
+                  await fetch(`${apiBase}/api/properties/${property._id}/locals/${localToDeleteIndex}`, {
+                    method: 'DELETE',
+                  });
+
+                  const response = await fetch(`${apiBase}/api/properties/${property._id}`);
+                  if (!response.ok) throw new Error('No se pudo obtener el inmueble actualizado');
+                  const updatedProperty = await response.json();
+                  setProperty(updatedProperty);
+
+                  setLocalToDeleteIndex(null);
+                } catch (error) {
+                  console.error('Error al eliminar local:', error);
+                  alert('No se pudo eliminar el local.');
+                }
+              }}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

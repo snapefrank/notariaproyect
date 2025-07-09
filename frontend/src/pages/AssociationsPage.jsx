@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger
@@ -93,6 +94,9 @@ const AssociationsPage = () => {
           <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
               <DialogTitle>Agregar Asociación</DialogTitle>
+              <DialogDescription>
+                Complete el formulario para registrar una asociación en el sistema.
+              </DialogDescription>
             </DialogHeader>
             <AssociationForm
               onSubmit={handleAddAssociation}

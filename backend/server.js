@@ -11,7 +11,8 @@ const artworkRoutes = require('./routes/artwork.routes');
 const associationRoutes = require('./routes/association.routes');
 const taskRoutes = require('./routes/task.routes')
 const path = require('path');
-
+const assetSummaryRoutes = require('./routes/assetSummary.routes');
+const searchRoutes = require('./routes/search.routes');
 // Importa las otras rutas aquí
 
 dotenv.config();
@@ -28,6 +29,12 @@ app.use('/uploads', (req, res, next) => {
   next();
 });
 app.use('/uploads', express.static('uploads'));
+app.use('/uploads/artworks/photos', express.static(path.join(__dirname, 'uploads/artwork/photos')));
+app.use('/uploads/properties/photos', express.static(path.join(__dirname, 'uploads/properties/photos')));
+app.use('/api/assets', assetSummaryRoutes);
+app.use('/api/search', searchRoutes);
+
+
 
 mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log('Conectado a MongoDB'))

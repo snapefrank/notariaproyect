@@ -8,7 +8,7 @@ const PhysicalPersonHeader = ({ person, onEdit, onDelete }) => {
     <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
       <div>
         <h1 className="text-3xl font-bold">
-          {person.nombres} {person.apellidos}
+          {person.nombres} {person.apellidoPaterno} {person.apellidoMaterno}
         </h1>
         <div className="flex items-center gap-2 mt-2 text-muted-foreground">
           <Calendar className="h-4 w-4" />

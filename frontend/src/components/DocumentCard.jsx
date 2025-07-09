@@ -7,8 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
 
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:5000';
+
 const DocumentCard = ({ document, onEdit, onDelete }) => {
-  const { id, title, description, type, category, createdAt, tags } = document;
+  const { _id, title, description, type, category, createdAt, tags, fileUrl } = document;
 
   const typeColors = {
     property: 'bg-blue-100 text-blue-800',
@@ -40,10 +42,10 @@ const DocumentCard = ({ document, onEdit, onDelete }) => {
                   {type === 'property' ? 'Inmueble' : type === 'artwork' ? 'Obra de Arte' : 'Otro'}
                 </Badge>
                 <Badge variant="outline" className={categoryColors[category] || 'bg-gray-100'}>
-                  {category === 'legal' ? 'Legal' : 
-                   category === 'contract' ? 'Contrato' : 
-                   category === 'certificate' ? 'Certificado' : 
-                   category === 'insurance' ? 'Seguro' : category}
+                  {category === 'legal' ? 'Legal' :
+                    category === 'contract' ? 'Contrato' :
+                      category === 'certificate' ? 'Certificado' :
+                        category === 'insurance' ? 'Seguro' : category}
                 </Badge>
               </div>
               <CardTitle className="text-xl line-clamp-1">{title}</CardTitle>
@@ -54,9 +56,10 @@ const DocumentCard = ({ document, onEdit, onDelete }) => {
             <span>{formatDate(createdAt)}</span>
           </CardDescription>
         </CardHeader>
+
         <CardContent className="pb-2">
           <p className="text-sm text-gray-600 line-clamp-2">{description}</p>
-          
+
           {tags && tags.length > 0 && (
             <div className="flex flex-wrap gap-1 mt-3">
               {tags.slice(0, 3).map((tag, index) => (
@@ -73,15 +76,16 @@ const DocumentCard = ({ document, onEdit, onDelete }) => {
             </div>
           )}
         </CardContent>
+
         <CardFooter className="flex justify-between pt-2">
           <Button variant="ghost" size="sm" asChild>
-            <Link to={`/documents/${id}`}>Ver detalles</Link>
+            <Link to={`/documents/${_id}`}>Ver detalles</Link>
           </Button>
           <div className="flex gap-1">
             <Button variant="ghost" size="icon" onClick={() => onEdit(document)}>
               <Edit className="h-4 w-4" />
             </Button>
-            <Button variant="ghost" size="icon" onClick={() => onDelete(id)}>
+            <Button variant="ghost" size="icon" onClick={() => onDelete(_id)}>
               <Trash className="h-4 w-4" />
             </Button>
           </div>

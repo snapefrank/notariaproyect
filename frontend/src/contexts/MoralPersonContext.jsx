@@ -10,21 +10,20 @@ export const MoralPersonProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const fetchMoralPersons = async () => {
-      try {
-        const response = await axios.get('/api/moral-persons');
-        setMoralPersons(response.data);
-      } catch (error) {
-        console.error('Error al cargar personas morales:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchMoralPersons();
   }, []);
 
-  // ✅ Nueva función: obtiene directamente desde el backend por ID
+  const fetchMoralPersons = async () => {
+    try {
+      const response = await axios.get('/api/moral-persons');
+      setMoralPersons(response.data);
+    } catch (error) {
+      console.error('Error al cargar personas morales:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const fetchMoralPersonById = async (id) => {
     try {
       const response = await axios.get(`/api/moral-persons/${id}`);
@@ -36,13 +35,20 @@ export const MoralPersonProvider = ({ children }) => {
   };
 
   const getMoralPersonById = (id) => {
-    return moralPersons.find(person => person._id === id);
+    return moralPersons.find((person) => person._id === id);
   };
 
   const addMoralPerson = async (person) => {
     try {
-      const response = await axios.post('/api/moral-persons', person);
-      setMoralPersons(prev => [...prev, response.data]);
+      const isFormData = person instanceof FormData;
+
+      const response = await axios.post('/api/moral-persons', person, {
+        headers: isFormData
+          ? { 'Content-Type': 'multipart/form-data' }
+          : { 'Content-Type': 'application/json' },
+      });
+
+      setMoralPersons((prev) => [...prev, response.data]);
     } catch (error) {
       console.error('Error al agregar persona moral:', error);
     }
@@ -50,9 +56,16 @@ export const MoralPersonProvider = ({ children }) => {
 
   const updateMoralPerson = async (id, updatedPerson) => {
     try {
-      const response = await axios.put(`/api/moral-persons/${id}`, updatedPerson);
-      setMoralPersons(prev =>
-        prev.map(person =>
+      const isFormData = updatedPerson instanceof FormData;
+
+      const response = await axios.put(`/api/moral-persons/${id}`, updatedPerson, {
+        headers: isFormData
+          ? { 'Content-Type': 'multipart/form-data' }
+          : { 'Content-Type': 'application/json' },
+      });
+
+      setMoralPersons((prev) =>
+        prev.map((person) =>
           person._id === id ? response.data : person
         )
       );
@@ -64,9 +77,7 @@ export const MoralPersonProvider = ({ children }) => {
   const deleteMoralPerson = async (id) => {
     try {
       await axios.delete(`/api/moral-persons/${id}`);
-      setMoralPersons(prev =>
-        prev.filter(person => person._id !== id)
-      );
+      setMoralPersons((prev) => prev.filter((person) => person._id !== id));
     } catch (error) {
       console.error('Error al eliminar persona moral:', error);
     }
@@ -77,7 +88,7 @@ export const MoralPersonProvider = ({ children }) => {
       value={{
         moralPersons,
         getMoralPersonById,
-        fetchMoralPersonById, // ✅ agregado
+        fetchMoralPersonById,
         addMoralPerson,
         updateMoralPerson,
         deleteMoralPerson,

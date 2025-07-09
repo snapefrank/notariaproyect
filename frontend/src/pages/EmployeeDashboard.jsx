@@ -86,8 +86,7 @@ const EmployeeDashboard = () => {
     .slice(0, 3);
 
   const employeeReminders = [
-    { title: "Vencimiento de Contrato Alquiler - Oficina Norte", dueDate: "2025-06-20", severity: "high" },
-    { title: "Seguimiento Firma - Cliente Sr. González", dueDate: "2025-06-10", severity: "medium" },
+
   ];
 
   const handleUpdateClick = (task) => {

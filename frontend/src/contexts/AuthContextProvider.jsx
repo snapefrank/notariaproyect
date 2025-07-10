@@ -2,6 +2,10 @@ import React, { useState, useEffect } from 'react';
 import AuthContext from '@/contexts/AuthContext';
 import { useToast } from '@/components/ui/use-toast';
 
+const BASE_URL = import.meta.env.VITE_API_URL;
+const AUTH_API = `${BASE_URL}/api/auth`;
+
+
 // Define permisos por rol
 const ROLES_PERMISSIONS = {
   owner: ['view_all_data'],
@@ -33,7 +37,7 @@ export const AuthProvider = ({ children }) => {
   // Nuevo login conectado al backend
   const login = async (username, password) => {
     try {
-      const response = await fetch('/api/auth/login', {
+      const response = await fetch(`${AUTH_API}/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username, password }),

@@ -2,6 +2,7 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
 const ArtworkContext = createContext();
+const API_URL = import.meta.env.VITE_API_URL + '/api/artworks';
 
 export const useArtworks = () => useContext(ArtworkContext);
 
@@ -10,7 +11,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const fetchArtworks = async () => {
     try {
-      const response = await axios.get('/api/artworks');
+      const response = await axios.get(API_URL);
       setArtworks(response.data);
     } catch (error) {
       console.error('Error al obtener las piezas de arte:', error);
@@ -19,7 +20,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const addArtwork = async (newArtwork) => {
     try {
-      const response = await axios.post('/api/artworks', newArtwork);
+      const response = await axios.post(API_URL, newArtwork);
       setArtworks(prev => [...prev, response.data]);
     } catch (error) {
       console.error('Error al agregar la pieza de arte:', error);
@@ -28,7 +29,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const updateArtwork = async (id, updatedArtwork) => {
     try {
-      const response = await axios.put(`/api/artworks/${id}`, updatedArtwork);
+      const response = await axios.put(`${API_URL}/${id}`, updatedArtwork);
       setArtworks(prev =>
         prev.map(art => (art._id === id ? response.data : art))
       );
@@ -39,7 +40,7 @@ export const ArtworkProvider = ({ children }) => {
 
   const deleteArtwork = async (id) => {
     try {
-      await axios.delete(`/api/artworks/${id}`);
+      await axios.delete(`${API_URL}/${id}`);
       setArtworks(prev => prev.filter(artwork => artwork._id !== id));
     } catch (error) {
       console.error('Error al eliminar la pieza de arte:', error);

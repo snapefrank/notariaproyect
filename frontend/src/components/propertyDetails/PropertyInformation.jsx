@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
+import { apiBase } from '@/lib/constants';
+
 
 
 const PropertyInformation = ({ property }) => {

@@ -1,8 +1,9 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
-const AssociationContext = createContext();
 
+const AssociationContext = createContext();
+const API_URL = import.meta.env.VITE_API_URL + '/api/associations';
 export const useAssociations = () => {
   return useContext(AssociationContext);
 };
@@ -13,7 +14,7 @@ export const AssociationProvider = ({ children }) => {
   useEffect(() => {
     const fetchAssociations = async () => {
       try {
-        const response = await axios.get('/api/associations');
+        const response = await axios.get(API_URL);
         setAssociations(response.data);
       } catch (error) {
         console.error('Error fetching associations:', error);
@@ -25,7 +26,7 @@ export const AssociationProvider = ({ children }) => {
 
   const addAssociation = async (association) => {
     try {
-      const response = await axios.post('/api/associations', association);
+      const response = await axios.post(API_URL, association);
       setAssociations([...associations, response.data]);
     } catch (error) {
       console.error('Error adding association:', error);
@@ -34,7 +35,7 @@ export const AssociationProvider = ({ children }) => {
 
   const updateAssociation = async (id, updatedAssociation) => {
     try {
-      const response = await axios.put(`/api/associations/${id}`, updatedAssociation);
+      const response = await axios.put(`${API_URL}/${id}`, updatedAssociation);
       setAssociations(associations.map(assoc => assoc._id === id ? response.data : assoc));
     } catch (error) {
       console.error('Error updating association:', error);
@@ -43,7 +44,7 @@ export const AssociationProvider = ({ children }) => {
 
   const deleteAssociation = async (id) => {
     try {
-      await axios.delete(`/api/associations/${id}`);
+      await axios.delete(`${API_URL}/${id}`);
       setAssociations(associations.filter(assoc => assoc._id !== id));
     } catch (error) {
       console.error('Error deleting association:', error);

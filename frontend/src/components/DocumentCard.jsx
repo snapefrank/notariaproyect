@@ -6,8 +6,9 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter }
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { formatDate } from '@/lib/utils';
+import { apiBase } from '@/lib/constants';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
+const BACKEND_URL = apiBase;
 
 const DocumentCard = ({ document, onEdit, onDelete }) => {
   const { _id, title, description, type, category, createdAt, tags, fileUrl } = document;

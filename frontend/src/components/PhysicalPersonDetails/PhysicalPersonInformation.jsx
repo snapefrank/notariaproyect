@@ -2,15 +2,12 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
-
+import { apiBase } from '@/lib/constants';
 
 const PhysicalPersonInformation = ({ person }) => {
   const nombreCompleto =
     person.nombreCompleto ||
     `${person.nombre || ''} ${person.apellidoPaterno || ''} ${person.apellidoMaterno || ''}`.trim();
-
 
   const formatDate = (isoString) => {
     if (!isoString) return 'No especificada';
@@ -20,10 +17,12 @@ const PhysicalPersonInformation = ({ person }) => {
       month: '2-digit',
       year: 'numeric'
     });
-  }
+  };
+
+  const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
+
   return (
     <div className="space-y-6">
-
       {/* TARJETA DE INFORMACIÓN PERSONAL */}
       <Card>
         <CardHeader>
@@ -31,6 +30,7 @@ const PhysicalPersonInformation = ({ person }) => {
         </CardHeader>
 
         <CardContent className="space-y-6">
+
           {/* RFC */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
@@ -38,7 +38,7 @@ const PhysicalPersonInformation = ({ person }) => {
               <span>{person.rfc || 'No especificado'}</span>
               {person.documentos?.rfc && (
                 <a
-                  href={`${BACKEND_URL}/${person.documentos.rfc}`}
+                  href={buildFileUrl(person.documentos.rfc)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -58,7 +58,7 @@ const PhysicalPersonInformation = ({ person }) => {
               <span>{person.curp || 'No especificado'}</span>
               {person.documentos?.curp && (
                 <a
-                  href={`${BACKEND_URL}/${person.documentos.curp}`}
+                  href={buildFileUrl(person.documentos.curp)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -78,7 +78,7 @@ const PhysicalPersonInformation = ({ person }) => {
               <span>{person.nss || 'No especificado'}</span>
               {person.documentos?.nss && (
                 <a
-                  href={`${BACKEND_URL}/${person.documentos.nss}`}
+                  href={buildFileUrl(person.documentos.nss)}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
@@ -90,6 +90,7 @@ const PhysicalPersonInformation = ({ person }) => {
               )}
             </div>
           </div>
+
           {/* Fecha de Nacimiento */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">Fecha de Nacimiento</h3>
@@ -108,7 +109,6 @@ const PhysicalPersonInformation = ({ person }) => {
             </div>
           </div>
 
-
           {/* Dirección */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">Dirección</h3>
@@ -116,6 +116,7 @@ const PhysicalPersonInformation = ({ person }) => {
               <span>{person.direccion || 'No especificada'}</span>
             </div>
           </div>
+
           {/* Información del Seguro */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">Información del Seguro</h3>
@@ -138,8 +139,6 @@ const PhysicalPersonInformation = ({ person }) => {
           </div>
         </CardContent>
       </Card>
-
-
     </div>
   );
 };

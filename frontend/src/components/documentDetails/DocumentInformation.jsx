@@ -2,9 +2,7 @@ import React from 'react';
 import { Tag, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
-
+import { apiBase } from '@/lib/constants';
 
 const DocumentInformation = ({ document }) => {
   return (
@@ -55,7 +53,7 @@ const DocumentInformation = ({ document }) => {
                 <span>Documento adjunto</span>
               </div>
               <a
-                href={`${BACKEND_URL}${document.fileUrl}`}
+                href={`${apiBase}${document.fileUrl.startsWith('/') ? '' : '/'}${document.fileUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

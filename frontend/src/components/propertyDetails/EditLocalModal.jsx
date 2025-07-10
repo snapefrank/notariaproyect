@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { apiBase } from '@/lib/constants';
 
+const API_URL = import.meta.env.VITE_API_URL + '/api/properties';
 const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdated }) => {
     const [form, setForm] = useState({
         name: '',
@@ -62,7 +63,7 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
                 }
             }
 
-            const response = await fetch(`${apiBase}/api/properties/${propertyId}/locals/${index}`, {
+            const response = await fetch(`${apiBase}/${API_URL}/${propertyId}/locals/${index}`, {
                 method: 'PUT',
                 body: formData,
             });
@@ -70,7 +71,7 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
             if (!response.ok) throw new Error('No se pudo actualizar el local.');
 
             // Aquí traemos de nuevo la propiedad actualizada
-            const refreshed = await fetch(`${apiBase}/api/properties/${propertyId}`);
+            const refreshed = await fetch(`${apiBase}/${API_URL}/${propertyId}`);
             if (!refreshed.ok) throw new Error('No se pudo obtener la propiedad actualizada');
             const updatedProperty = await refreshed.json();
 

@@ -8,7 +8,7 @@ export const DocumentProvider = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  const API_URL = '/api/documents';
+  const API_URL = import.meta.env.VITE_API_URL + '/api/documents';
 
   useEffect(() => {
     const loadDocuments = async () => {

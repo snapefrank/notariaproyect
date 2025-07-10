@@ -2,6 +2,8 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 import { useToast } from '@/components/ui/use-toast';
 
+const API_URL = import.meta.env.VITE_API_URL + '/api/physical-persons';
+
 const PhysicalPersonContext = createContext();
 
 export const usePhysicalPersons = () => {
@@ -19,7 +21,7 @@ export const PhysicalPersonProvider = ({ children }) => {
 
   const fetchAllPhysicalPersons = async () => {
     try {
-      const response = await axios.get('/api/physical-persons');
+      const response = await axios.get(API_URL);
       setPhysicalPersons(response.data); // Asegúrate que aquí venga también "documents"
     } catch (error) {
       console.error('Error fetching physical persons:', error);
@@ -28,7 +30,7 @@ export const PhysicalPersonProvider = ({ children }) => {
 
   const addPhysicalPerson = async (person) => {
     try {
-      const response = await axios.post('/api/physical-persons', person, {
+      const response = await axios.post(API_URL, person, {
         headers: person instanceof FormData
           ? { 'Content-Type': 'multipart/form-data' }
           : { 'Content-Type': 'application/json' }
@@ -58,7 +60,7 @@ export const PhysicalPersonProvider = ({ children }) => {
     try {
       const isFormData = updatedPerson instanceof FormData;
 
-      const response = await axios.put(`/api/physical-persons/${id}`, updatedPerson, {
+      const response = await axios.put(`${API_URL}/${id}`, updatedPerson, {
         headers: isFormData
           ? { 'Content-Type': 'multipart/form-data' }
           : { 'Content-Type': 'application/json' },
@@ -89,7 +91,7 @@ export const PhysicalPersonProvider = ({ children }) => {
 
   const deletePhysicalPerson = async (id) => {
     try {
-      await axios.delete(`/api/physical-persons/${id}`);
+      await axios.delete(`${API_URL}/${id}`);
       setPhysicalPersons((prev) => prev.filter((person) => person._id !== id));
 
       toast({

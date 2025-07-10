@@ -13,6 +13,7 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import debounce from 'lodash.debounce';
 import LocationPicker from '@/components/LocationPicker';
+import { apiBase } from '@/lib/constants';
 
 
 
@@ -122,7 +123,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const fetchOwnerSuggestions = debounce(async (query) => {
     if (!query) return setOwnerSuggestions([]);
     try {
-      const res = await axios.get(`/api/search/persons?query=${query}`);
+      const res = await axios.get(`${apiBase}/search/persons?query=${query}`);;
       setOwnerSuggestions(res.data);
     } catch (error) {
       console.error('Error al buscar propietarios:', error);

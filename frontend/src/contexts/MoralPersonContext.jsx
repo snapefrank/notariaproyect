@@ -1,6 +1,9 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import axios from 'axios';
 
+
+const API_URL = import.meta.env.VITE_API_URL + '/api/moral-persons';
+
 const MoralPersonContext = createContext();
 
 export const useMoralPersons = () => useContext(MoralPersonContext);
@@ -15,7 +18,7 @@ export const MoralPersonProvider = ({ children }) => {
 
   const fetchMoralPersons = async () => {
     try {
-      const response = await axios.get('/api/moral-persons');
+      const response = await axios.get(API_URL);
       setMoralPersons(response.data);
     } catch (error) {
       console.error('Error al cargar personas morales:', error);
@@ -26,7 +29,7 @@ export const MoralPersonProvider = ({ children }) => {
 
   const fetchMoralPersonById = async (id) => {
     try {
-      const response = await axios.get(`/api/moral-persons/${id}`);
+      const response = await axios.get(`${API_URL}/${id}`);
       return response.data;
     } catch (error) {
       console.error('Error al obtener persona moral por ID:', error);
@@ -42,7 +45,7 @@ export const MoralPersonProvider = ({ children }) => {
     try {
       const isFormData = person instanceof FormData;
 
-      const response = await axios.post('/api/moral-persons', person, {
+      const response = await axios.post(API_URL, person, {
         headers: isFormData
           ? { 'Content-Type': 'multipart/form-data' }
           : { 'Content-Type': 'application/json' },
@@ -58,7 +61,7 @@ export const MoralPersonProvider = ({ children }) => {
     try {
       const isFormData = updatedPerson instanceof FormData;
 
-      const response = await axios.put(`/api/moral-persons/${id}`, updatedPerson, {
+      const response = await axios.put(`${API_URL}/${id}`, updatedPerson, {
         headers: isFormData
           ? { 'Content-Type': 'multipart/form-data' }
           : { 'Content-Type': 'application/json' },
@@ -76,7 +79,7 @@ export const MoralPersonProvider = ({ children }) => {
 
   const deleteMoralPerson = async (id) => {
     try {
-      await axios.delete(`/api/moral-persons/${id}`);
+      await axios.delete(`${API_URL}/${id}`);
       setMoralPersons((prev) => prev.filter((person) => person._id !== id));
     } catch (error) {
       console.error('Error al eliminar persona moral:', error);

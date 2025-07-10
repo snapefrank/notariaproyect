@@ -31,6 +31,12 @@ import RelatedDocumentInfo from '@/components/artworkDetails/RelatedDocumentInfo
 import LoadingSpinner from '@/components/artworkDetails/LoadingSpinner';
 import NotFoundMessage from '@/components/artworkDetails/NotFoundMessage';
 
+// 🔧 Rutas base (puedes mover esto a un archivo apiRoutes.js si deseas)
+const BASE_URL = import.meta.env.VITE_API_URL;
+const ARTWORK_API = `${BASE_URL}/api/artworks`;
+const PHYSICAL_PERSON_API = `${BASE_URL}/api/physical-persons`;
+const MORAL_PERSON_API = `${BASE_URL}/api/moral-persons`;
+
 const ArtworkDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -55,7 +61,7 @@ const ArtworkDetails = () => {
 
       if (!foundArtwork) {
         try {
-          const response = await axios.get(`/api/artworks/${id}`);
+          const response = await axios.get(`${ARTWORK_API}/${id}`);
           foundArtwork = response.data;
         } catch (error) {
           console.error('Error al obtener la obra de arte desde el backend:', error);
@@ -72,9 +78,8 @@ const ArtworkDetails = () => {
       } else if (foundArtwork.ownerId && foundArtwork.ownerType) {
         try {
           const endpoint = foundArtwork.ownerType === 'PhysicalPerson'
-            ? `/api/physical-persons/${foundArtwork.ownerId}`
-            : `/api/moral-persons/${foundArtwork.ownerId}`;
-
+            ? `${PHYSICAL_PERSON_API}/${foundArtwork.ownerId}`
+            : `${MORAL_PERSON_API}/${foundArtwork.ownerId}`;
 
           const response = await axios.get(endpoint);
           const person = response.data;

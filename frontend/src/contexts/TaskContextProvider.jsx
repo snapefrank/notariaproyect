@@ -3,13 +3,14 @@ import React, { createContext, useState, useContext } from 'react';
 import axios from 'axios';
 
 const TaskContext = createContext();
+const API_URL = import.meta.env.VITE_API_URL + '/api/tasks';
 
 export const useTasks = () => useContext(TaskContext);
 
 export const TaskProvider = ({ children }) => {
   const [tasks, setTasks] = useState([]);
 
-  const API_URL = '/api/tasks';
+  
  
 
   const addTask = async (newTask) => {

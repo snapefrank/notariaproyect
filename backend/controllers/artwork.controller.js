@@ -39,11 +39,14 @@ exports.createArtwork = async (req, res) => {
       location,
       ownerId,
       ownerType,
-      ownerExternalName // ✅ nuevo campo opcional
+      ownerExternalName // campo opcional
     } = req.body;
 
-    const certificatePath = req.files?.certificate?.[0]?.filename || '';
-    const photoPaths = req.files?.photos?.map(file => file.filename) || [];
+    const certificatePath = req.files?.certificate?.[0]
+      ? `artworks/certificates/${req.files.certificate[0].filename}`
+      : '';
+
+    const photoPaths = req.files?.photos?.map(file => `artworks/photos/${file.filename}`) || [];
 
     const newArtwork = new Artwork({
       artist,
@@ -77,11 +80,11 @@ exports.updateArtwork = async (req, res) => {
     const updates = { ...req.body };
 
     if (req.files?.certificate) {
-      updates.certificatePath = req.files.certificate[0].filename;
+      updates.certificatePath = `artworks/certificates/${req.files.certificate[0].filename}`;
     }
 
     if (req.files?.photos) {
-      updates.photoPaths = req.files.photos.map(file => file.filename);
+      updates.photoPaths = req.files.photos.map(file => `artworks/photos/${file.filename}`);
     }
 
     const updatedArtwork = await Artwork.findByIdAndUpdate(req.params.id, updates, { new: true });

@@ -33,6 +33,9 @@ import EditLocalModal from '@/components/propertyDetails/EditLocalModal';
 import PropertyForm from '@/components/PropertyForm';
 
 const API_URL = import.meta.env.VITE_API_URL + '/api/properties';
+const apiBase = import.meta.env.VITE_API_URL;
+
+
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -58,7 +61,7 @@ const PropertyDetails = () => {
     const fetchProperty = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`${API_URL}${id}`);
+        const response = await fetch(`${API_URL}/${id}`);
         const data = await response.json();
         setProperty(data);
 
@@ -348,11 +351,11 @@ const PropertyDetails = () => {
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               onClick={async () => {
                 try {
-                  await fetch(`${API_URL}${property._id}/locals/${localToDeleteIndex}`, {
+                  await fetch(`${API_URL}/${property._id}/locals/${localToDeleteIndex}`, {
                     method: 'DELETE',
                   });
 
-                  const response = await fetch(`${API_URL}${property._id}`);
+                  const response = await fetch(`${API_URL}/${property._id}`);
                   if (!response.ok) throw new Error('No se pudo obtener el inmueble actualizado');
                   const updatedProperty = await response.json();
                   setProperty(updatedProperty);

@@ -50,9 +50,18 @@ exports.createProperty = async (req, res) => {
       };
     });
 
+    let propietario = body.propietario;
+    if (body.tipoPropietario !== 'Personalizado') {
+      try {
+        propietario = require('mongoose').Types.ObjectId(propietario);
+      } catch (err) {
+        console.warn('⚠️ ID de propietario no válido:', propietario);
+      }
+    }
+
     const newProperty = new Property({
       name: body.name,
-      propietario: body.propietario,
+      propietario,
       tipoPropietario: body.tipoPropietario,
       valor_total: parseFloat(body.valor_total) || 0,
       usufruct: body.usufruct,
@@ -125,10 +134,6 @@ exports.updateProperty = async (req, res) => {
 
     const nuevasFotos = files?.propertyPhotos?.map(f => f.filename) || [];
     const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
-
-
-
-
     const extraDocs = files?.extraDocs?.map(f => f.filename) || existing.extraDocs || [];
     const deedFileUrl = files?.deedFile?.[0]?.filename || existing.deedFileUrl || '';
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || existing.rentContractUrl || '';
@@ -158,12 +163,20 @@ exports.updateProperty = async (req, res) => {
       };
     });
 
+    let propietario = body.propietario;
+    if (body.tipoPropietario !== 'Personalizado') {
+      try {
+        propietario = require('mongoose').Types.ObjectId(propietario);
+      } catch (err) {
+        console.warn('⚠️ ID de propietario no válido:', propietario);
+      }
+    }
 
     const updated = await Property.findByIdAndUpdate(
       id,
       {
         name: body.name,
-        propietario: body.propietario,
+        propietario,
         tipoPropietario: body.tipoPropietario,
         valor_total: parseFloat(body.valor_total) || 0,
         usufruct: body.usufruct,
@@ -235,7 +248,7 @@ exports.addLocalToProperty = async (req, res) => {
     const { propertyId } = req.params;
     const property = await Property.findById(propertyId);
 
-        console.log('🧾 Archivos recibidos al agregar local:', req.files);
+    console.log('🧾 Archivos recibidos al agregar local:', req.files);
     console.log('📦 Body recibido:', req.body);
 
     if (!property) {

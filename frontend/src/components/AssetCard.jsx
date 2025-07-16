@@ -71,6 +71,19 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
       default: return '';
     }
   };
+  const getOwnerName = () => {
+    if (asset.tipoPropietario === 'Personalizado') {
+      return asset.owner || asset.propietario || 'Propietario personalizado';
+    }
+
+    const p = asset.propietario;
+    if (p?.nombres) {
+      return `${p.nombres} ${p.apellidoPaterno || ''} ${p.apellidoMaterno || ''}`.trim();
+    }
+
+    return p?.razonSocial || p?.nombre || 'Propietario no especificado';
+  };
+
 
   return (
     <motion.div
@@ -111,14 +124,13 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
           )}
           {assetType === 'property' && (
             <div className="mt-2 text-sm space-y-1 text-muted-foreground">
-              {asset.propietario?.nombres && (
+              {assetType === 'property' && (
                 <div className="flex items-center gap-1">
                   <span className="font-semibold">Propietario:</span>
-                  <span>
-                    {`${asset.propietario.nombres} ${asset.propietario.apellidoPaterno} ${asset.propietario.apellidoMaterno}`.trim()}
-                  </span>
+                  <span>{getOwnerName()}</span>
                 </div>
               )}
+
 
               {asset.notary && (
                 <div className="flex items-baseline gap-1">

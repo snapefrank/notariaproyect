@@ -123,7 +123,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const fetchOwnerSuggestions = debounce(async (query) => {
     if (!query) return setOwnerSuggestions([]);
     try {
-      const res = await axios.get(`${apiBase}/search/persons?query=${query}`);;
+      const res = await axios.get(`${apiBase}/api/search/persons?query=${query}`);;
       setOwnerSuggestions(res.data);
     } catch (error) {
       console.error('Error al buscar propietarios:', error);
@@ -138,12 +138,21 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     e.preventDefault();
     const data = new FormData();
 
-    const finalOwner = selectedOwnerId || formData.owner;
+    let finalOwner = selectedOwnerId;
+    let finalTipoPropietario = tipoPropietario;
 
+    // Si no hay ID seleccionado, se usará el texto libre del campo
+    if (!selectedOwnerId) {
+      finalOwner = ownerQuery.trim();
+      finalTipoPropietario = 'Personalizado'; // puedes manejarlo así o como null
+    }
+
+    // Validación mínima
     if (!finalOwner) {
-      alert("Por favor selecciona un propietario válido.");
+      alert("Por favor, escribe o selecciona un propietario.");
       return;
     }
+
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== 'owner') {
         data.append(key, value);
@@ -152,8 +161,10 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
 
     // ✅ Aquí agregas el campo `owner` con el ID correcto
     data.append('propietario', finalOwner);
-    data.append('tipoPropietario', tipoPropietario);
+    data.append('tipoPropietario', finalTipoPropietario);
     data.append('owner', ownerQuery); // nombre visible opcional
+
+
     // ✅ Agrega ubicación detallada si está disponible
     const { address, coords } = formData.locationDetails || {};
     const latitude = coords?.[0];
@@ -180,10 +191,11 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       }
     });
     data.set('totalArea', formData.totalArea?.toString() || '');
-    if (!['PhysicalPerson', 'MoralPerson'].includes(tipoPropietario)) {
+    if (selectedOwnerId && !['PhysicalPerson', 'MoralPerson'].includes(tipoPropietario)) {
       alert('Error: El tipo de propietario es inválido.');
       return;
     }
+
     console.log('📤 Enviando imágenes existentes del inmueble:', existingPhotos);
     console.log('📤 Enviando locales:', locales);
 

@@ -55,11 +55,14 @@ const PropertyInformation = ({ property }) => {
           <Info
             label="Propietario"
             value={
-              propietario
-                ? `${propietario.nombres} ${propietario.apellidoPaterno} ${propietario.apellidoMaterno}`
-                : 'No especificado'
+              property.tipoPropietario === 'Personalizado'
+                ? property.owner || property.propietario || 'Propietario personalizado no especificado'
+                : propietario?.nombres
+                  ? `${propietario.nombres} ${propietario.apellidoPaterno || ''} ${propietario.apellidoMaterno || ''}`.trim()
+                  : propietario?.razonSocial || propietario?.nombre || 'Propietario no especificado'
             }
           />
+
           <Info
             label="Valor Total del Inmueble"
             value={property.valor_total

@@ -79,7 +79,7 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
               {artwork.photoPaths.map((path, index) => (
                 <button
                   key={index}
-                  onClick={() => setSelectedImage(`${apiBase}/${path}`)}
+                  onClick={() => setSelectedImage(`${apiBase}/uploads/artworks/photos/${path.split('/').pop()}`)}
                   className="focus:outline-none"
                 >
                   {failedImages[index] ? (
@@ -89,7 +89,7 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
                     </div>
                   ) : (
                     <img
-                      src={`${apiBase}/${path}`}
+                      src={`${apiBase}/uploads/artworks/photos/${path}`}
                       alt={`Foto ${index + 1}`}
                       className="rounded-md w-full h-32 object-cover shadow-sm hover:ring-2 hover:ring-blue-500"
                       onError={() => handleImageError(index)}

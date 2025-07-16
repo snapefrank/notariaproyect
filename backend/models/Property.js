@@ -15,13 +15,12 @@ const localSchema = new mongoose.Schema({
 const propertySchema = new mongoose.Schema({
   name: { type: String, required: true },                // Nombre de la propiedad
   propietario: {
-    type: mongoose.Schema.Types.ObjectId,
-    refPath: 'tipoPropietario',
+    type: mongoose.Schema.Types.Mixed, // puede ser ObjectId o String
     required: true
   },
   tipoPropietario: {
     type: String,
-    enum: ['PhysicalPerson', 'MoralPerson'],
+    enum: ['PhysicalPerson', 'MoralPerson', 'Personalizado'],
     required: true
   },
   owner: { type: String }, // Puedes dejarlo para mostrar el nombre directamente si quieres

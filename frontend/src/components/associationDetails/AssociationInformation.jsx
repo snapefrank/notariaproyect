@@ -1,5 +1,5 @@
 import React from 'react';
-import { Tag, FileText } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 
@@ -10,48 +10,79 @@ const AssociationInformation = ({ association }) => {
         <CardTitle>Detalles de la Asociación</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-1">Descripción</h3>
-          <p className="text-base">{association.description}</p>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <p className="text-sm text-muted-foreground">Nombre</p>
+            <p className="font-medium">{association.nombre}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Apoderado legal</p>
+            <p className="font-medium">{association.apoderado || 'No especificado'}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Número de escritura</p>
+            <p className="font-medium">{association.numeroEscritura}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Fecha de escritura</p>
+            <p className="font-medium">{association.fechaEscritura?.slice(0, 10)}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">Régimen fiscal</p>
+            <p className="font-medium">{association.regimenFiscal}</p>
+          </div>
+          <div>
+            <p className="text-sm text-muted-foreground">RFC</p>
+            <p className="font-medium">{association.rfc}</p>
+          </div>
         </div>
 
-        {association.tags && association.tags.length > 0 && (
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Etiquetas</h3>
-            <div className="flex flex-wrap gap-2">
-              {association.tags.map((tag, index) => (
-                <div key={index} className="flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
-                  <Tag className="h-3 w-3 mr-1" />
-                  {tag}
+        {(association.deedFile || association.rfcFile || (association.additionalFiles?.length > 0)) && (
+          <div className="pt-6">
+            <h3 className="text-sm font-medium text-muted-foreground mb-2">Documentos</h3>
+            <div className="space-y-3">
+              {association.deedFile && (
+                <div className="p-4 border rounded-md flex items-center justify-between">
+                  <div className="flex items-center">
+                    <FileText className="h-5 w-5 text-primary mr-2" />
+                    <span>Escritura</span>
+                  </div>
+                  <a href={`/${association.deedFile}`} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm">Ver</Button>
+                  </a>
                 </div>
-              ))}
-            </div>
-          </div>
-        )}
+              )}
 
-        <div>
-          <h3 className="text-sm font-medium text-muted-foreground mb-2">Información Adicional</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-gray-50 rounded-md">
-              <p className="text-sm text-muted-foreground">Creado por</p>
-              <p className="font-medium">{association.createdBy}</p>
-            </div>
-            <div className="p-4 bg-gray-50 rounded-md">
-              <p className="text-sm text-muted-foreground">Estado</p>
-              <p className="font-medium">{association.status === 'active' ? 'Activa' : 'Inactiva'}</p>
-            </div>
-          </div>
-        </div>
+              {association.rfcFile && (
+                <div className="p-4 border rounded-md flex items-center justify-between">
+                  <div className="flex items-center">
+                    <FileText className="h-5 w-5 text-primary mr-2" />
+                    <span>RFC</span>
+                  </div>
+                  <a href={`/${association.rfcFile}`} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm">Ver</Button>
+                  </a>
+                </div>
+              )}
 
-        {association.fileUrl && (
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Archivo</h3>
-            <div className="p-4 border rounded-md flex items-center justify-between">
-              <div className="flex items-center">
-                <FileText className="h-5 w-5 text-primary mr-2" />
-                <span>Documento adjunto</span>
-              </div>
-              <Button variant="outline" size="sm">Ver archivo</Button>
+              {association.additionalFiles && association.additionalFiles.length > 0 && (
+                <div className="p-4 border rounded-md">
+                  <p className="text-sm font-medium mb-2">Documentos adicionales</p>
+                  <div className="space-y-2">
+                    {association.additionalFiles.map((filePath, index) => (
+                      <div key={index} className="flex justify-between items-center">
+                        <div className="flex items-center">
+                          <FileText className="h-4 w-4 text-primary mr-2" />
+                          <span className="text-sm">Documento {index + 1}</span>
+                        </div>
+                        <a href={`/${filePath}`} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm">Ver</Button>
+                        </a>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

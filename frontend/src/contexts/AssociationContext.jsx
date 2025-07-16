@@ -26,7 +26,12 @@ export const AssociationProvider = ({ children }) => {
 
   const addAssociation = async (association) => {
     try {
-      const response = await axios.post(API_URL, association);
+      const response = await axios.post(API_URL, association, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       setAssociations([...associations, response.data]);
     } catch (error) {
       console.error('Error adding association:', error);
@@ -35,7 +40,12 @@ export const AssociationProvider = ({ children }) => {
 
   const updateAssociation = async (id, updatedAssociation) => {
     try {
-      const response = await axios.put(`${API_URL}/${id}`, updatedAssociation);
+      const response = await axios.put(`${API_URL}/${id}`, updatedAssociation, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
       setAssociations(associations.map(assoc => assoc._id === id ? response.data : assoc));
     } catch (error) {
       console.error('Error updating association:', error);

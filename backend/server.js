@@ -29,7 +29,7 @@ app.use('/uploads', (req, res, next) => {
   next();
 });
 app.use('/uploads', express.static('uploads'));
-app.use('/uploads/artworks/photos', express.static(path.join(__dirname, 'uploads/artwork/photos')));
+app.use('/uploads/artworks/photos', express.static(path.join(__dirname, 'uploads/artworks/photos')));
 app.use('/uploads/properties/photos', express.static(path.join(__dirname, 'uploads/properties/photos')));
 app.use('/api/assets', assetSummaryRoutes);
 app.use('/api/search', searchRoutes);

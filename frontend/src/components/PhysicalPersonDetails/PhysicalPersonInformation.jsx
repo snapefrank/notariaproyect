@@ -116,27 +116,6 @@ const PhysicalPersonInformation = ({ person }) => {
               <span>{person.direccion || 'No especificada'}</span>
             </div>
           </div>
-
-          {/* Información del Seguro */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">Información del Seguro</h3>
-            <div className="space-y-2 p-3 bg-gray-50 rounded-md">
-              {person.datosMedicos?.aseguradora ? (
-                <>
-                  <div><strong>Tipo de Sangre:</strong> {person.datosMedicos.tipoSangre || 'No especificado'}</div>
-                  <div><strong>Aseguradora:</strong> {person.datosMedicos.aseguradora}</div>
-                  <div><strong>Tipo de Seguro:</strong> {person.datosMedicos.tipoSeguro || 'No especificado'}</div>
-                  <div><strong>Beneficiarios:</strong> {person.datosMedicos.beneficiarios || 'No especificado'}</div>
-                  <div><strong>Inicio de Vigencia:</strong> {formatDate(person.datosMedicos.fechaInicioVigencia)}</div>
-                  <div><strong>Vencimiento:</strong> {formatDate(person.datosMedicos.fechaVencimiento)}</div>
-                  <div><strong>Número de Póliza:</strong> {person.datosMedicos.numeroPoliza || 'No especificado'}</div>
-                  <div><strong>Prima:</strong> {person.datosMedicos.prima || 'No especificado'}</div>
-                </>
-              ) : (
-                <span>No especificado</span>
-              )}
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>

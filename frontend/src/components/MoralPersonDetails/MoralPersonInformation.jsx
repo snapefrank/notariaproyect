@@ -1,36 +1,109 @@
 import React from 'react';
+import { FileText } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { apiBase } from '@/lib/constants';
 
-const MoralPersonInformation = ({ person }) => (
-  <div className="bg-white p-6 rounded-md shadow-md space-y-4">
-    <div>
-      <h3 className="font-semibold text-sm text-muted-foreground">Razón Social</h3>
-      <p>{person.nombre || 'No especificada'}</p>
-    </div>
+const MoralPersonInformation = ({ person }) => {
+  const formatDate = (isoString) => {
+    if (!isoString) return 'No especificada';
+    const date = new Date(isoString);
+    return date.toLocaleDateString('es-MX', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
 
-    <div>
-      <h3 className="font-semibold text-sm text-muted-foreground">RFC</h3>
-      <p>{person.rfc || 'No especificado'}</p>
-    </div>
+  const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
 
-    <div>
-      <h3 className="font-semibold text-sm text-muted-foreground">Régimen Fiscal</h3>
-      <p>{person.regimenFiscal || 'No especificado'}</p>
-    </div>
+  return (
+    <div className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Información de la Persona Moral</CardTitle>
+        </CardHeader>
 
-    <div>
-      <h3 className="font-semibold text-sm text-muted-foreground">Dirección</h3>
-      <p>{person.domicilioFiscal || 'No especificada'}</p>
-    </div>
+        <CardContent className="space-y-6">
+          {/* Nombre o Razón Social */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-1">Razón Social</h3>
+            <div className="p-3 bg-gray-50 rounded-md">
+              <span>{person.nombre || 'No especificada'}</span>
+            </div>
+          </div>
 
-    <div>
-      <h3 className="font-semibold text-sm text-muted-foreground">Fecha de Constitución</h3>
-      <p>
-        {person.fechaConstitucion
-          ? new Date(person.fechaConstitucion).toLocaleDateString()
-          : 'No especificada'}
-      </p>
+          {/* RFC */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
+            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+              <span>{person.rfc || 'No especificado'}</span>
+              {person.rfcFile && (
+                <a
+                  href={buildFileUrl(person.rfcFile)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <Button variant="outline" size="sm">
+                    <FileText className="h-4 w-4 mr-1" />
+                    Ver archivo
+                  </Button>
+                </a>
+              )}
+            </div>
+          </div>
+
+          {/* Régimen Fiscal */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-1">Régimen Fiscal</h3>
+            <div className="p-3 bg-gray-50 rounded-md">
+              <span>{person.regimenFiscal || 'No especificado'}</span>
+            </div>
+          </div>
+
+          {/* Domicilio Fiscal */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-1">Domicilio Fiscal</h3>
+            <div className="p-3 bg-gray-50 rounded-md">
+              <span>{person.domicilioFiscal || 'No especificado'}</span>
+            </div>
+          </div>
+
+          {/* Fecha de Constitución */}
+          <div>
+            <h3 className="text-sm font-medium text-muted-foreground mb-1">Fecha de Constitución</h3>
+            <div className="p-3 bg-gray-50 rounded-md">
+              <span>{formatDate(person.fechaConstitucion)}</span>
+            </div>
+          </div>
+
+          {/* Documentos Adicionales */}
+          {person.additionalDocs?.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Documentos Adicionales</h3>
+              <ul className="space-y-2">
+                {person.additionalDocs.map((docPath, index) => (
+                  <li key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                    <span>Documento {index + 1}</span>
+                    <a
+                      href={buildFileUrl(docPath)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <Button variant="outline" size="sm">
+                        <FileText className="h-4 w-4 mr-1" />
+                        Ver archivo
+                      </Button>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
-  </div>
-);
+  );
+};
 
 export default MoralPersonInformation;

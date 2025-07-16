@@ -33,6 +33,8 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     documentos: {
       escritura: null,
       adicional: null,
+      rfcFile: null,
+      additionalDocs: []
     }
   });
 
@@ -61,10 +63,15 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           [key]: type === 'checkbox' ? checked : value,
         }
       }));
-    } else if (['escritura', 'adicional'].includes(name)) {
+    } else if (['escritura', 'adicional', 'rfcFile'].includes(name)) {
       setFormData((prev) => ({
         ...prev,
         documentos: { ...prev.documentos, [name]: files[0] }
+      }));
+    } else if (name === 'additionalDocs') {
+      setFormData((prev) => ({
+        ...prev,
+        documentos: { ...prev.documentos, additionalDocs: Array.from(files) }
       }));
     } else {
       setFormData((prev) => ({ ...prev, [name]: value }));
@@ -81,10 +88,17 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           data.append(`credito.${subKey}`, subValue);
         });
       } else if (key === 'documentos') {
-        Object.entries(value).forEach(([docKey, file]) => {
-          if (file) data.append(docKey, file);
+        Object.entries(value).forEach(([docKey, fileOrFiles]) => {
+          if (!fileOrFiles) return;
+
+          if (Array.isArray(fileOrFiles)) {
+            fileOrFiles.forEach((f) => data.append(docKey, f));
+          } else {
+            data.append(docKey, fileOrFiles);
+          }
         });
-      } else {
+      }
+      else {
         data.append(key, value);
       }
     });
@@ -110,6 +124,13 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           <div>
             <Label htmlFor="rfc">RFC</Label>
             <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} required />
+            <Input
+              type="file"
+              name="rfcFile"
+              accept="application/pdf"
+              onChange={handleChange}
+              className="mt-1"
+            />
           </div>
           <div>
             <Label htmlFor="regimenFiscal">Régimen Fiscal</Label>
@@ -123,6 +144,11 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
             <Label htmlFor="fechaConstitucion">Fecha de Constitución</Label>
             <Input type="date" id="fechaConstitucion" name="fechaConstitucion" value={formData.fechaConstitucion} onChange={handleChange} required />
           </div>
+          <div>
+            <Label htmlFor="additionalDocs">Subir Documentos Adicionales (PDF)</Label>
+            <Input type="file" id="additionalDocs" name="additionalDocs" multiple accept="application/pdf" onChange={handleChange} />
+          </div>
+
         </div>
         {/* Crédito Financiero */}
         <div className="pt-4 border-t">

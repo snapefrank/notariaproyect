@@ -6,6 +6,8 @@ const moralPersonSchema = new mongoose.Schema({
   regimenFiscal: { type: String },
   domicilioFiscal: { type: String },
   fechaConstitucion: { type: Date },
+  rfcFile: { type: String },
+  additionalDocs: [{ type: String }],
 
   credito: {
     institucionFinanciera: { type: String },

@@ -16,7 +16,16 @@ const storage = multer.diskStorage({
 
 const upload = multer({
   storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // opcional: 10 MB
+  limits: { fileSize: 10 * 1024 * 1024 }
 });
 
-module.exports = upload;
+// ✅ Exportas directamente el middleware con `.fields(...)`
+module.exports = upload.fields([
+  { name: 'insuranceFile', maxCount: 10 },
+  { name: 'rfcFile', maxCount: 1 },
+  { name: 'curpFile', maxCount: 1 },
+  { name: 'nssFile', maxCount: 1 },
+  { name: 'escritura', maxCount: 1 },
+  { name: 'adicional', maxCount: 1 },
+  { name: 'additionalDocs', maxCount: 10 }
+]);

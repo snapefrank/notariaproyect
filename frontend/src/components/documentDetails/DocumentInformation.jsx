@@ -37,10 +37,6 @@ const DocumentInformation = ({ document }) => {
               <p className="text-sm text-muted-foreground">Creado por</p>
               <p className="font-medium">{document.createdBy}</p>
             </div>
-            <div className="p-4 bg-gray-50 rounded-md">
-              <p className="text-sm text-muted-foreground">Estado</p>
-              <p className="font-medium">{document.status === 'active' ? 'Activo' : 'Inactivo'}</p>
-            </div>
           </div>
         </div>
 

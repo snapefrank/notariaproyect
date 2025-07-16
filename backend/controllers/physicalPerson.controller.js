@@ -58,6 +58,7 @@ const createPhysicalPerson = async (req, res) => {
         curp: curpPath,
         nss: nssPath,
       },
+      insuranceDocuments: req.files?.insuranceFile?.map(file => file.path) || [],
       datosMedicos: {
         tipoSangre: body.datosMedicos?.tipoSangre || '',
         aseguradora: body.datosMedicos?.aseguradora || '',
@@ -126,7 +127,9 @@ const updatePhysicalPerson = async (req, res) => {
       curp: req.files?.curpFile?.[0]?.path || person.documentos?.curp || '',
       nss: req.files?.nssFile?.[0]?.path || person.documentos?.nss || '',
     };
-
+    person.insuranceDocuments = req.files?.insuranceFile
+      ? req.files.insuranceFile.map(file => file.path)
+      : person.insuranceDocuments || [];
     person.datosMedicos = {
       tipoSangre: body.datosMedicos?.tipoSangre || '',
       aseguradora: body.datosMedicos?.aseguradora || '',
@@ -183,6 +186,8 @@ const deletePhysicalPerson = async (req, res) => {
       archivos.push(person.credito.inmuebleGarantia.documentos.escritura);
     if (person.credito?.inmuebleGarantia?.documentos?.adicional)
       archivos.push(person.credito.inmuebleGarantia.documentos.adicional);
+    if (person.insuranceDocument) archivos.push(person.insuranceDocument);
+
 
     // Elimina los archivos físicamente
     deleteFiles(archivos);

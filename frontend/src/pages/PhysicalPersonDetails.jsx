@@ -27,6 +27,7 @@ import LoadingSpinner from '@/components/documentDetails/LoadingSpinner';
 import NotFoundMessage from '@/components/documentDetails/NotFoundMessage';
 import PhysicalPersonForm from '@/components/PhysicalPersonForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { FileText } from 'lucide-react';
 
 import {
   fetchPhysicalPersonById,
@@ -42,8 +43,17 @@ const PhysicalPersonDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '/api';
+  const BACKEND_URL = import.meta.env.VITE_API_URL;
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   useEffect(() => {
     const fetchPerson = async () => {
@@ -116,6 +126,51 @@ const PhysicalPersonDetails = () => {
         >
           <Card>
             <CardHeader>
+              <CardTitle>Informacion del Seguro</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {person.datosMedicos?.aseguradora ? (
+                <div className="text-base space-y-3 leading-relaxed">
+                  <p><strong>Tipo de Sangre:</strong> {person.datosMedicos.tipoSangre || 'No especificado'}</p>
+                  <p><strong>Aseguradora:</strong> {person.datosMedicos.aseguradora}</p>
+                  <p><strong>Tipo de Seguro:</strong> {person.datosMedicos.tipoSeguro || 'No especificado'}</p>
+                  <p><strong>Beneficiarios:</strong> {person.datosMedicos.beneficiarios || 'No especificado'}</p>
+                  <p><strong>Inicio de Vigencia:</strong> {formatDate(person.datosMedicos.fechaInicioVigencia)}</p>
+                  <p><strong>Vencimiento:</strong> {formatDate(person.datosMedicos.fechaVencimiento)}</p>
+                  <p><strong>Número de Póliza:</strong> {person.datosMedicos.numeroPoliza || 'No especificado'}</p>
+                  <p><strong>Prima:</strong> {person.datosMedicos.prima || 'No especificado'}</p>
+                  {/* Documento del Seguro */}
+                  {person.insuranceDocuments && person.insuranceDocuments.length > 0 && (
+                    <div className="mt-4">
+                      <h3 className="text-sm font-medium text-muted-foreground mb-1">Documentos del Seguro</h3>
+                      <ul className="space-y-2">
+                        {person.insuranceDocuments.map((filePath, index) => (
+                          <li key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                            <span>Archivo #{index + 1}</span>
+                            <a
+                              href={`${BACKEND_URL}/${filePath}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Ver archivo
+                              </Button>
+                            </a>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <span>No especificado</span>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="mt-6">
+            <CardHeader>
               <CardTitle>Crédito Financiero</CardTitle>
             </CardHeader>
             <CardContent>
@@ -134,23 +189,52 @@ const PhysicalPersonDetails = () => {
                       <p><strong>Tipo de Inmueble:</strong> {person.credito.inmuebleGarantia?.tipoInmueble || 'N/A'}</p>
                       <p><strong>Dirección:</strong> {person.credito.inmuebleGarantia?.direccionInmueble || 'N/A'}</p>
                       <p><strong>Valor Comercial:</strong> ${person.credito.inmuebleGarantia?.valorComercial?.toLocaleString() || 'N/A'}</p>
-                      <p><strong>Folio o Escritura:</strong> {person.credito.inmuebleGarantia?.escrituraFolio || 'N/A'}</p>
 
-                      <div className="pt-2 space-y-1">
-                        {person.credito.inmuebleGarantia?.documentos?.escritura && (
-                          <a
-                            href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.escritura}`}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-blue-600 hover:underline"
-                          >
-                            Ver Escritura (PDF)
-                          </a>
-                        )}
+                      {/* Escritura */}
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Escritura</h3>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                          <span>
+                            {person.credito.inmuebleGarantia?.documentos?.escritura ? 'Disponible' : 'No especificado'}
+                          </span>
+                          {person.credito.inmuebleGarantia?.documentos?.escritura && (
+                            <a
+                              href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.escritura}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Ver archivo
+                              </Button>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Documento Adicional */}
+                      <div className="mt-4">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Documento Adicional</h3>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                          <span>
+                            {person.credito.inmuebleGarantia?.documentos?.adicional ? 'Disponible' : 'No especificado'}
+                          </span>
+                          {person.credito.inmuebleGarantia?.documentos?.adicional && (
+                            <a
+                              href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.adicional}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Ver archivo
+                              </Button>
+                            </a>
+                          )}
+                        </div>
                       </div>
                     </>
                   )}
-
                   {person.credito.observaciones && (
                     <p><strong>Observaciones:</strong> {person.credito.observaciones}</p>
                   )}

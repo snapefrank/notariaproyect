@@ -62,6 +62,8 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     curpFile: null,
     nssFile: null
   });
+  const [insuranceFile, setInsuranceFile] = useState([]);
+
 
   const [tieneSeguro, setTieneSeguro] = useState(false);
   const [tieneCredito, setTieneCredito] = useState(false);
@@ -154,6 +156,13 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     if (docFiles.rfcFile) data.append('rfcFile', docFiles.rfcFile);
     if (docFiles.curpFile) data.append('curpFile', docFiles.curpFile);
     if (docFiles.nssFile) data.append('nssFile', docFiles.nssFile);
+    if (insuranceFile && insuranceFile.length > 0) {
+      insuranceFile.forEach((file) => {
+        data.append('insuranceFile', file);
+      });
+    }
+
+
 
     // 🚫 YA NO guardes directamente con fetch
     // ✅ ENVÍA LOS DATOS AL CONTEXTO A TRAVÉS DE onSubmit
@@ -265,6 +274,17 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
                   />
                 </div>
               ))}
+              <div className="col-span-2">
+                <Label htmlFor="insuranceFile">Documentos del Seguro</Label>
+                <Input
+                  type="file"
+                  id="insuranceFile"
+                  name="insuranceFile"
+                  accept=".pdf,.jpg,.jpeg,.png"
+                  multiple
+                  onChange={(e) => setInsuranceFile(Array.from(e.target.files))}
+                />
+              </div>
             </div>
           </div>
         )}

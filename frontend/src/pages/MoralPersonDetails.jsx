@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -24,19 +24,23 @@ import {
 import LoadingSpinner from '@/components/documentDetails/LoadingSpinner';
 import NotFoundMessage from '@/components/documentDetails/NotFoundMessage';
 import MoralPersonForm from '@/components/MoralPersonForm';
+import MoralPersonInformation from '@/components/MoralPersonDetails/MoralPersonInformation';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-// 👇 Importa funciones API
-import { getMoralPersonById, updateMoralPerson, deleteMoralPerson } from '@/lib/moralPerson.api';
-
+import {
+  getMoralPersonById,
+  updateMoralPerson,
+  deleteMoralPerson
+} from '@/lib/moralPerson.api';
 
 const MoralPersonDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-
   const [person, setPerson] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const BACKEND_URL = import.meta.env.VITE_API_URL;
 
   useEffect(() => {
     const fetchPerson = async () => {
@@ -55,7 +59,7 @@ const MoralPersonDetails = () => {
   const handleUpdate = async (formData) => {
     try {
       await updateMoralPerson(id, formData);
-      const updated = await fetchMoralPersonById(id);
+      const updated = await getMoralPersonById(id);
       setPerson(updated);
       setIsEditDialogOpen(false);
     } catch (error) {
@@ -76,6 +80,16 @@ const MoralPersonDetails = () => {
   if (isLoading) return <LoadingSpinner />;
   if (!person) return <NotFoundMessage onBack={() => navigate('/personas-morales')} />;
 
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('es-MX', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -92,80 +106,95 @@ const MoralPersonDetails = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Información General */}
+      <div className="space-y-6">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
-          className="lg:col-span-2 bg-white p-4 rounded-lg shadow-md"
         >
-          <h3 className="text-lg font-semibold text-gray-800 border-b pb-1 mb-4">Información de la Persona Moral</h3>
-          <div className="text-sm space-y-2">
-            <p><strong>Razón Social:</strong> {person.nombre}</p>
-            <p><strong>RFC:</strong> {person.rfc}</p>
-            <p><strong>Régimen Fiscal:</strong> {person.regimenFiscal || 'N/A'}</p>
-            <p><strong>Dirección:</strong> {person.domicilioFiscal || 'N/A'}</p>
-            <p><strong>Fecha de Constitución:</strong> {person.fechaConstitucion?.split('T')[0] || 'N/A'}</p>
-          </div>
+          <MoralPersonInformation person={person} />
         </motion.div>
 
-        {/* Crédito Financiero */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
-          className="bg-white p-4 rounded-lg shadow-md space-y-4"
         >
-          <h3 className="text-lg font-semibold text-gray-800 border-b pb-1">Crédito Financiero</h3>
+          <Card>
+            <CardHeader>
+              <CardTitle>Crédito Financiero</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {person?.credito ? (
+                <div className="text-base space-y-3 leading-relaxed">
+                  <p><strong>Institución:</strong> {person.credito.institucionFinanciera || 'N/A'}</p>
+                  <p><strong>Monto:</strong> ${person.credito.montoCredito?.toLocaleString() || 'N/A'}</p>
+                  <p><strong>Plazo:</strong> {person.credito.plazoMeses || 'N/A'} meses</p>
+                  <p><strong>Interés Anual:</strong> {person.credito.tasaInteresAnual || 'N/A'}%</p>
+                  <p><strong>Pago Mensual:</strong> ${person.credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
+                  <p><strong>Tiene inmueble en garantía:</strong> {person.credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
 
-          {person?.credito ? (
-            <div className="text-sm space-y-2">
-              <p><strong>Institución:</strong> {person.credito.institucionFinanciera || 'N/A'}</p>
-              <p><strong>Monto:</strong> ${person.credito.montoCredito?.toLocaleString() || 'N/A'}</p>
-              <p><strong>Plazo:</strong> {person.credito.plazoMeses || 'N/A'} meses</p>
-              <p><strong>Interés Anual:</strong> {person.credito.tasaInteresAnual || 'N/A'}%</p>
-              <p><strong>Pago Mensual:</strong> ${person.credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
-              <p><strong>Tiene inmueble en garantía:</strong> {person.credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
+                  {person.credito.tieneInmuebleGarantia && (
+                    <>
+                      <p><strong>Tipo de Inmueble:</strong> {person.credito.inmuebleGarantia?.tipoInmueble || 'N/A'}</p>
+                      <p><strong>Dirección:</strong> {person.credito.inmuebleGarantia?.direccionInmueble || 'N/A'}</p>
+                      <p><strong>Valor Comercial:</strong> ${person.credito.inmuebleGarantia?.valorComercial?.toLocaleString() || 'N/A'}</p>
 
-              {person.credito.tieneInmuebleGarantia && (
-                <>
-                  <p><strong>Tipo de Inmueble:</strong> {person.credito.inmuebleGarantia?.tipoInmueble || 'N/A'}</p>
-                  <p><strong>Dirección:</strong> {person.credito.inmuebleGarantia?.direccionInmueble || 'N/A'}</p>
-                  <p><strong>Valor Comercial:</strong> ${person.credito.inmuebleGarantia?.valorComercial?.toLocaleString() || 'N/A'}</p>
+                      {/* Escritura */}
+                      <div>
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Escritura</h3>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                          <span>
+                            {person.credito.inmuebleGarantia?.documentos?.escritura ? 'Disponible' : 'No especificado'}
+                          </span>
+                          {person.credito.inmuebleGarantia?.documentos?.escritura && (
+                            <a
+                              href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.escritura}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Ver archivo
+                              </Button>
+                            </a>
+                          )}
+                        </div>
+                      </div>
 
-                  <div className="pt-2 space-y-1">
-                    {person.credito.inmuebleGarantia?.documentos?.escritura && (
-                      <a
-                        href={`/${person.credito.inmuebleGarantia.documentos.escritura}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Ver Escritura (PDF)
-                      </a>
-                    )}
-                    {person.credito.inmuebleGarantia?.documentos?.adicional && (
-                      <a
-                        href={`/${person.credito.inmuebleGarantia.documentos.adicional}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        Ver Documento Adicional (PDF)
-                      </a>
-                    )}
-                  </div>
-                </>
+                      {/* Documento Adicional */}
+                      <div className="mt-4">
+                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Documento Adicional</h3>
+                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
+                          <span>
+                            {person.credito.inmuebleGarantia?.documentos?.adicional ? 'Disponible' : 'No especificado'}
+                          </span>
+                          {person.credito.inmuebleGarantia?.documentos?.adicional && (
+                            <a
+                              href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.adicional}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              <Button variant="outline" size="sm">
+                                <FileText className="h-4 w-4 mr-1" />
+                                Ver archivo
+                              </Button>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    </>
+                  )}
+
+                  {person.credito.observaciones && (
+                    <p><strong>Observaciones:</strong> {person.credito.observaciones}</p>
+                  )}
+                </div>
+              ) : (
+                <p className="text-gray-500 italic">No se ha registrado información de crédito.</p>
               )}
-
-              {person.credito.observaciones && (
-                <p><strong>Observaciones:</strong> {person.credito.observaciones}</p>
-              )}
-            </div>
-          ) : (
-            <p className="text-gray-500 italic">No se ha registrado información de crédito.</p>
-          )}
+            </CardContent>
+          </Card>
         </motion.div>
       </div>
 

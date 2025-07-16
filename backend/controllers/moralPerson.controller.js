@@ -34,6 +34,9 @@ exports.createMoralPerson = async (req, res) => {
       regimenFiscal: body.regimenFiscal,
       domicilioFiscal: body.domicilioFiscal,
       fechaConstitucion: body.fechaConstitucion,
+      rfcFile: req.files?.rfcFile?.[0]?.path || '',
+      additionalDocs: req.files?.adicional?.map(file => file.path) || [],
+
 
       credito: {
         institucionFinanciera: body['credito.institucionFinanciera'],
@@ -75,6 +78,14 @@ exports.updateMoralPerson = async (req, res) => {
     person.regimenFiscal = body.regimenFiscal || person.regimenFiscal;
     person.domicilioFiscal = body.domicilioFiscal || person.domicilioFiscal;
     person.fechaConstitucion = body.fechaConstitucion || person.fechaConstitucion;
+    if (req.files?.rfcFile?.[0]) {
+      person.rfcFile = req.files.rfcFile[0].path;
+    }
+
+    if (req.files?.adicional) {
+      person.additionalDocs = req.files.adicional.map(file => file.path);
+    }
+
 
     person.credito = {
       institucionFinanciera: body['credito.institucionFinanciera'],

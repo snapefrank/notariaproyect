@@ -61,7 +61,7 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
                 <span>Archivo PDF del certificado</span>
               </div>
               <a
-                href={`${apiBase}/${artwork.certificatePath}`}
+                href={`${apiBase}/uploads/${artwork.certificatePath}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -89,7 +89,7 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
                     </div>
                   ) : (
                     <img
-                      src={`${apiBase}/uploads/artworks/photos/${path}`}
+                      src={`${apiBase}/uploads/artworks/photos/${path.split('/').pop()}`}
                       alt={`Foto ${index + 1}`}
                       className="rounded-md w-full h-32 object-cover shadow-sm hover:ring-2 hover:ring-blue-500"
                       onError={() => handleImageError(index)}

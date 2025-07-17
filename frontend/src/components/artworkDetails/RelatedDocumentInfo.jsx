@@ -10,7 +10,7 @@ const RelatedDocumentInfo = ({ artwork, relatedDocument }) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Documento Relacionado</CardTitle>
+        <CardTitle>Documento Relacionados</CardTitle>
         <CardDescription>Información sobre el documento vinculado a esta obra de arte</CardDescription>
       </CardHeader>
       <CardContent>

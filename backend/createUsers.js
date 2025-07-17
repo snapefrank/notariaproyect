@@ -10,15 +10,15 @@ async function createUsers() {
   
   const users = [
     {
-      username: 'Ivanadmin',
+      username: 'IvanaLomeli',
       password: await bcrypt.hash('admin123', 10),
-      name: 'Administrador Principal',
+      name: 'Ivan Lomelí',
       role: 'owner'
     },
     {
-      username: 'Marianaemp',
+      username: 'MarianaLomeli',
       password: await bcrypt.hash('emp123', 10),
-      name: 'Mariana TL (Empleado)',
+      name: 'Mariana Lomelí',
       role: 'employee'
     }
   ];

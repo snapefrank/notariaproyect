@@ -117,18 +117,10 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel className="font-normal">
-                  <div className="flex flex-col space-y-1">
-                    <p className="text-sm font-medium leading-none text-custom-umber">{user?.name}</p>
-                    <p className="text-xs leading-none text-custom-gray">{user?.username} ({user?.role})</p>
-                  </div>
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={() => navigate(user?.role === 'owner' ? '/owner' : '/employee')}>
                   <UserCircle className="mr-2 h-4 w-4" />
                   <span>Mi Panel</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:!text-red-600 hover:!bg-red-50">
                   <LogOut className="mr-2 h-4 w-4" />
                   <span>Cerrar Sesión</span>

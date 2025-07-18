@@ -24,9 +24,18 @@ exports.createAssociation = async (req, res) => {
       regimenFiscal: req.body.regimenFiscal,
       rfc: req.body.rfc,
 
-      deedFile: req.files?.deedFile?.[0]?.path || '',
-      rfcFile: req.files?.rfcFile?.[0]?.path || '',
-      additionalFiles: req.files?.additionalFiles?.map(file => file.path) || [],
+      deedFile: req.files?.deedFile?.[0]
+        ? 'uploads/associations/deeds/' + req.files.deedFile[0].filename
+        : '',
+
+      rfcFile: req.files?.rfcFile?.[0]
+        ? 'uploads/associations/rfc/' + req.files.rfcFile[0].filename
+        : '',
+
+      additionalFiles: req.files?.additionalFiles?.map(file =>
+        'uploads/associations/extra-docs/' + file.filename
+      ) || [],
+
     });
 
     const saved = await newAssociation.save();
@@ -57,13 +66,16 @@ exports.updateAssociation = async (req, res) => {
 
     // Archivos
     if (req.files?.deedFile?.[0]) {
-      association.deedFile = req.files.deedFile[0].path;
+      association.deedFile = 'uploads/associations/deeds/' + req.files.deedFile[0].filename;
     }
     if (req.files?.rfcFile?.[0]) {
-      association.rfcFile = req.files.rfcFile[0].path;
+      association.rfcFile = 'uploads/associations/rfc/' + req.files.rfcFile[0].filename;
     }
+
     if (req.files?.additionalFiles?.length) {
-      association.additionalFiles = req.files.additionalFiles.map(file => file.path);
+      association.additionalFiles = req.files.additionalFiles.map(file =>
+        'uploads/associations/extra-docs/' + file.filename
+      );
     }
 
     const updated = await association.save();

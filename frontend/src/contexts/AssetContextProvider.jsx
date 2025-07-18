@@ -71,18 +71,33 @@ export const AssetProvider = ({ children }) => {
 
 
   // 🔧 Conversor universal a FormData (solo si hay archivos)
-  const formatFormData = (data) => {
-    const formData = new FormData();
-    for (const key in data) {
-      const value = data[key];
-      if (Array.isArray(value)) {
-        value.forEach(item => formData.append(key, item));
-      } else {
-        formData.append(key, value);
-      }
+const formatFormData = (data) => {
+  const formData = new FormData();
+  for (const key in data) {
+    const value = data[key];
+
+    if (value === null || value === undefined || value === '') {
+      continue; // ⚠️ No incluir campos vacíos
     }
-    return formData;
-  };
+
+    if (Array.isArray(value)) {
+      value.forEach((item) => {
+        formData.append(key, typeof item === 'object' ? JSON.stringify(item) : item);
+      });
+    } else if (typeof value === 'object') {
+      if (key === 'propietario') {
+        formData.append(key, value.id || value._id || '');
+      } else {
+        formData.append(key, JSON.stringify(value));
+      }
+    } else {
+      formData.append(key, value);
+    }
+  }
+  return formData;
+};
+
+
 
   const addProperty = async (newProperty) => {
     try {
@@ -229,12 +244,18 @@ export const AssetProvider = ({ children }) => {
       console.error('❌ Error al recargar propiedades:', error);
     }
   };
+  const updatePropertyStatus = (id, updatedFields) => {
+  setProperties((prev) =>
+    prev.map((p) => (p._id === id ? { ...p, ...updatedFields } : p))
+  );
+};
+
 
   const value = {
     properties, artworks, otherAssets, isLoading,
     addProperty, updateProperty, deleteProperty, getPropertyById,
     addArtwork, updateArtwork, deleteArtwork, getArtworkById,
-    addOtherAsset, updateOtherAsset, deleteOtherAsset, getOtherAssetById, refreshProperty,refreshProperties,
+    addOtherAsset, updateOtherAsset, deleteOtherAsset, getOtherAssetById, refreshProperty,refreshProperties,updatePropertyStatus
   };
 
   return <AssetContext.Provider value={value}>{children}</AssetContext.Provider>;

@@ -61,7 +61,7 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
                 <span>Archivo PDF del certificado</span>
               </div>
               <a
-                href={`${apiBase}/uploads/${artwork.certificatePath}`}
+                href={`${apiBase}/${artwork.certificatePath}`}
                 target="_blank"
                 rel="noopener noreferrer"
               >

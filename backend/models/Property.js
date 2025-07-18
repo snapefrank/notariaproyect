@@ -15,8 +15,11 @@ const localSchema = new mongoose.Schema({
 const propertySchema = new mongoose.Schema({
   name: { type: String, required: true },                // Nombre de la propiedad
   propietario: {
-    type: mongoose.Schema.Types.Mixed, // puede ser ObjectId o String
-    required: true
+    type: mongoose.Schema.Types.ObjectId,
+    refPath: 'tipoPropietario',
+    required: function () {
+      return this.tipoPropietario !== 'Personalizado';
+    }
   },
   tipoPropietario: {
     type: String,
@@ -31,9 +34,8 @@ const propertySchema = new mongoose.Schema({
   deedFileUrl: { type: String },                         // Archivo de escritura
   notary: { type: String, required: true },              // Notaría
   cadastralKey: { type: String, required: true },        // Clave catastral
-  location: { type: String, required: true },            // Ubicación
-  latitude: { type: Number },
-  longitude: { type: Number },
+  location: { type: String, required: true },            // Ubicación en google maps
+
 
   totalArea: { type: Number, required: true },           // Superficie total
 
@@ -65,6 +67,7 @@ const propertySchema = new mongoose.Schema({
   status: { type: String, enum: ['active', 'sold'], default: 'active' },
   soldDate: { type: Date },
   soldNote: { type: String },
+  saleDocuments: [String],
 
   // Timestamps
   createdAt: { type: Date, default: Date.now },

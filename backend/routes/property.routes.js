@@ -4,6 +4,8 @@ const controller = require('../controllers/Property.controllers');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
+const uploadSaleDocs = require('../middlewares/uploadSaleDocs');
+
 
 // Configuración de multer con rutas dinámicas
 const storage = multer.diskStorage({
@@ -14,8 +16,13 @@ const storage = multer.diskStorage({
     else if (file.fieldname === 'rentContractFile') cb(null, 'uploads/properties/rent-contracts/');
     else if (file.fieldname.startsWith('localPhotos_')) cb(null, 'uploads/locals/photos/');
     else if (file.fieldname.startsWith('localRentContract_')) cb(null, 'uploads/locals/contracts/');
+    else if (file.fieldname === 'contract') cb(null, 'uploads/locals/contracts/');
+    else if (file.fieldname === 'localPhotos') cb(null, 'uploads/locals/photos/');
+
+
     else cb(null, 'uploads/');
   },
+
   filename: (req, file, cb) => {
     const ext = path.extname(file.originalname);
     cb(null, `${file.fieldname}_${Date.now()}${ext}`);
@@ -42,6 +49,13 @@ folders.forEach(folder => {
 router.get('/', controller.getAllProperties);
 // GET: Obtener propiedad por ID
 router.get('/:id', controller.getPropertyById);
+
+router.post(
+  '/:id/mark-as-sold',
+  uploadSaleDocs.array('saleDocs'),
+  controller.markAsSold
+);
+
 
 
 // POST: Crear nueva propiedad con todos los archivos (propiedad + locales)

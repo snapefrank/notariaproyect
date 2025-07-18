@@ -39,7 +39,7 @@ const apiBase = import.meta.env.VITE_API_URL;
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getPropertyById, updateProperty, deleteProperty, refreshProperty } = useAssets();
+  const { getPropertyById, updateProperty, deleteProperty, refreshProperty, updatePropertyStatus  } = useAssets();
   const { documents } = useDocuments();
 
   const [property, setProperty] = useState(null);
@@ -56,6 +56,8 @@ const PropertyDetails = () => {
   const [editLocalIndex, setEditLocalIndex] = useState(null);
   const [showEditLocalDialog, setShowEditLocalDialog] = useState(false);
   const [localToDeleteIndex, setLocalToDeleteIndex] = useState(null);
+  const [saleDocs, setSaleDocs] = useState([]);
+
 
   useEffect(() => {
     const fetchProperty = async () => {
@@ -87,28 +89,46 @@ const PropertyDetails = () => {
     navigate('/properties');
   };
 
-  const handleSellProperty = async () => {
-    if (!sellDate) {
-      alert('La fecha de venta es obligatoria.');
-      return;
-    }
+const handleSellProperty = async () => {
+  if (!sellDate) {
+    alert('La fecha de venta es obligatoria.');
+    return;
+  }
 
-    const updated = {
-      ...property,
-      status: 'sold',
-      soldDate: sellDate,
-      soldNote: sellNote,
-    };
+  const formData = new FormData();
+  formData.append('soldDate', sellDate);
+  formData.append('soldNote', sellNote);
+  saleDocs.forEach((file) => {
+    formData.append('saleDocs', file);
+  });
 
-    try {
-      await updateProperty(id, updated);
-      setShowSellDialog(false);
-      navigate(`/inmuebles-vendidos/${id}`);
-    } catch (error) {
-      console.error('Error al marcar como vendido:', error);
-      alert('Ocurrió un error al actualizar el inmueble.');
-    }
-  };
+  try {
+    const response = await fetch(`${API_URL}/${id}/mark-as-sold`, {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok) throw new Error('Error al marcar como vendido.');
+
+    const updated = await response.json();
+
+    // ✅ Actualiza el inmueble en el contexto global sin recargar
+    updatePropertyStatus(id, updated);
+
+    // ✅ Opcionalmente actualiza también el estado local de este componente
+    setProperty(updated);
+
+    setShowSellDialog(false);
+
+    // ✅ Redireccionar solo si ya no quieres mostrarlo aquí
+    navigate(`/inmuebles-vendidos/${id}`);
+  } catch (error) {
+    console.error('Error al marcar como vendido:', error);
+    alert('Ocurrió un error al actualizar el inmueble.');
+  }
+};
+
+
 
   if (isLoading) return <LoadingSpinner />;
   if (!property) return <NotFoundMessage onBack={() => navigate('/properties')} />;
@@ -141,7 +161,10 @@ const PropertyDetails = () => {
         {property.locals && property.locals.length > 0 && property.locals.map((local, index) => {
           console.log(`▶ Local ${index + 1}:`, local); // 👈 AQUI se imprime cada local
           return (
-            <Accordion key={index} title={`Local ${index + 1} – Arrendatario: ${local.tenant || 'Sin definir'}`}>
+            <Accordion
+              key={index}
+              title={`Local ${index + 1} – ${local.name ? `Nombre: ${local.name}` : 'Sin nombre'} – Arrendatario: ${local.tenant || 'Sin definir'}`}
+            >
               <p><strong>Superficie rentada:</strong> {local.rentedArea} m²</p>
               <p><strong>Costo de renta:</strong> ${local.rentCost}</p>
               <p><strong>Inicio de renta:</strong> {local.rentStartDate?.substring(0, 10)}</p>
@@ -151,7 +174,7 @@ const PropertyDetails = () => {
                 <p>
                   <strong>Contrato:</strong>{' '}
                   <a
-                    href={`${apiBase}/uploads/locals/${local.rentContractUrl}`}
+                    href={`${apiBase}/uploads/locals/contracts/${local.rentContractUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 underline"
@@ -236,6 +259,16 @@ const PropertyDetails = () => {
               value={sellNote}
               onChange={(e) => setSellNote(e.target.value)}
             />
+            <div>
+              <label className="block text-sm font-medium mb-1">Documentos de Venta (PDF)</label>
+              <Input
+                type="file"
+                accept="application/pdf"
+                multiple
+                onChange={(e) => setSaleDocs(Array.from(e.target.files))}
+              />
+            </div>
+
             <div className="flex justify-end gap-2 pt-2">
               <Button variant="secondary" onClick={() => setShowSellDialog(false)}>
                 Cancelar

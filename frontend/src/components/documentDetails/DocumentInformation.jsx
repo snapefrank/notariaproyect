@@ -1,26 +1,32 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Tag, FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { apiBase } from '@/lib/constants';
 
-const DocumentInformation = ({ document }) => {
+const DocumentInformation = ({ document: doc }) => {
+  const [pdfData, setPdfData] = useState({ url: null, title: null });
+
+  const fullUrl = `${apiBase}${doc.fileUrl.startsWith('/') ? '' : '/'}${doc.fileUrl}`;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Detalles del Documento</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-1">Descripción</h3>
-          <p className="text-base">{document.description}</p>
+          <p className="text-base">{doc.description || 'No especificado'}</p>
         </div>
 
-        {document.tags && document.tags.length > 0 && (
+        {doc.tags && doc.tags.length > 0 && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Etiquetas</h3>
             <div className="flex flex-wrap gap-2">
-              {document.tags.map((tag, index) => (
+              {doc.tags.map((tag, index) => (
                 <div key={index} className="flex items-center text-xs bg-gray-100 text-gray-700 px-2 py-1 rounded-full">
                   <Tag className="h-3 w-3 mr-1" />
                   {tag}
@@ -35,34 +41,58 @@ const DocumentInformation = ({ document }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="p-4 bg-gray-50 rounded-md">
               <p className="text-sm text-muted-foreground">Creado por</p>
-              <p className="font-medium">{document.createdBy}</p>
+              <p className="font-medium">{doc.createdBy || 'No especificado'}</p>
             </div>
           </div>
         </div>
 
-        {document.fileUrl && (
+        {doc.fileUrl && (
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-2">Archivo</h3>
-            <div className="p-4 border rounded-md flex items-center justify-between">
+            <div className="p-4 border rounded-md flex items-center justify-between bg-gray-100">
               <div className="flex items-center">
                 <FileText className="h-5 w-5 text-primary mr-2" />
                 <span>Documento adjunto</span>
               </div>
-              <a
-                href={`${apiBase}${document.fileUrl.startsWith('/') ? '' : '/'}${document.fileUrl}`}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <Button variant="outline" size="sm">
-                  Ver archivo
+              <div className="space-x-2">
+                <Button size="sm" variant="outline" onClick={() => setPdfData({ url: fullUrl, title: 'Documento adjunto' })}>
+                  Visualizar
                 </Button>
-              </a>
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    const a = window.document.createElement('a');
+                    a.href = fullUrl;
+                    a.download = 'documento.pdf';
+                    a.target = '_blank';
+                    a.rel = 'noopener noreferrer';
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                  }}
+                >
+                  Descargar
+                </Button>
+              </div>
             </div>
           </div>
         )}
+
+        {/* Modal para visualizar PDF */}
+        <Dialog open={!!pdfData.url} onOpenChange={() => setPdfData({ url: null, title: null })}>
+          <DialogContent className="max-w-5xl w-full h-[90vh]">
+            <iframe
+              src={pdfData.url}
+              title={pdfData.title}
+              className="w-full h-full border-none"
+            ></iframe>
+          </DialogContent>
+        </Dialog>
+
       </CardContent>
     </Card>
   );
 };
+
 
 export default DocumentInformation;

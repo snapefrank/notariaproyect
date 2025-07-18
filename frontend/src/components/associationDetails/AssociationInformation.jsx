@@ -2,6 +2,7 @@ import React from 'react';
 import { FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { apiBase } from '@/lib/constants';
 
 const AssociationInformation = ({ association }) => {
   return (
@@ -47,7 +48,7 @@ const AssociationInformation = ({ association }) => {
                     <FileText className="h-5 w-5 text-primary mr-2" />
                     <span>Escritura</span>
                   </div>
-                  <a href={`/${association.deedFile}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`${apiBase}/${association.deedFile}`} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm">Ver</Button>
                   </a>
                 </div>
@@ -59,7 +60,7 @@ const AssociationInformation = ({ association }) => {
                     <FileText className="h-5 w-5 text-primary mr-2" />
                     <span>RFC</span>
                   </div>
-                  <a href={`/${association.rfcFile}`} target="_blank" rel="noopener noreferrer">
+                  <a href={`${apiBase}/${association.rfcFile}`} target="_blank" rel="noopener noreferrer">
                     <Button variant="outline" size="sm">Ver</Button>
                   </a>
                 </div>
@@ -75,7 +76,7 @@ const AssociationInformation = ({ association }) => {
                           <FileText className="h-4 w-4 text-primary mr-2" />
                           <span className="text-sm">Documento {index + 1}</span>
                         </div>
-                        <a href={`/${filePath}`} target="_blank" rel="noopener noreferrer">
+                        <a href={`${apiBase}/${filePath}`} target="_blank" rel="noopener noreferrer">
                           <Button variant="outline" size="sm">Ver</Button>
                         </a>
                       </div>

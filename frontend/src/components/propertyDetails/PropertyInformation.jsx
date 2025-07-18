@@ -42,6 +42,14 @@ const PropertyInformation = ({ property }) => {
     ? owner.nombre || owner.name || 'Propietario no identificado'
     : 'No especificado';
 
+  const formatLocalDate = (dateStr) => {
+    if (!dateStr) return 'No especificado';
+    const date = new Date(dateStr);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    return `${day}/${month}/${year}`;
+  };
 
   return (
     <Card>
@@ -76,10 +84,25 @@ const PropertyInformation = ({ property }) => {
 
           <Info label="Usufructo" value={usufruct} />
           <Info label="Número de Escritura" value={deedNumber} />
-          <Info label="Fecha de Escritura" value={deedDate && new Date(deedDate).toLocaleDateString()} />
+          <Info label="Fecha de Escritura" value={formatLocalDate(deedDate)} />
           <Info label="Notaría" value={notary} />
           <Info label="Clave Catastral" value={cadastralKey} />
-          <Info label="Ubicación" value={location} />
+          <div className="p-4 bg-gray-50 rounded-md">
+            <p className="text-muted-foreground mb-1">Ubicación</p>
+            {location ? (
+              <a
+                href={location}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-blue-600 hover:underline font-medium"
+              >
+                📍 Ver en Google Maps
+              </a>
+            ) : (
+              <p className="font-medium">No especificado</p>
+            )}
+          </div>
+
           <Info label="Superficie Total" value={`${totalArea} m²`} />
           <Info label="¿Cuenta con Gravamen?" value={hasEncumbrance ? 'Sí' : 'No'} />
         </div>
@@ -88,7 +111,7 @@ const PropertyInformation = ({ property }) => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
             <Info label="Institución del Gravamen" value={encumbranceInstitution} />
             <Info label="Monto del Gravamen" value={`$${Number(encumbranceAmount).toLocaleString()}`} />
-            <Info label="Fecha del Gravamen" value={encumbranceDate && new Date(encumbranceDate).toLocaleDateString()} />
+            <Info label="Fecha del Gravamen" value={formatLocalDate(encumbranceDate)} />
           </div>
         )}
 
@@ -99,26 +122,12 @@ const PropertyInformation = ({ property }) => {
               <Info label="Arrendatario" value={tenant} />
               <Info label="Superficie rentada" value={`${rentedArea} m²`} />
               <Info label="Costo mensual" value={`$${rentCost}`} />
-              <Info
-                label="Inicio de renta"
-                value={
-                  rentStart
-                    ? new Date(rentStart).toLocaleDateString('es-MX', { dateStyle: 'medium' })
-                    : 'No especificado'
-                }
-              />
-              <Info
-                label="Fin de renta"
-                value={
-                  rentEnd
-                    ? new Date(rentEnd).toLocaleDateString('es-MX', { dateStyle: 'medium' })
-                    : 'No especificado'
-                }
-              />
+              <Info label="Inicio de renta" value={formatLocalDate(property.rentStartDate)} />
+              <Info label="Fin de renta" value={formatLocalDate(property.rentEndDate)} />
+
             </div>
           </div>
         )}
-
         {(deedFileUrl || rentContractUrl || extraDocs.length > 0) && (
           <div className="pt-6 border-t space-y-3">
             <h3 className="text-base font-semibold">Documentos</h3>
@@ -167,6 +176,26 @@ const PropertyInformation = ({ property }) => {
             </div>
           </div>
         )}
+
+        {property.status === 'sold' &&
+          property.saleDocuments &&
+          property.saleDocuments.length > 0 && (
+            <div className="pt-6 border-t space-y-3">
+              <h3 className="text-base font-semibold">Documentos de Venta</h3>
+              <Info label="Fecha de Venta" value={formatLocalDate(property.soldDate)} />
+              {property.soldNote && (
+                <Info label="Nota" value={property.soldNote} />
+              )}
+              {property.saleDocuments.map((filename, index) => (
+                <DocumentItem
+                  key={index}
+                  label={`Documento de Venta ${index + 1}`}
+                  fileUrl={`${apiBase}/uploads/properties/sale-docs/${filename}`}
+                  onView={setPdfData}
+                />
+              ))}
+            </div>
+          )}
       </CardContent>
 
       <Dialog open={!!pdfData.url} onOpenChange={() => setPdfData({ url: null, title: null })}>

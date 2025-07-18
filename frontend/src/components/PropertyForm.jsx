@@ -12,7 +12,6 @@ import {
 import { motion } from 'framer-motion';
 import axios from 'axios';
 import debounce from 'lodash.debounce';
-import LocationPicker from '@/components/LocationPicker';
 import { apiBase } from '@/lib/constants';
 
 
@@ -42,10 +41,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     rentStartDate: initialData.rentStartDate || '',
     rentEndDate: initialData.rentEndDate || '',
     type: initialData.type || '',
-    locationDetails: initialData.locationDetails || {
-      address: initialData.location || '',
-      coords: initialData.coords || [20.5888, -100.3899],
-    },
   });
 
   // Archivos
@@ -54,7 +49,8 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [extraDocs, setExtraDocs] = useState([]);
   const [existingPhotos, setExistingPhotos] = useState(initialData.photos || []);
   const [locales, setLocales] = useState(initialData.locals || []); // ← usa initialData.locals
-  const [propertyPhotos, setPropertyPhotos] = useState([]); // 
+  const [propertyPhotos, setPropertyPhotos] = useState([]); //
+
 
 
   // Autocompletado para propietario
@@ -86,10 +82,11 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   };
 
   const handleFileChange = (e, setter, multiple = false) => {
+    const files = e.target.files;
     if (multiple) {
-      setter(Array.from(e.target.files));
+      setter(Array.from(files));
     } else {
-      setter(e.target.files[0]);
+      setter(files[0]);
     }
   };
 
@@ -100,8 +97,8 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   };
 
   const handleLocalFileChange = (index, field, files) => {
-    const updated = JSON.parse(JSON.stringify(locales)); // ✅ copia profunda
-    updated[index][field] = Array.from(files);           // ✅ asegura nuevo array sin referencias cruzadas
+    const updated = JSON.parse(JSON.stringify(locales));
+    updated[index][field] = Array.from(files);
     setLocales(updated);
   };
 
@@ -114,7 +111,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       rentEndDate: '',
       rentedArea: '',
       rentCost: '',
-      rentContractFile: null,
+      rentContractFile: [],
       photos: []
     }]);
   };
@@ -133,6 +130,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   useEffect(() => {
     fetchOwnerSuggestions(ownerQuery);
   }, [ownerQuery]);
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -163,16 +161,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     data.append('propietario', finalOwner);
     data.append('tipoPropietario', finalTipoPropietario);
     data.append('owner', ownerQuery); // nombre visible opcional
-
-
-    // ✅ Agrega ubicación detallada si está disponible
-    const { address, coords } = formData.locationDetails || {};
-    const latitude = coords?.[0];
-    const longitude = coords?.[1];
-
-    data.set('location', (typeof address === 'string' ? address : address?.toString()) || '');
-    data.append('latitude', latitude?.toString() || '');
-    data.append('longitude', longitude?.toString() || '');
+    data.append('location', formData.location);
 
     if (deedFile) data.append('deedFile', deedFile);
     if (rentContractFile) data.append('rentContractFile', rentContractFile);
@@ -191,13 +180,29 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       }
     });
     data.set('totalArea', formData.totalArea?.toString() || '');
-    if (selectedOwnerId && !['PhysicalPerson', 'MoralPerson'].includes(tipoPropietario)) {
-      alert('Error: El tipo de propietario es inválido.');
-      return;
+    const isMongoId = /^[0-9a-fA-F]{24}$/.test(selectedOwnerId);
+
+    if (selectedOwnerId) {
+      if (!isMongoId) {
+        console.warn('⚠️ ID de propietario con formato incorrecto:', selectedOwnerId);
+        finalOwner = ownerQuery.trim();
+        finalTipoPropietario = 'Personalizado'; // ← ahora sí lo dejamos como texto plano
+      } else {
+        if (!['PhysicalPerson', 'MoralPerson'].includes(tipoPropietario)) {
+          alert('El tipo de propietario debe ser Física o Moral.');
+          return;
+        }
+      }
     }
+
 
     console.log('📤 Enviando imágenes existentes del inmueble:', existingPhotos);
     console.log('📤 Enviando locales:', locales);
+    // ✅ Verificar archivos adjuntos de contrato de locales
+    locales.forEach((local, index) => {
+      console.log(`📦 Local ${index + 1}: contrato a enviar =>`, local.rentContractFile?.[0]?.name || '❌ NO SELECCIONADO');
+    });
+
 
     onSubmit(data);
   };
@@ -255,7 +260,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
                     key={person.id}
                     onClick={() => {
                       setOwnerQuery(person.name);
-                      setSelectedOwnerId(person.id);
+                      setSelectedOwnerId(person._id);
                       setTipoPropietario(normalizarTipoPropietario(person.type)); // ✔️ correcto
                       setOwnerSuggestions([]);
                     }}
@@ -328,19 +333,14 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               required
             />
           </div>
-
           <div className="col-span-2">
-            <LocationPicker
-              value={formData.locationDetails}
-              onChange={(val) => {
-                setFormData((prev) => ({
-                  ...prev,
-                  locationDetails: val,
-                }));
-              }}
+            <Label>Ubicación en Google Maps</Label>
+            <Input
+              placeholder="Pega aquí el enlace de Google Maps"
+              value={formData.location}
+              onChange={(e) => handleChange('location', e.target.value)}
             />
           </div>
-
           <div>
             <Label>Superficie total</Label>
             <Input
@@ -547,6 +547,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
                     accept=".pdf"
                     onChange={(e) => handleLocalFileChange(index, 'rentContractFile', e.target.files)}
                   />
+
                 </div>
                 <div className="col-span-2">
                   <Label>Fotos del local</Label>

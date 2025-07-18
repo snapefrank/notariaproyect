@@ -7,7 +7,6 @@ import axios from 'axios';
 import { apiBase } from '@/lib/constants';
 import { useToast } from '@/components/ui/use-toast';
 
-const API_URL = import.meta.env.VITE_API_URL + '/api/properties';
 
 const AddLocalModal = ({ open, onClose, propertyId, onLocalAdded }) => {
     const { toast } = useToast();
@@ -55,7 +54,7 @@ const AddLocalModal = ({ open, onClose, propertyId, onLocalAdded }) => {
         }
 
         try {
-            const response = await axios.post(`${apiBase}/${API_URL}/${propertyId}/locals`, formData, {
+            const response = await axios.post(`${apiBase}/api/properties/${propertyId}/locals`, formData, {
                 headers: { 'Content-Type': 'multipart/form-data' },
             });
 

@@ -123,9 +123,12 @@ const AssociationsPage = () => {
               className="p-4 border rounded-md shadow-sm bg-white"
             >
               <h2 className="text-lg font-semibold">{association.nombre}</h2>
+
               <p className="text-sm text-muted-foreground">
-                Tipo: {association.tipo}
+                <span className="font-medium text-gray-700">RFC:</span>{' '}
+                {association.rfc || 'No registrado'}
               </p>
+
               <div className="mt-2 flex justify-between items-center">
                 <Button
                   variant="link"

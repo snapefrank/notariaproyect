@@ -1,5 +1,15 @@
 const Property = require('../models/Property');
 
+
+// ✅ Normaliza la fecha a medianoche local para evitar desfases de zona horaria
+const normalizeDate = (value) => {
+  if (!value || value === 'undefined' || value === 'null') return undefined;
+  const date = new Date(value);
+  return isNaN(date.getTime()) ? undefined : date;
+};
+
+
+
 // GET all properties
 exports.getAllProperties = async (req, res) => {
   try {
@@ -15,7 +25,6 @@ exports.getAllProperties = async (req, res) => {
   }
 };
 
-// POST new property
 // POST new property
 exports.createProperty = async (req, res) => {
   try {
@@ -49,47 +58,51 @@ exports.createProperty = async (req, res) => {
         rentContractUrl: rentContractFile
       };
     });
+    locals.forEach((local, i) => {
+      console.log(`📄 Local ${i + 1}: contrato recibido =>`, local.rentContractUrl || '❌ NO RECIBIDO');
+    });
 
-    let propietario = body.propietario;
-    if (body.tipoPropietario !== 'Personalizado') {
-      try {
-        propietario = require('mongoose').Types.ObjectId(propietario);
-      } catch (err) {
-        console.warn('⚠️ ID de propietario no válido:', propietario);
-      }
-    }
+
+let propietario = undefined;
+if (body.tipoPropietario !== 'Personalizado') {
+  try {
+    propietario = require('mongoose').Types.ObjectId(body.propietario);
+  } catch (err) {
+    console.warn('⚠️ ID de propietario no válido:', body.propietario);
+    return res.status(400).json({ error: 'ID de propietario no válido' });
+  }
+}
 
     const newProperty = new Property({
       name: body.name,
       propietario,
       tipoPropietario: body.tipoPropietario,
+      owner: body.owner || '',
       valor_total: parseFloat(body.valor_total) || 0,
       usufruct: body.usufruct,
       deedNumber: body.deedNumber,
-      deedDate: body.deedDate,
+      deedDate: normalizeDate(body.deedDate),
       deedFileUrl,
       notary: body.notary,
       cadastralKey: body.cadastralKey,
-      location: body.location,
-      latitude: body.latitude,
-      longitude: body.longitude,
+      location: Array.isArray(body.location) ? body.location[0] : String(body.location).trim(),
       totalArea: body.totalArea,
       hasEncumbrance: body.hasEncumbrance,
       encumbranceInstitution: body.encumbranceInstitution,
       encumbranceAmount: body.encumbranceAmount,
-      encumbranceDate: body.encumbranceDate,
+      encumbranceDate: normalizeDate(body.encumbranceDate),
       isRented: body.isRented,
       tenant: body.tenant,
       rentedArea: body.rentedArea,
       rentCost: body.rentCost,
-      rentStartDate: body.rentStartDate,
-      rentEndDate: body.rentEndDate,
+      rentStartDate: normalizeDate(body.rentStartDate),
+      rentEndDate: normalizeDate(body.rentEndDate),
       rentContractUrl,
       photos: fotosFinales,
       extraDocs,
       locals,
       status: body.status,
-      soldDate: body.soldDate,
+      soldDate: normalizeDate(body.soldDate),
       soldNote: body.soldNote,
       createdAt: new Date(),
       updatedAt: new Date(),
@@ -162,10 +175,12 @@ exports.updateProperty = async (req, res) => {
         rentContractUrl: rentContractFile
       };
     });
-
     let propietario = body.propietario;
     if (body.tipoPropietario !== 'Personalizado') {
       try {
+        if (typeof propietario === 'object' && propietario !== null) {
+          propietario = propietario.id || propietario._id || '';
+        }
         propietario = require('mongoose').Types.ObjectId(propietario);
       } catch (err) {
         console.warn('⚠️ ID de propietario no válido:', propietario);
@@ -181,33 +196,31 @@ exports.updateProperty = async (req, res) => {
         valor_total: parseFloat(body.valor_total) || 0,
         usufruct: body.usufruct,
         deedNumber: body.deedNumber,
-        deedDate: body.deedDate,
+        deedDate: normalizeDate(body.deedDate),
         deedFileUrl,
         notary: body.notary,
         cadastralKey: body.cadastralKey,
-        location: body.location,
+        location: Array.isArray(body.location) ? body.location[0] : String(body.location).trim(),
         totalArea: body.totalArea,
         hasEncumbrance: body.hasEncumbrance,
         encumbranceInstitution: body.encumbranceInstitution,
-        encumbranceAmount: body.encumbranceAmount,
-        encumbranceDate: body.encumbranceDate,
+        encumbranceAmount: isNaN(body.encumbranceAmount) ? undefined : parseFloat(body.encumbranceAmount),
+        encumbranceDate: normalizeDate(body.encumbranceDate),
         status: body.status,
-        soldDate: body.soldDate,
+        soldDate: normalizeDate(body.soldDate),
         soldNote: body.soldNote,
         isRented: body.isRented,
         tenant: body.tenant,
         rentedArea: body.rentedArea,
         rentCost: body.rentCost,
-        rentStartDate: body.rentStartDate,
-        rentEndDate: body.rentEndDate,
+        rentStartDate: normalizeDate(body.rentStartDate),
+        rentEndDate: normalizeDate(body.rentEndDate),
         rentContractUrl,
         photos: fotosFinales,
         extraDocs,
         locals: nuevosLocales,
         updatedAt: new Date(),
         type: body.type,
-        latitude: body.latitude,
-        longitude: body.longitude,
       },
       { new: true }
     );
@@ -264,8 +277,8 @@ exports.addLocalToProperty = async (req, res) => {
       tenant,
       rentedArea,
       rentCost,
-      rentStartDate,
-      rentEndDate,
+      rentStartDate: normalizeDate(rentStartDate),
+      rentEndDate: normalizeDate(rentEndDate),
       rentContractUrl: contractFile || '',
       photos: localPhotos
     };
@@ -361,6 +374,37 @@ exports.getPropertyById = async (req, res) => {
     res.status(500).json({ error: 'Error al obtener la propiedad' });
   }
 };
+// POST: Marcar como vendido y guardar documentos
+exports.markAsSold = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { soldDate, soldNote } = req.body;
+
+    const archivos = req.files?.map(file => file.filename) || [];
+
+    const updated = await Property.findByIdAndUpdate(
+      id,
+      {
+        status: 'sold',
+        soldDate: normalizeDate(soldDate),
+        soldNote,
+        $push: { saleDocuments: { $each: archivos } },
+        updatedAt: new Date()
+      },
+      { new: true }
+    );
+
+    if (!updated) {
+      return res.status(404).json({ message: 'Inmueble no encontrado' });
+    }
+
+    res.status(200).json({ ...updated.toObject(), id: updated._id.toString() });
+  } catch (error) {
+    console.error('❌ Error al marcar como vendido:', error);
+    res.status(500).json({ message: 'Error al marcar como vendido', error: error.message });
+  }
+};
+
 
 
 

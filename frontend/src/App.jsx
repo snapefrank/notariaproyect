@@ -25,6 +25,7 @@ import AssociationsPage from '@/pages/AssociationsPage';
 import SoldPropertyDetails from '@/pages/SoldPropertyDetails';
 import PhysicalPersonDetails from '@/pages/PhysicalPersonDetails';
 import AssociationDetails from '@/pages/AssociationDetails';
+import UserProfilePage from '@/pages/UserProfilePage';
 
 
 // Placeholder
@@ -199,7 +200,7 @@ const App = () => {
             <MainLayout><AssociationDetails /></MainLayout>
           </ProtectedRoute>
         } />
-
+        <Route path="/mi-perfil" element={<UserProfilePage />} />
         {/* Página no encontrada */}
         <Route path="*" element={<NotFound />} />
       </Routes>

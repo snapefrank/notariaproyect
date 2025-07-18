@@ -17,6 +17,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User as UserIcon } from 'lucide-react';
+
 
 const NavLink = ({ to, children, exact = false }) => {
   const location = useLocation();
@@ -117,9 +119,9 @@ const Header = () => {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuItem onClick={() => navigate(user?.role === 'owner' ? '/owner' : '/employee')}>
-                  <UserCircle className="mr-2 h-4 w-4" />
-                  <span>Mi Panel</span>
+                <DropdownMenuItem onClick={() => navigate('/mi-perfil')}>
+                  <UserIcon className="mr-2 h-4 w-4" />
+                  Mi Panel
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={handleLogout} className="text-red-600 hover:!text-red-600 hover:!bg-red-50">
                   <LogOut className="mr-2 h-4 w-4" />

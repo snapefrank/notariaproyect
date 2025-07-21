@@ -157,10 +157,10 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
               ) : null}
               {(asset.valor_total || asset.value) ? (
                 <div className="flex items-baseline gap-1">
-                  <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  {/* <DollarSign className="h-4 w-4 text-muted-foreground" /> */}
                   <span className="font-semibold">Valor:</span>
                   <span>
-                    {formatCurrency(asset.valor_total || asset.value)}
+                    {formatCurrency(asset.valor_total || asset.value) + ' MXN'}
                   </span>
                 </div>
               ) : null}

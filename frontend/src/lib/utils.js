@@ -2,32 +2,32 @@ import { clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
 export function cn(...inputs) {
-	return twMerge(clsx(inputs));
+  return twMerge(clsx(inputs));
 }
 
 export function formatDate(dateString) {
   if (!dateString) return 'Fecha no disponible';
-  
+
   const date = new Date(dateString);
   if (isNaN(date.getTime())) return 'Fecha inválida';
-  
+
   return new Intl.DateTimeFormat('es-ES', {
     day: '2-digit',
     month: '2-digit',
     year: 'numeric'
   }).format(date);
 }
-
 export function formatCurrency(value) {
   if (!value && value !== 0) return 'No disponible';
-  
-  return new Intl.NumberFormat('es-ES', {
+
+  return new Intl.NumberFormat('es-MX', {
     style: 'currency',
-    currency: 'USD',
+    currency: 'MXN',
     minimumFractionDigits: 0,
     maximumFractionDigits: 0
-  }).format(value);
+  }).format(Number(value));
 }
+
 
 export function truncateText(text, maxLength) {
   if (!text) return '';

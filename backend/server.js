@@ -49,6 +49,8 @@ app.use('/api/moral-persons', moralPersonRoutes);
 app.use('/api/artworks', artworkRoutes);
 app.use('/api/associations', associationRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/reminders', require('./routes/reminder.routes'));
+
 // Agrega las otras rutas aquí
 
 const PORT = process.env.PORT || 5000;

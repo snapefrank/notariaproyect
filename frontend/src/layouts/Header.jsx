@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAssets } from '@/contexts/AssetContext';
@@ -18,6 +18,9 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User as UserIcon } from 'lucide-react';
+import { useReminders } from '@/contexts/ReminderContext';
+
+
 
 
 const NavLink = ({ to, children, exact = false }) => {
@@ -51,6 +54,10 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const logoUrl = "https://storage.googleapis.com/hostinger-horizons-assets-prod/90f9b128-8767-4a3a-9236-41e435352062/d0251411dd7004bdf40efa49621e0612.png";
+  const { reminders } = useReminders();
+  const urgentCount = reminders.filter(r => r.severity === 'high').length;
+  const [showReminders, setShowReminders] = useState(false);
+
 
   const { properties } = useAssets();
   const { moralPersons } = useMoralPersons();
@@ -102,10 +109,41 @@ const Header = () => {
 
           {/* Derecha: Acciones de Usuario */}
           <div className="flex items-center space-x-2 sm:space-x-3">
-            <Button variant="ghost" size="icon" className="text-custom-gray hover:text-custom-umber hover:bg-custom-silver/50">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notificaciones</span>
-            </Button>
+            <div className="relative">
+              <button
+                onClick={() => setShowReminders(!showReminders)}
+                className="relative p-2 rounded-full hover:bg-custom-silver/50 text-custom-gray hover:text-custom-umber"
+              >
+                <Bell className="h-5 w-5" />
+                {urgentCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
+                    {urgentCount}
+                  </span>
+                )}
+              </button>
+
+              {showReminders && (
+                <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-md shadow-lg z-50">
+                  <div className="p-4">
+                    <h4 className="text-sm font-semibold mb-2 text-red-600">⚠️ Notificaciones Urgentes</h4>
+                    {urgentCount === 0 ? (
+                      <p className="text-sm text-gray-500">No hay recordatorios urgentes por vencer.</p>
+                    ) : (
+                      <ul className="space-y-2 max-h-60 overflow-y-auto">
+                        {reminders.filter(r => r.severity === 'high').map((reminder, index) => (
+                          <li key={index} className="text-sm text-red-700">
+                            <div className="font-medium">• {reminder.title}</div>
+                            <div className="text-xs text-gray-500">Vence: {reminder.dueDate}</div>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="flex items-center space-x-2 text-custom-gray hover:text-custom-umber hover:bg-custom-silver/50 px-1 sm:px-2">

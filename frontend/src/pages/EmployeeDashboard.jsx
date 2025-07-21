@@ -16,6 +16,7 @@ import {
   Dialog, DialogContent, DialogDescription,
   DialogHeader, DialogTitle, DialogTrigger
 } from '@/components/ui/dialog';
+import { useReminders } from '@/contexts/ReminderContext';
 
 const itemVariants = {
   hidden: { opacity: 0, y: 20 },
@@ -85,9 +86,7 @@ const EmployeeDashboard = () => {
     .sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt))
     .slice(0, 3);
 
-  const employeeReminders = [
-
-  ];
+  const { reminders: employeeReminders } = useReminders();
 
   const handleUpdateClick = (task) => {
     setSelectedTask(task);

@@ -12,6 +12,7 @@ import { MoralPersonProvider } from '@/contexts/MoralPersonContext';
 import { ArtworkProvider } from '@/contexts/ArtworkContext';
 import { AssociationProvider } from './contexts/AssociationContext';
 import 'leaflet/dist/leaflet.css';
+import { ReminderProvider } from './contexts/ReminderContext';
 
 // Importa otros contextos si es necesario
 
@@ -26,8 +27,10 @@ root.render(
               <MoralPersonProvider>
                 <ArtworkProvider>
                   <AssociationProvider>
+                    <ReminderProvider>
                     <App />
                     <Toaster />
+                    </ReminderProvider>
                   </AssociationProvider>
                 </ArtworkProvider>
               </MoralPersonProvider>
@@ -37,4 +40,5 @@ root.render(
       </AuthProvider>
     </BrowserRouter>
   </React.StrictMode>
+  
 );

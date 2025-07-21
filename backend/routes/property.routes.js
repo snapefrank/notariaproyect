@@ -41,6 +41,16 @@ const folders = [
   'uploads/locals/contracts',
 ];
 
+// Generador de campos dinámicos para locales
+const generateLocalFields = (max = 20) => {
+  const fields = [];
+  for (let i = 0; i < max; i++) {
+    fields.push({ name: `localRentContract_${i}`, maxCount: 1 });
+    fields.push({ name: `localPhotos_${i}`, maxCount: 10 });
+  }
+  return fields;
+};
+
 folders.forEach(folder => {
   if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
 });
@@ -66,17 +76,7 @@ router.post(
     { name: 'rentContractFile', maxCount: 1 },
     { name: 'propertyPhotos', maxCount: 20 },
     { name: 'extraDocs', maxCount: 20 },
-
-    // Para locales (puedes poner más si quieres manejar hasta 10 locales, por ejemplo)
-    { name: 'localRentContract_0', maxCount: 1 },
-    { name: 'localPhotos_0', maxCount: 10 },
-    { name: 'localRentContract_1', maxCount: 1 },
-    { name: 'localPhotos_1', maxCount: 10 },
-    { name: 'localRentContract_2', maxCount: 1 },
-    { name: 'localPhotos_2', maxCount: 10 },
-    { name: 'localRentContract_3', maxCount: 1 },
-    { name: 'localPhotos_3', maxCount: 10 },
-    // ... puedes continuar hasta local_9 o más si lo necesitas
+    ...generateLocalFields(20)
   ]),
   controller.createProperty
 );
@@ -89,14 +89,7 @@ router.put(
     { name: 'rentContractFile', maxCount: 1 },
     { name: 'propertyPhotos', maxCount: 20 },
     { name: 'extraDocs', maxCount: 20 },
-    { name: 'localRentContract_0', maxCount: 1 },
-    { name: 'localPhotos_0', maxCount: 10 },
-    { name: 'localRentContract_1', maxCount: 1 },
-    { name: 'localPhotos_1', maxCount: 10 },
-    { name: 'localRentContract_2', maxCount: 1 },
-    { name: 'localPhotos_2', maxCount: 10 },
-    { name: 'localRentContract_3', maxCount: 1 },
-    { name: 'localPhotos_3', maxCount: 10 },
+    ...generateLocalFields(20)
   ]),
   controller.updateProperty
 );

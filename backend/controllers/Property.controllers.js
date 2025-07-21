@@ -365,7 +365,7 @@ exports.deleteLocalFromProperty = async (req, res) => {
 exports.getPropertyById = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id)
-      .populate('propietario') // << ESTA LÍNEA ES CLAVE
+      .populate('propietario') 
       .exec();
 
     res.json(property);

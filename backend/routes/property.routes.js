@@ -6,11 +6,10 @@ const path = require('path');
 const fs = require('fs');
 const uploadSaleDocs = require('../middlewares/uploadSaleDocs');
 
-
 // Configuración de multer con rutas dinámicas
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
-    if (file.fieldname === 'deedFile') cb(null, 'uploads/properties/deeds/');
+    if (file.fieldname === 'deedFiles') cb(null, 'uploads/properties/deeds/');
     else if (file.fieldname === 'propertyPhotos') cb(null, 'uploads/properties/photos/');
     else if (file.fieldname === 'extraDocs') cb(null, 'uploads/properties/extra-docs/');
     else if (file.fieldname === 'rentContractFile') cb(null, 'uploads/properties/rent-contracts/');
@@ -18,7 +17,6 @@ const storage = multer.diskStorage({
     else if (file.fieldname.startsWith('localRentContract_')) cb(null, 'uploads/locals/contracts/');
     else if (file.fieldname === 'contract') cb(null, 'uploads/locals/contracts/');
     else if (file.fieldname === 'localPhotos') cb(null, 'uploads/locals/photos/');
-
 
     else cb(null, 'uploads/');
   },
@@ -67,12 +65,11 @@ router.post(
 );
 
 
-
 // POST: Crear nueva propiedad con todos los archivos (propiedad + locales)
 router.post(
   '/',
   upload.fields([
-    { name: 'deedFile', maxCount: 1 },
+    { name: 'deedFiles', maxCount: 10 },
     { name: 'rentContractFile', maxCount: 1 },
     { name: 'propertyPhotos', maxCount: 20 },
     { name: 'extraDocs', maxCount: 20 },
@@ -85,7 +82,7 @@ router.post(
 router.put(
   '/:id',
   upload.fields([
-    { name: 'deedFile', maxCount: 1 },
+    { name: 'deedFiles', maxCount: 10 },
     { name: 'rentContractFile', maxCount: 1 },
     { name: 'propertyPhotos', maxCount: 20 },
     { name: 'extraDocs', maxCount: 20 },
@@ -137,6 +134,5 @@ router.put(
 
 // DELETE: Eliminar local por índice
 router.delete('/:propertyId/locals/:index', controller.deleteLocalFromProperty);
-
 
 module.exports = router;

@@ -31,11 +31,10 @@ const propertySchema = new mongoose.Schema({
   usufruct: { type: String },                            // Usufructo
   deedNumber: { type: String, required: true },          // Número de escritura
   deedDate: { type: Date, required: true },              // Fecha de escritura
-  deedFileUrl: { type: String },                         // Archivo de escritura
+  deedFiles: [{ type: String }],                         // Archivo de escritura
   notary: { type: String, required: true },              // Notaría
   cadastralKey: { type: String, required: true },        // Clave catastral
   location: { type: String, required: true },            // Ubicación en google maps
-
 
   totalArea: { type: Number, required: true },           // Superficie total
 
@@ -76,6 +75,4 @@ const propertySchema = new mongoose.Schema({
 
 delete mongoose.connection.models['Property'];
 
-
 module.exports = mongoose.model('Property', propertySchema);
-

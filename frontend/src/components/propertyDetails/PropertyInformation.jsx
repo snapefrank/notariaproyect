@@ -6,7 +6,6 @@ import axios from 'axios';
 import { apiBase } from '@/lib/constants';
 
 
-
 const PropertyInformation = ({ property }) => {
   console.log("✅ PROPERTY COMPLETA:", property);
   const {
@@ -81,7 +80,6 @@ const PropertyInformation = ({ property }) => {
               : 'No especificado'}
           />
 
-
           <Info label="Usufructo" value={usufruct} />
           <Info label="Número de Escritura" value={deedNumber} />
           <Info label="Fecha de Escritura" value={formatLocalDate(deedDate)} />
@@ -128,16 +126,19 @@ const PropertyInformation = ({ property }) => {
             </div>
           </div>
         )}
-        {(deedFileUrl || rentContractUrl || extraDocs.length > 0) && (
+        {(rentContractUrl || extraDocs.length > 0) && (
           <div className="pt-6 border-t space-y-3">
             <h3 className="text-base font-semibold">Documentos</h3>
-            {deedFileUrl && (
-              <DocumentItem
-                label="Escritura"
-                fileUrl={`${apiBase}/uploads/properties/deeds/${deedFileUrl}`}
-                onView={setPdfData}
-              />
-            )}
+            {property.deedFiles?.length > 0 &&
+              property.deedFiles.map((filename, idx) => (
+                <DocumentItem
+                  key={idx}
+                  label={`Escritura ${property.deedFiles.length > 1 ? idx + 1 : ''}`}
+                  fileUrl={`${apiBase}/uploads/properties/deeds/${filename}`}
+                  onView={setPdfData}
+                />
+              ))}
+
             {isRented && rentContractUrl && (
               <DocumentItem
                 label="Contrato de Arrendamiento"
@@ -255,3 +256,4 @@ const DocumentItem = ({ label, fileUrl, onView }) => (
 );
 
 export default PropertyInformation;
+

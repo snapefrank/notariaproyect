@@ -15,7 +15,6 @@ import debounce from 'lodash.debounce';
 import { apiBase } from '@/lib/constants';
 
 
-
 const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: initialData.name || '',
@@ -44,13 +43,12 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   });
 
   // Archivos
-  const [deedFile, setDeedFile] = useState(null);
+  const [deedFiles, setDeedFiles] = useState([]);
   const [rentContractFile, setRentContractFile] = useState(null);
   const [extraDocs, setExtraDocs] = useState([]);
   const [existingPhotos, setExistingPhotos] = useState(initialData.photos || []);
-  const [locales, setLocales] = useState(initialData.locals || []); // ← usa initialData.locals
-  const [propertyPhotos, setPropertyPhotos] = useState([]); //
-
+  const [locales, setLocales] = useState(initialData.locals || []);
+  const [propertyPhotos, setPropertyPhotos] = useState([]);
 
 
   // Autocompletado para propietario
@@ -76,7 +74,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     normalizarTipoPropietario(initialData.tipoPropietario || '')
   );
 
-
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
@@ -101,7 +98,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     updated[index][field] = Array.from(files);
     setLocales(updated);
   };
-
 
   const addLocal = () => {
     setLocales([...locales, {
@@ -131,7 +127,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     fetchOwnerSuggestions(ownerQuery);
   }, [ownerQuery]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
@@ -142,7 +137,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     // Si no hay ID seleccionado, se usará el texto libre del campo
     if (!selectedOwnerId) {
       finalOwner = ownerQuery.trim();
-      finalTipoPropietario = 'Personalizado'; // puedes manejarlo así o como null
+      finalTipoPropietario = 'Personalizado';
     }
 
     // Validación mínima
@@ -153,17 +148,20 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
 
     Object.entries(formData).forEach(([key, value]) => {
       if (key !== 'owner') {
-        data.append(key, value);
+        const isNumberField = ['valor_total', 'totalArea', 'rentedArea', 'rentCost', 'encumbranceAmount'].includes(key);
+        const cleanedValue = isNumberField
+          ? value === '' || isNaN(Number(value)) ? '' : Number(value)
+          : value;
+        data.append(key, cleanedValue);
       }
     });
 
-    // ✅ Aquí agregas el campo `owner` con el ID correcto
     data.append('propietario', finalOwner);
     data.append('tipoPropietario', finalTipoPropietario);
-    data.append('owner', ownerQuery); // nombre visible opcional
+    data.append('owner', ownerQuery);
     data.append('location', formData.location);
 
-    if (deedFile) data.append('deedFile', deedFile);
+    deedFiles.forEach(file => data.append('deedFiles', file));
     if (rentContractFile) data.append('rentContractFile', rentContractFile);
 
     data.append('imagenesExistentes', JSON.stringify(existingPhotos));
@@ -186,7 +184,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       if (!isMongoId) {
         console.warn('⚠️ ID de propietario con formato incorrecto:', selectedOwnerId);
         finalOwner = ownerQuery.trim();
-        finalTipoPropietario = 'Personalizado'; // ← ahora sí lo dejamos como texto plano
+        finalTipoPropietario = 'Personalizado';
       } else {
         if (!['PhysicalPerson', 'MoralPerson'].includes(tipoPropietario)) {
           alert('El tipo de propietario debe ser Física o Moral.');
@@ -195,14 +193,12 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       }
     }
 
-
     console.log('📤 Enviando imágenes existentes del inmueble:', existingPhotos);
     console.log('📤 Enviando locales:', locales);
-    // ✅ Verificar archivos adjuntos de contrato de locales
+    // Verificar archivos adjuntos de contrato de locales
     locales.forEach((local, index) => {
       console.log(`📦 Local ${index + 1}: contrato a enviar =>`, local.rentContractFile?.[0]?.name || '❌ NO SELECCIONADO');
     });
-
 
     onSubmit(data);
   };
@@ -311,9 +307,12 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
             <Label>Subir archivo de escritura</Label>
             <Input
               type="file"
+              name="deedFiles"           
               accept=".pdf,.doc,.docx"
-              onChange={(e) => handleFileChange(e, setDeedFile)}
+              multiple
+              onChange={(e) => handleFileChange(e, setDeedFiles, true)}
             />
+
           </div>
 
           <div>
@@ -478,6 +477,19 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               onChange={(e) => handleFileChange(e, setPropertyPhotos, true)}
             />
           </div>
+          <div className="col-span-2">
+            <Label>Fotos existentes del inmueble</Label>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+              {existingPhotos?.map((photoUrl, idx) => (
+                <img
+                  key={idx}
+                  src={`${apiBase}${photoUrl}`}
+                  alt={`Foto ${idx + 1}`}
+                  className="w-full h-auto rounded shadow"
+                />
+              ))}
+            </div>
+          </div>
 
           <div className="col-span-2">
             <Label>Documentos adicionales</Label>
@@ -577,3 +589,4 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   );
 };
 export default PropertyForm;
+

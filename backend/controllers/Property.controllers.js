@@ -1,6 +1,5 @@
 const Property = require('../models/Property');
 
-
 // ✅ Normaliza la fecha a medianoche local para evitar desfases de zona horaria
 const normalizeDate = (value) => {
   if (!value || value === 'undefined' || value === 'null') return undefined;
@@ -8,7 +7,9 @@ const normalizeDate = (value) => {
   return isNaN(date.getTime()) ? undefined : date;
 };
 
-
+const parseOptionalFloat = (value) => {
+  return value === undefined || value === null || value === '' ? undefined : parseFloat(value);
+};
 
 // GET all properties
 exports.getAllProperties = async (req, res) => {
@@ -31,7 +32,7 @@ exports.createProperty = async (req, res) => {
     const body = req.body;
     const files = req.files;
 
-    const deedFileUrl = files?.deedFile?.[0]?.filename || '';
+    const deedFiles = files?.deedFiles?.map(f => f.filename) || [];
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || '';
     const extraDocs = files?.extraDocs?.map(f => f.filename) || [];
 
@@ -62,16 +63,15 @@ exports.createProperty = async (req, res) => {
       console.log(`📄 Local ${i + 1}: contrato recibido =>`, local.rentContractUrl || '❌ NO RECIBIDO');
     });
 
-
-let propietario = undefined;
-if (body.tipoPropietario !== 'Personalizado') {
-  try {
-    propietario = require('mongoose').Types.ObjectId(body.propietario);
-  } catch (err) {
-    console.warn('⚠️ ID de propietario no válido:', body.propietario);
-    return res.status(400).json({ error: 'ID de propietario no válido' });
-  }
-}
+    let propietario = undefined;
+    if (body.tipoPropietario !== 'Personalizado') {
+      try {
+        propietario = require('mongoose').Types.ObjectId(body.propietario);
+      } catch (err) {
+        console.warn('⚠️ ID de propietario no válido:', body.propietario);
+        return res.status(400).json({ error: 'ID de propietario no válido' });
+      }
+    }
 
     const newProperty = new Property({
       name: body.name,
@@ -82,7 +82,7 @@ if (body.tipoPropietario !== 'Personalizado') {
       usufruct: body.usufruct,
       deedNumber: body.deedNumber,
       deedDate: normalizeDate(body.deedDate),
-      deedFileUrl,
+      deedFiles,
       notary: body.notary,
       cadastralKey: body.cadastralKey,
       location: Array.isArray(body.location) ? body.location[0] : String(body.location).trim(),
@@ -117,7 +117,6 @@ if (body.tipoPropietario !== 'Personalizado') {
   }
 };
 
-
 // PUT update property
 exports.updateProperty = async (req, res) => {
   try {
@@ -128,7 +127,6 @@ exports.updateProperty = async (req, res) => {
     console.log('🟡 req.body.imagenesExistentes:', req.body.imagenesExistentes);
     console.log('🟡 req.files.propertyPhotos:', req.files?.propertyPhotos);
     console.log('🟡 req.body.locals:', req.body.locals);
-
 
     const existing = await Property.findById(id);
     if (!existing) return res.status(404).json({ message: 'Propiedad no encontrada' });
@@ -148,7 +146,7 @@ exports.updateProperty = async (req, res) => {
     const nuevasFotos = files?.propertyPhotos?.map(f => f.filename) || [];
     const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
     const extraDocs = files?.extraDocs?.map(f => f.filename) || existing.extraDocs || [];
-    const deedFileUrl = files?.deedFile?.[0]?.filename || existing.deedFileUrl || '';
+    const deedFiles = files?.deedFiles?.map(f => f.filename) || existing.deedFiles || [];
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || existing.rentContractUrl || '';
 
     // ✅ Combinar locales
@@ -159,10 +157,8 @@ exports.updateProperty = async (req, res) => {
       console.log(`🟢 Fotos actuales del local ${index}:`, existing.locals?.[index]?.photos);
       console.log(`🟢 Fotos nuevas recibidas del local ${index}:`, nuevasFotosLocal);
 
-
       const fotosAnteriores = existing.locals?.[index]?.photos || [];
       const fotosFinales = Array.from(new Set([...fotosAnteriores, ...nuevasFotosLocal]));
-
 
       const rentContractFile =
         files?.[`localRentContract_${index}`]?.[0]?.filename ||
@@ -175,16 +171,23 @@ exports.updateProperty = async (req, res) => {
         rentContractUrl: rentContractFile
       };
     });
-    let propietario = body.propietario;
+    let propietario = undefined;
+
     if (body.tipoPropietario !== 'Personalizado') {
       try {
-        if (typeof propietario === 'object' && propietario !== null) {
-          propietario = propietario.id || propietario._id || '';
+        if (typeof body.propietario === 'object') {
+          propietario = body.propietario._id || body.propietario.id;
+        } else {
+          propietario = body.propietario;
         }
+
         propietario = require('mongoose').Types.ObjectId(propietario);
       } catch (err) {
-        console.warn('⚠️ ID de propietario no válido:', propietario);
+        console.warn('❌ ID inválido para propietario:', body.propietario);
+        return res.status(400).json({ error: 'ID de propietario inválido' });
       }
+    } else {
+      propietario = undefined; // no se usa si es personalizado
     }
 
     const updated = await Property.findByIdAndUpdate(
@@ -193,26 +196,26 @@ exports.updateProperty = async (req, res) => {
         name: body.name,
         propietario,
         tipoPropietario: body.tipoPropietario,
-        valor_total: parseFloat(body.valor_total) || 0,
+        valor_total: parseOptionalFloat(body.valor_total) ?? 0,
         usufruct: body.usufruct,
         deedNumber: body.deedNumber,
         deedDate: normalizeDate(body.deedDate),
-        deedFileUrl,
+        deedFiles,
         notary: body.notary,
         cadastralKey: body.cadastralKey,
-        location: Array.isArray(body.location) ? body.location[0] : String(body.location).trim(),
-        totalArea: body.totalArea,
+        location: Array.isArray(body.location) ? body.location[0] : body.location ? String(body.location).trim(): '',
+        totalArea: parseOptionalFloat(body.totalArea),
         hasEncumbrance: body.hasEncumbrance,
         encumbranceInstitution: body.encumbranceInstitution,
-        encumbranceAmount: isNaN(body.encumbranceAmount) ? undefined : parseFloat(body.encumbranceAmount),
+        encumbranceAmount: parseOptionalFloat(body.encumbranceAmount),
         encumbranceDate: normalizeDate(body.encumbranceDate),
         status: body.status,
         soldDate: normalizeDate(body.soldDate),
         soldNote: body.soldNote,
         isRented: body.isRented,
         tenant: body.tenant,
-        rentedArea: body.rentedArea,
-        rentCost: body.rentCost,
+        rentedArea: parseOptionalFloat(body.rentedArea),
+        rentCost: parseOptionalFloat(body.rentCost),
         rentStartDate: normalizeDate(body.rentStartDate),
         rentEndDate: normalizeDate(body.rentEndDate),
         rentContractUrl,
@@ -231,7 +234,6 @@ exports.updateProperty = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar propiedad', error: err.message });
   }
 };
-
 
 // DELETE property
 exports.deleteProperty = async (req, res) => {
@@ -365,7 +367,7 @@ exports.deleteLocalFromProperty = async (req, res) => {
 exports.getPropertyById = async (req, res) => {
   try {
     const property = await Property.findById(req.params.id)
-      .populate('propietario') 
+      .populate('propietario')
       .exec();
 
     res.json(property);
@@ -404,7 +406,3 @@ exports.markAsSold = async (req, res) => {
     res.status(500).json({ message: 'Error al marcar como vendido', error: error.message });
   }
 };
-
-
-
-

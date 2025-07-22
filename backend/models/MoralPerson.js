@@ -9,24 +9,19 @@ const moralPersonSchema = new mongoose.Schema({
   rfcFile: { type: String },
   additionalDocs: [{ type: String }],
 
-  credito: {
-    institucionFinanciera: { type: String },
-    montoCredito: { type: Number },
-    plazoMeses: { type: Number },
-    tasaInteresAnual: { type: Number },
-    pagoMensual: { type: Number },
-    tieneInmuebleGarantia: { type: Boolean },
-    inmuebleGarantia: {
-      tipoInmueble: { type: String },
-      direccionInmueble: { type: String },
-      valorComercial: { type: Number },
-      documentos: {
-        escritura: { type: String }, // archivo PDF
-        adicional: { type: String }  // puede ser avalúo o certificado
-      }
-    },
-    observaciones: { type: String }
-  },
+creditos: [{
+  institucionFinanciera: { type: String },
+  montoCredito: { type: Number },
+  plazoMeses: { type: Number },
+  tasaInteresAnual: { type: Number },
+  pagoMensual: { type: Number },
+  tieneInmuebleGarantia: { type: Boolean },
+  tipoInmueble: { type: String },
+  direccionInmueble: { type: String },
+  valorComercial: { type: Number },
+  observaciones: { type: String },
+  archivoCredito: [{ type: String }]
+}],
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

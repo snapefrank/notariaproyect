@@ -28,7 +28,7 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     nss: '',
     direccion: '',
     sexo: '',
-    datosMedicos: {
+    datosMedicos: [{
       tipoSangre: '',
       aseguradora: '',
       tipoSeguro: '',
@@ -37,8 +37,8 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
       fechaVencimiento: '',
       numeroPoliza: '',
       prima: '',
-    },
-    credito: {
+    }],
+    creditos: [{
       institucionFinanciera: '',
       montoCredito: '',
       plazoMeses: '',
@@ -49,11 +49,8 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
       direccionInmueble: '',
       valorComercial: '',
       observaciones: '',
-    },
-    documentos: {
-      escritura: null,
-      adicional: null,
-    }
+    }],
+    creditoDocumentos: []
 
   });
 
@@ -63,6 +60,7 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     nssFile: null
   });
   const [insuranceFile, setInsuranceFile] = useState([]);
+  const [creditFiles, setCreditFiles] = useState([]);
 
 
   const [tieneSeguro, setTieneSeguro] = useState(false);
@@ -90,42 +88,69 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
       setFormData({
         ...formData,
         ...initialData,
-        fechaNacimiento: formatDateToInput(initialData.fechaNacimiento), // 👈 CORREGIDO
-        datosMedicos: {
-          ...formData.datosMedicos,
-          ...initialData.datosMedicos
-        }
+        fechaNacimiento: formatDateToInput(initialData.fechaNacimiento),
+        datosMedicos: Array.isArray(initialData.datosMedicos)
+          ? initialData.datosMedicos
+          : [{
+            tipoSangre: '',
+            aseguradora: '',
+            tipoSeguro: '',
+            beneficiarios: '',
+            fechaInicioVigencia: '',
+            fechaVencimiento: '',
+            numeroPoliza: '',
+            prima: ''
+          }],
+        creditos: Array.isArray(initialData.creditos)
+          ? initialData.creditos
+          : [{
+            institucionFinanciera: '',
+            montoCredito: '',
+            plazoMeses: '',
+            tasaInteresAnual: '',
+            pagoMensual: '',
+            tieneInmuebleGarantia: false,
+            tipoInmueble: '',
+            direccionInmueble: '',
+            valorComercial: '',
+            observaciones: ''
+          }]
       });
 
-      setTieneSeguro(!!initialData.datosMedicos?.aseguradora);
-      setTieneCredito(!!initialData.credito?.institucionFinanciera);
+      setTieneSeguro(!!initialData.datosMedicos?.length);
+      setTieneCredito(!!initialData.creditos?.length);
     }
-  }, [initialData])
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;
 
     if (name.startsWith('datosMedicos.')) {
-      const key = name.split('.')[1];
-      setFormData((prev) => ({
-        ...prev,
-        datosMedicos: { ...prev.datosMedicos, [key]: value },
-      }));
-    } else if (name.startsWith('credito.')) {
-      const key = name.split('.')[1];
-      setFormData((prev) => ({
-        ...prev,
-        credito: { ...prev.credito, [key]: type === 'checkbox' ? checked : value },
-      }));
-    } else if (['escritura', 'adicional'].includes(name)) {
+      const [, index, field] = name.split('.');
+      const updated = [...formData.datosMedicos];
+      updated[Number(index)][field] = value;
+      setFormData((prev) => ({ ...prev, datosMedicos: updated }));
+    }
+
+    else if (name.startsWith('creditos.')) {
+      const [, index, field] = name.split('.');
+      const updated = [...formData.creditos];
+      updated[Number(index)][field] = type === 'checkbox' ? checked : value;
+      setFormData((prev) => ({ ...prev, creditos: updated }));
+    }
+
+    else if (['escritura', 'adicional'].includes(name)) {
       setFormData((prev) => ({
         ...prev,
         documentos: { ...prev.documentos, [name]: files[0] }
       }));
-    } else {
+    }
+
+    else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
+
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -134,15 +159,20 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
 
     // Campos simples y objetos anidados
     Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'datosMedicos' || key === 'credito') {
-        Object.entries(value).forEach(([subKey, subValue]) => {
-          const val = typeof subValue === 'boolean' ? String(subValue) : subValue;
-          data.append(`${key}.${subKey}`, val ?? '');
+      if (key === 'datosMedicos') {
+        value.forEach((seguro, index) => {
+          Object.entries(seguro).forEach(([subKey, subValue]) => {
+            const val = typeof subValue === 'boolean' ? String(subValue) : subValue;
+            data.append(`datosMedicos[${index}][${subKey}]`, val ?? '');
+          });
         });
-      } else if (key === 'documentos') {
+      } else if (key === 'creditos') {
+        data.append('creditos', JSON.stringify(value));
+      }
+      else if (key === 'documentos') {
         Object.entries(value).forEach(([docKey, file]) => {
           if (file) {
-            data.append(docKey, file); // usa directamente 'escritura' y 'adicional'
+            data.append(docKey, file); // 'escritura', 'adicional'
           }
         });
       } else {
@@ -152,28 +182,36 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     });
 
 
+
     // Agrega los archivos RFC/CURP/NSS directamente
     if (docFiles.rfcFile) data.append('rfcFile', docFiles.rfcFile);
     if (docFiles.curpFile) data.append('curpFile', docFiles.curpFile);
     if (docFiles.nssFile) data.append('nssFile', docFiles.nssFile);
-    if (insuranceFile && insuranceFile.length > 0) {
-      insuranceFile.forEach((file) => {
-        data.append('insuranceFile', file);
-      });
-    }
+    insuranceFile.forEach((fileList, index) => {
+      if (Array.isArray(fileList)) {
+        fileList.forEach((file, i) => {
+          if (file) {
+            data.append(`insuranceFile_${index}_${i}`, file);
+          }
+        });
+      }
+    });
+    creditFiles.forEach((fileList, index) => {
+      if (Array.isArray(fileList)) {
+        fileList.forEach((file, i) => {
+          if (file) {
+            data.append(`creditFile_${index}_${i}`, file);
+          }
+        });
+      }
+    });
 
 
-
-    // 🚫 YA NO guardes directamente con fetch
-    // ✅ ENVÍA LOS DATOS AL CONTEXTO A TRAVÉS DE onSubmit
 
     console.log('📦 Contenido que se enviará al backend:');
     for (let pair of data.entries()) {
       console.log(`${pair[0]}: ${pair[1]}`);
     }
-
-
-
     onSubmit(data);
   };
 
@@ -225,12 +263,22 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           </div>
           <div>
             <Label htmlFor="sexo">Sexo</Label>
-            <select id="sexo" name="sexo" value={formData.sexo} onChange={handleChange} required className="w-full border rounded px-2 py-1">
-              <option value="">Selecciona</option>
-              <option value="M">Masculino</option>
-              <option value="F">Femenino</option>
-            </select>
+            <Select
+              value={formData.sexo}
+              onValueChange={(value) =>
+                setFormData((prev) => ({ ...prev, sexo: value }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Selecciona" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="M">Masculino</SelectItem>
+                <SelectItem value="F">Femenino</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
+
         </div>
         <div className="space-y-4">
           <h3 className="text-lg font-medium text-gray-700 border-b pb-1">¿Tiene Seguro?</h3>
@@ -250,42 +298,80 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         {tieneSeguro && (
           <div className="space-y-4">
             <h3 className="text-lg font-medium text-gray-700 border-b pb-1">Datos del Seguro</h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(formData.datosMedicos).map(([key, value]) => (
-                <div key={key}>
-                  <Label htmlFor={`datosMedicos.${key}`}>
-                    {{
-                      tipoSangre: 'Tipo de Sangre',
-                      aseguradora: 'Aseguradora',
-                      tipoSeguro: 'Tipo de Seguro',
-                      beneficiarios: 'Beneficiarios',
-                      fechaInicioVigencia: 'Inicio de Vigencia',
-                      fechaVencimiento: 'Vencimiento',
-                      numeroPoliza: 'Número de Póliza',
-                      prima: 'Prima'
-                    }[key] || key}
-                  </Label>
+
+            {formData.datosMedicos.map((seguro, index) => (
+              <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 border rounded p-3 mb-4">
+                {Object.entries(seguro).map(([key, value]) => (
+                  <div key={key}>
+                    <Label htmlFor={`datosMedicos.${index}.${key}`}>
+                      {{
+                        tipoSangre: 'Tipo de Sangre',
+                        aseguradora: 'Aseguradora',
+                        tipoSeguro: 'Tipo de Seguro',
+                        beneficiarios: 'Beneficiarios',
+                        fechaInicioVigencia: 'Inicio de Vigencia',
+                        fechaVencimiento: 'Vencimiento',
+                        numeroPoliza: 'Número de Póliza',
+                        prima: 'Prima'
+                      }[key] || key}
+                    </Label>
+                    <Input
+                      type={key.includes('fecha') ? 'date' : 'text'}
+                      id={`datosMedicos.${index}.${key}`}
+                      name={`datosMedicos.${index}.${key}`}
+                      value={value}
+                      onChange={(e) => {
+                        const updated = [...formData.datosMedicos];
+                        updated[index][key] = e.target.value;
+                        setFormData(prev => ({ ...prev, datosMedicos: updated }));
+                      }}
+                    />
+                  </div>
+                ))}
+                <div className="col-span-2">
+                  <Label>Archivo del Seguro</Label>
                   <Input
-                    type={key.includes('fecha') ? 'date' : 'text'}
-                    id={`datosMedicos.${key}`}
-                    name={`datosMedicos.${key}`}
-                    value={value}
-                    onChange={handleChange}
+                    type="file"
+                    name={`insuranceFile_${index}`}
+                    multiple
+                    accept=".pdf,.jpg,.jpeg,.png"
+                    onChange={(e) => {
+                      const files = Array.from(e.target.files);
+                      setInsuranceFile(prev => {
+                        const updated = [...prev];
+                        updated[index] = files;
+                        return updated;
+                      });
+                    }}
                   />
                 </div>
-              ))}
-              <div className="col-span-2">
-                <Label htmlFor="insuranceFile">Documentos del Seguro</Label>
-                <Input
-                  type="file"
-                  id="insuranceFile"
-                  name="insuranceFile"
-                  accept=".pdf,.jpg,.jpeg,.png"
-                  multiple
-                  onChange={(e) => setInsuranceFile(Array.from(e.target.files))}
-                />
               </div>
-            </div>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  datosMedicos: [
+                    ...prev.datosMedicos,
+                    {
+                      tipoSangre: '',
+                      aseguradora: '',
+                      tipoSeguro: '',
+                      beneficiarios: '',
+                      fechaInicioVigencia: '',
+                      fechaVencimiento: '',
+                      numeroPoliza: '',
+                      prima: ''
+                    }
+                  ]
+                }))
+              }
+            >
+              Agregar Seguro
+            </Button>
           </div>
         )}
         <div className="space-y-4">
@@ -303,89 +389,163 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
             </SelectContent>
           </Select>
         </div>
+
         {tieneCredito && (
           <div className="space-y-4">
-            <div className="space-y-4">
-              <h3 className="text-lg font-medium text-gray-700 border-b pb-1">Crédito Financiero</h3>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="credito.institucionFinanciera">Institución Financiera</Label>
-                  <Input id="credito.institucionFinanciera" name="credito.institucionFinanciera" value={formData.credito.institucionFinanciera} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="credito.montoCredito">Monto Total del Crédito</Label>
-                  <Input type="number" id="credito.montoCredito" name="credito.montoCredito" value={formData.credito.montoCredito} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="credito.plazoMeses">Plazo (Meses)</Label>
-                  <Input type="number" id="credito.plazoMeses" name="credito.plazoMeses" value={formData.credito.plazoMeses} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="credito.tasaInteresAnual">Tasa de Interés Anual (%)</Label>
-                  <Input type="number" step="0.01" id="credito.tasaInteresAnual" name="credito.tasaInteresAnual" value={formData.credito.tasaInteresAnual} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label htmlFor="credito.pagoMensual">Pago Mensual</Label>
-                  <Input type="number" id="credito.pagoMensual" name="credito.pagoMensual" value={formData.credito.pagoMensual} onChange={handleChange} />
-                </div>
-                <div>
-                  <Label>¿Tiene inmueble en garantía?</Label>
-                  <Select
-                    value={formData.credito.tieneInmuebleGarantia ? 'yes' : 'no'}
-                    onValueChange={(value) =>
-                      setFormData((prev) => ({
-                        ...prev,
-                        credito: {
-                          ...prev.credito,
-                          tieneInmuebleGarantia: value === 'yes'
-                        }
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Seleccione una opción" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="yes">Sí</SelectItem>
-                      <SelectItem value="no">No</SelectItem>
-                    </SelectContent>
-                  </Select>
+            <h3 className="text-lg font-medium text-gray-700 border-b pb-1">Crédito Financiero</h3>
+
+            {formData.creditos.map((credito, index) => (
+              <div key={index} className="border rounded p-4 space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor={`creditos.${index}.institucionFinanciera`}>Institución Financiera</Label>
+                    <Input
+                      name={`creditos.${index}.institucionFinanciera`}
+                      value={credito.institucionFinanciera}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`creditos.${index}.montoCredito`}>Monto Total del Crédito</Label>
+                    <Input
+                      name={`creditos.${index}.montoCredito`}
+                      value={credito.montoCredito}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`creditos.${index}.plazoMeses`}>Plazo (Meses)</Label>
+                    <Input
+                      type="number"
+                      name={`creditos.${index}.plazoMeses`}
+                      value={credito.plazoMeses}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`creditos.${index}.tasaInteresAnual`}>Tasa de Interés Anual (%)</Label>
+                    <Input
+                      type="number"
+                      name={`creditos.${index}.tasaInteresAnual`}
+                      value={credito.tasaInteresAnual}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor={`creditos.${index}.pagoMensual`}>Pago Mensual</Label>
+                    <Input
+                      type="number"
+                      name={`creditos.${index}.pagoMensual`}
+                      value={credito.pagoMensual}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <div>
+                    <Label>¿Tiene inmueble en garantía?</Label>
+                    <Select
+                      value={credito.tieneInmuebleGarantia ? 'yes' : 'no'}
+                      onValueChange={(v) => {
+                        const updated = [...formData.creditos];
+                        updated[index].tieneInmuebleGarantia = v === 'yes';
+                        setFormData((prev) => ({ ...prev, creditos: updated }));
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Seleccione una opción" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yes">Sí</SelectItem>
+                        <SelectItem value="no">No</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {credito.tieneInmuebleGarantia && (
+                    <>
+                      <div>
+                        <Label htmlFor={`creditos.${index}.tipoInmueble`}>Tipo de Inmueble</Label>
+                        <Input
+                          name={`creditos.${index}.tipoInmueble`}
+                          value={credito.tipoInmueble}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`creditos.${index}.direccionInmueble`}>Dirección del Inmueble</Label>
+                        <Input
+                          name={`creditos.${index}.direccionInmueble`}
+                          value={credito.direccionInmueble}
+                          onChange={handleChange}
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={`creditos.${index}.valorComercial`}>Valor Comercial</Label>
+                        <Input
+                          name={`creditos.${index}.valorComercial`}
+                          value={credito.valorComercial}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </>
+                  )}
                 </div>
 
+                <div className="mt-2">
+                  <Label htmlFor={`creditos.${index}.observaciones`}>Observaciones</Label>
+                  <textarea
+                    className="w-full border rounded px-2 py-1 mt-1"
+                    name={`creditos.${index}.observaciones`}
+                    value={credito.observaciones}
+                    onChange={handleChange}
+                  />
+                </div>
 
-                {/* Datos del Inmueble */}
-                {formData.credito.tieneInmuebleGarantia && (
-                  <>
-                    <div>
-                      <Label htmlFor="credito.tipoInmueble">Tipo de Inmueble</Label>
-                      <Input id="credito.tipoInmueble" name="credito.tipoInmueble" value={formData.credito.tipoInmueble} onChange={handleChange} />
-                    </div>
-                    <div>
-                      <Label htmlFor="credito.direccionInmueble">Dirección del Inmueble</Label>
-                      <Input id="credito.direccionInmueble" name="credito.direccionInmueble" value={formData.credito.direccionInmueble} onChange={handleChange} />
-                    </div>
-                    <div>
-                      <Label htmlFor="credito.valorComercial">Valor Estimado</Label>
-                      <Input type="number" id="credito.valorComercial" name="credito.valorComercial" value={formData.credito.valorComercial} onChange={handleChange} />
-                    </div>
-                    <div>
-                      <Label htmlFor="escritura">Subir Escritura (PDF)</Label>
-                      <Input type="file" id="escritura" name="escritura" accept="application/pdf" onChange={handleDocFileChange} />
-                    </div>
-                    <div>
-                      <Label htmlFor="adicional">Subir Documento Adicional (PDF)</Label>
-                      <Input type="file" id="adicional" name="adicional" accept="application/pdf" onChange={handleDocFileChange} />
-                    </div>
-                  </>
-                )}
-
-
-                <div className="col-span-full">
-                  <Label htmlFor="credito.observaciones">Observaciones</Label>
-                  <textarea id="credito.observaciones" name="credito.observaciones" value={formData.credito.observaciones} onChange={handleChange} className="w-full border rounded px-2 py-1" />
+                <div className="col-span-2 mt-2">
+                  <Label>Subir Archivos del Crédito</Label>
+                  <Input
+                    type="file"
+                    name={`creditFile_${index}`}
+                    multiple
+                    accept=".pdf"
+                    onChange={(e) => {
+                      const archivos = Array.from(e.target.files);
+                      setCreditFiles((prev) => {
+                        const updated = [...prev];
+                        updated[index] = archivos;
+                        return updated;
+                      });
+                    }}
+                  />
                 </div>
               </div>
-            </div>
+            ))}
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() =>
+                setFormData((prev) => ({
+                  ...prev,
+                  creditos: [
+                    ...prev.creditos,
+                    {
+                      institucionFinanciera: '',
+                      montoCredito: '',
+                      plazoMeses: '',
+                      tasaInteresAnual: '',
+                      pagoMensual: '',
+                      tieneInmuebleGarantia: false,
+                      tipoInmueble: '',
+                      direccionInmueble: '',
+                      valorComercial: '',
+                      observaciones: ''
+                    }
+                  ]
+                }))
+              }
+            >
+              Agregar Crédito
+            </Button>
           </div>
         )}
 

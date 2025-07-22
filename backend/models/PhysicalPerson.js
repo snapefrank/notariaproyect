@@ -16,8 +16,7 @@ const physicalPersonSchema = new mongoose.Schema({
     curp: { type: String },
     nss: { type: String }
   },
-  insuranceDocuments: [{ type: String }],
-  datosMedicos: {
+  datosMedicos: [{
     tipoSangre: { type: String },
     aseguradora: { type: String },
     tipoSeguro: { type: String },
@@ -25,10 +24,11 @@ const physicalPersonSchema = new mongoose.Schema({
     fechaInicioVigencia: { type: Date },
     fechaVencimiento: { type: Date },
     numeroPoliza: { type: String },
-    prima: { type: String }
-  },
+    prima: { type: String },
+    archivoSeguro: [{ type: String }]
+  }],
 
-  credito: {
+  creditos: [{
     institucionFinanciera: { type: String },
     montoCredito: { type: Number },
     plazoMeses: { type: Number },
@@ -39,13 +39,15 @@ const physicalPersonSchema = new mongoose.Schema({
     direccionInmueble: { type: String },
     valorComercial: { type: Number },
     observaciones: { type: String },
+    archivoCredito: [{ type: String }], // ✅ Campo que faltaba
     inmuebleGarantia: {
       documentos: {
         escritura: { type: String },
         adicional: { type: String }
       }
     }
-  },
+  }],
+
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

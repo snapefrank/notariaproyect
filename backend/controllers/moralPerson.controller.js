@@ -26,36 +26,40 @@ exports.getMoralPersonById = async (req, res) => {
 // Crear una nueva persona moral
 exports.createMoralPerson = async (req, res) => {
   try {
-    const body = req.body;
+    const filesArray = req.files || [];
+    const creditos = [];
+    const parsedBody = parseNestedFormData(req.body);
 
+    if (Array.isArray(parsedBody.creditos)) {
+      parsedBody.creditos.forEach((credito, index) => {
+        const archivoCredito = filesArray
+          .filter(f => f.fieldname.startsWith(`creditFile_${index}_`))
+          .map(f => f.path);
+
+        creditos.push({
+          institucionFinanciera: credito.institucionFinanciera || '',
+          montoCredito: Number(credito.montoCredito || 0),
+          plazoMeses: Number(credito.plazoMeses || 0),
+          tasaInteresAnual: Number(credito.tasaInteresAnual || 0),
+          pagoMensual: Number(credito.pagoMensual || 0),
+          tieneInmuebleGarantia: credito.tieneInmuebleGarantia === 'true',
+          tipoInmueble: credito.tipoInmueble || '',
+          direccionInmueble: credito.direccionInmueble || '',
+          valorComercial: Number(credito.valorComercial || 0),
+          observaciones: credito.observaciones || '',
+          archivoCredito
+        });
+      });
+    }
     const newPerson = new MoralPerson({
-      nombre: body.nombre,
-      rfc: body.rfc,
-      regimenFiscal: body.regimenFiscal,
-      domicilioFiscal: body.domicilioFiscal,
-      fechaConstitucion: body.fechaConstitucion,
+      nombre: parsedBody.nombre,
+      rfc: parsedBody.rfc,
+      regimenFiscal: parsedBody.regimenFiscal,
+      domicilioFiscal: parsedBody.domicilioFiscal,
+      fechaConstitucion: parsedBody.fechaConstitucion,
       rfcFile: req.files?.rfcFile?.[0]?.path || '',
       additionalDocs: req.files?.adicional?.map(file => file.path) || [],
-
-
-      credito: {
-        institucionFinanciera: body['credito.institucionFinanciera'],
-        montoCredito: body['credito.montoCredito'],
-        plazoMeses: body['credito.plazoMeses'],
-        tasaInteresAnual: body['credito.tasaInteresAnual'],
-        pagoMensual: body['credito.pagoMensual'],
-        tieneInmuebleGarantia: body['credito.tieneInmuebleGarantia'] === 'true',
-        inmuebleGarantia: {
-          tipoInmueble: body['credito.tipoInmueble'],
-          direccionInmueble: body['credito.direccionInmueble'],
-          valorComercial: body['credito.valorComercial'],
-          documentos: {
-            escritura: req.files?.escritura?.[0]?.path || '',
-            adicional: req.files?.adicional?.[0]?.path || ''
-          }
-        },
-        observaciones: body['credito.observaciones']
-      }
+      creditos,
     });
 
     const saved = await newPerson.save();
@@ -87,24 +91,36 @@ exports.updateMoralPerson = async (req, res) => {
     }
 
 
-    person.credito = {
-      institucionFinanciera: body['credito.institucionFinanciera'],
-      montoCredito: body['credito.montoCredito'],
-      plazoMeses: body['credito.plazoMeses'],
-      tasaInteresAnual: body['credito.tasaInteresAnual'],
-      pagoMensual: body['credito.pagoMensual'],
-      tieneInmuebleGarantia: body['credito.tieneInmuebleGarantia'] === 'true',
-      inmuebleGarantia: {
-        tipoInmueble: body['credito.tipoInmueble'],
-        direccionInmueble: body['credito.direccionInmueble'],
-        valorComercial: body['credito.valorComercial'],
-        documentos: {
-          escritura: req.files?.escritura?.[0]?.path || person.credito?.inmuebleGarantia?.documentos?.escritura || '',
-          adicional: req.files?.adicional?.[0]?.path || person.credito?.inmuebleGarantia?.documentos?.adicional || ''
-        }
-      },
-      observaciones: body['credito.observaciones']
-    };
+    const filesArray = req.files || [];
+    const parsedBody = parseNestedFormData(body);
+    const nuevosCreditos = [];
+
+    if (Array.isArray(parsedBody.creditos)) {
+      parsedBody.creditos.forEach((credito, index) => {
+        const archivoCredito = filesArray
+          .filter(f => f.fieldname.startsWith(`creditFile_${index}_`))
+          .map(f => f.path);
+
+        nuevosCreditos.push({
+          institucionFinanciera: credito.institucionFinanciera || '',
+          montoCredito: Number(credito.montoCredito || 0),
+          plazoMeses: Number(credito.plazoMeses || 0),
+          tasaInteresAnual: Number(credito.tasaInteresAnual || 0),
+          pagoMensual: Number(credito.pagoMensual || 0),
+          tieneInmuebleGarantia: credito.tieneInmuebleGarantia === 'true',
+          tipoInmueble: credito.tipoInmueble || '',
+          direccionInmueble: credito.direccionInmueble || '',
+          valorComercial: Number(credito.valorComercial || 0),
+          observaciones: credito.observaciones || '',
+          archivoCredito
+        });
+      });
+    }
+
+    if (nuevosCreditos.length > 0) {
+      person.creditos = nuevosCreditos;
+    }
+
 
     const updated = await person.save();
     res.json(updated);
@@ -122,3 +138,27 @@ exports.deleteMoralPerson = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+function parseNestedFormData(body) {
+  const result = {};
+  const arrayRegex = /^([^\[\]]+)\[(\d+)\]\[([^\[\]]+)\]$/;
+
+  for (const key in body) {
+    const value = body[key];
+    const match = key.match(arrayRegex);
+
+    if (match) {
+      const [, arrayName, index, propName] = match;
+      result[arrayName] = result[arrayName] || [];
+      result[arrayName][index] = result[arrayName][index] || {};
+      result[arrayName][index][propName] = value;
+    } else if (key.includes('.')) {
+      const [parent, child] = key.split('.');
+      result[parent] = result[parent] || {};
+      result[parent][child] = value;
+    } else {
+      result[key] = value;
+    }
+  }
+  return result;
+}
+

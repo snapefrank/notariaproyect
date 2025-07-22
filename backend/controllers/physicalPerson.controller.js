@@ -28,21 +28,98 @@ const getPhysicalPersonById = async (req, res) => {
 
 
 // Crear una nueva persona física
-
 const createPhysicalPerson = async (req, res) => {
   try {
     console.log('BODY:', req.body);
     console.log('FILES:', req.files);
+
     const body = parseNestedFormData(req.body);
+    if (typeof body.creditos === 'string') {
+      try {
+        body.creditos = JSON.parse(body.creditos);
+      } catch (e) {
+        console.error('❌ Error al parsear creditos JSON:', e.message);
+        body.creditos = [];
+      }
+    }
 
+    const filesArray = req.files || [];
 
-    // Verifica que estos accesos existan antes de usarlos
-    const escrituraPath = req.files?.escritura?.[0]?.path || '';
-    const adicionalPath = req.files?.adicional?.[0]?.path || '';
-    const rfcPath = req.files?.rfcFile?.[0]?.path || '';
-    const curpPath = req.files?.curpFile?.[0]?.path || '';
-    const nssPath = req.files?.nssFile?.[0]?.path || '';
+    // Asociar archivos personales (RFC, CURP, NSS)
+    const documentos = {};
+    filesArray.forEach(file => {
+      if (file.fieldname === 'rfcFile') documentos.rfc = file.path;
+      if (file.fieldname === 'curpFile') documentos.curp = file.path;
+      if (file.fieldname === 'nssFile') documentos.nss = file.path;
+    });
 
+    // Asociar archivos de escritura y adicional
+    let escrituraPath = '';
+    let adicionalPath = '';
+    filesArray.forEach(file => {
+      if (file.fieldname === 'escritura') escrituraPath = file.path;
+      if (file.fieldname === 'adicional') adicionalPath = file.path;
+    });
+
+    // Procesar seguros médicos
+    const datosMedicos = [];
+    if (Array.isArray(body.datosMedicos)) {
+      body.datosMedicos.forEach((seguro, index) => {
+        const archivosSeguro = filesArray
+          .filter(f => f.fieldname.startsWith(`insuranceFile_${index}_`))
+          .map(f => f.path);
+
+        datosMedicos.push({
+          aseguradora: seguro.aseguradora || '',
+          numeroPoliza: seguro.numeroPoliza || '',
+          fechaInicioVigencia: seguro.fechaInicioVigencia ? new Date(seguro.fechaInicioVigencia) : null,
+          fechaVencimiento: seguro.fechaVencimiento ? new Date(seguro.fechaVencimiento) : null,
+          tipoSeguro: seguro.tipoSeguro || '',
+          tipoSangre: seguro.tipoSangre || '',
+          beneficiarios: seguro.beneficiarios || '',
+          prima: seguro.prima || '',
+          archivoSeguro: archivosSeguro
+        });
+      });
+    } else if (typeof body.datosMedicos === 'object') {
+      const archivosSeguro = filesArray
+        .filter(f => f.fieldname.startsWith(`insuranceFile_0_`))
+        .map(f => f.path);
+
+      datosMedicos.push({
+        aseguradora: body.datosMedicos.aseguradora || '',
+        numeroPoliza: body.datosMedicos.numeroPoliza || '',
+        fechaInicioVigencia: body.datosMedicos.fechaInicioVigencia ? new Date(body.datosMedicos.fechaInicioVigencia) : null,
+        fechaVencimiento: body.datosMedicos.fechaVencimiento ? new Date(body.datosMedicos.fechaVencimiento) : null,
+        tipoSeguro: body.datosMedicos.tipoSeguro || '',
+        tipoSangre: body.datosMedicos.tipoSangre || '',
+        beneficiarios: body.datosMedicos.beneficiarios || '',
+        prima: body.datosMedicos.prima || '',
+        archivoSeguro: archivosSeguro
+      });
+    }
+    const creditos = [];
+    if (Array.isArray(body.creditos)) {
+      body.creditos.forEach((credito, index) => {
+        const archivosCredito = filesArray
+          .filter(f => f.fieldname.startsWith(`creditFile_${index}_`))
+          .map(f => f.path);
+
+        creditos.push({
+          institucionFinanciera: credito.institucionFinanciera || '',
+          montoCredito: Number(credito.montoCredito || 0),
+          plazoMeses: Number(credito.plazoMeses || 0),
+          tasaInteresAnual: Number(credito.tasaInteresAnual || 0),
+          pagoMensual: Number(credito.pagoMensual || 0),
+          tieneInmuebleGarantia: credito.tieneInmuebleGarantia === true || credito.tieneInmuebleGarantia === 'true',
+          tipoInmueble: credito.tipoInmueble || '',
+          direccionInmueble: credito.direccionInmueble || '',
+          valorComercial: Number(credito.valorComercial || 0),
+          observaciones: credito.observaciones || '',
+          archivoCredito: archivosCredito
+        });
+      });
+    }
     const newPerson = new PhysicalPerson({
       nombres: body.nombres,
       apellidoPaterno: body.apellidoPaterno,
@@ -53,42 +130,10 @@ const createPhysicalPerson = async (req, res) => {
       nss: body.nss,
       direccion: body.direccion,
       sexo: body.sexo,
-      documentos: {
-        rfc: rfcPath,
-        curp: curpPath,
-        nss: nssPath,
-      },
-      insuranceDocuments: req.files?.insuranceFile?.map(file => file.path) || [],
-      datosMedicos: {
-        tipoSangre: body.datosMedicos?.tipoSangre || '',
-        aseguradora: body.datosMedicos?.aseguradora || '',
-        tipoSeguro: body.datosMedicos?.tipoSeguro || '',
-        beneficiarios: body.datosMedicos?.beneficiarios || '',
-        fechaInicioVigencia: body.datosMedicos?.fechaInicioVigencia ? new Date(body.datosMedicos.fechaInicioVigencia) : undefined,
-        fechaVencimiento: body.datosMedicos?.fechaVencimiento ? new Date(body.datosMedicos.fechaVencimiento) : undefined,
-        numeroPoliza: body.datosMedicos?.numeroPoliza || '',
-        prima: body.datosMedicos?.prima || ''
-      },
-      credito: {
-        institucionFinanciera: body.credito?.institucionFinanciera || '',
-        montoCredito: Number(body.credito?.montoCredito || 0),
-        plazoMeses: Number(body.credito?.plazoMeses || 0),
-        tasaInteresAnual: Number(body.credito?.tasaInteresAnual || 0),
-        pagoMensual: Number(body.credito?.pagoMensual || 0),
-        tieneInmuebleGarantia: body.credito?.tieneInmuebleGarantia === 'true',
-        tipoInmueble: body.credito?.tipoInmueble || '',
-        direccionInmueble: body.credito?.direccionInmueble || '',
-        valorComercial: Number(body.credito?.valorComercial || 0),
-        observaciones: body.credito?.observaciones || '',
-        inmuebleGarantia: {
-          documentos: {
-            escritura: escrituraPath,
-            adicional: adicionalPath
-          }
-        }
-      }
+      documentos,
+      datosMedicos,
+      creditos,
     });
-
 
     const saved = await newPerson.save();
     res.status(201).json(saved);
@@ -102,6 +147,7 @@ const createPhysicalPerson = async (req, res) => {
 };
 
 
+
 // Actualizar una persona física
 const updatePhysicalPerson = async (req, res) => {
   try {
@@ -109,10 +155,23 @@ const updatePhysicalPerson = async (req, res) => {
     if (!person) return res.status(404).json({ message: 'Persona no encontrada' });
 
     const body = parseNestedFormData(req.body);
+
+    if (typeof body.creditos === 'string') {
+      try {
+        body.creditos = JSON.parse(body.creditos);
+      } catch (e) {
+        console.error('❌ Error al parsear creditos JSON:', e.message);
+        body.creditos = [];
+      }
+    }
+
+
+    const filesArray = req.files || [];
+
     console.log('🧾 Datos recibidos para actualización:', body);
-    console.log('🗂 Archivos:', req.files);
+    console.log('🗂 Archivos recibidos:', filesArray);
 
-
+    // Actualización directa de datos personales
     person.nombres = body.nombres || person.nombres;
     person.apellidoPaterno = body.apellidoPaterno || person.apellidoPaterno;
     person.apellidoMaterno = body.apellidoMaterno || person.apellidoMaterno;
@@ -122,51 +181,129 @@ const updatePhysicalPerson = async (req, res) => {
     person.nss = typeof body.nss === 'string' ? body.nss : person.nss;
     person.direccion = body.direccion || person.direccion;
     person.sexo = body.sexo || person.sexo;
-    person.documentos = {
-      rfc: req.files?.rfcFile?.[0]?.path || person.documentos?.rfc || '',
-      curp: req.files?.curpFile?.[0]?.path || person.documentos?.curp || '',
-      nss: req.files?.nssFile?.[0]?.path || person.documentos?.nss || '',
-    };
-    person.insuranceDocuments = req.files?.insuranceFile
-      ? req.files.insuranceFile.map(file => file.path)
-      : person.insuranceDocuments || [];
-    person.datosMedicos = {
-      tipoSangre: body.datosMedicos?.tipoSangre || '',
-      aseguradora: body.datosMedicos?.aseguradora || '',
-      tipoSeguro: body.datosMedicos?.tipoSeguro || '',
-      beneficiarios: body.datosMedicos?.beneficiarios || '',
-      fechaInicioVigencia: body.datosMedicos?.fechaInicioVigencia ? new Date(body.datosMedicos.fechaInicioVigencia) : null,
-      fechaVencimiento: body.datosMedicos?.fechaVencimiento ? new Date(body.datosMedicos.fechaVencimiento) : null,
-      numeroPoliza: body.datosMedicos?.numeroPoliza || '',
-      prima: body.datosMedicos?.prima || ''
-    };
 
-    person.credito = {
-      institucionFinanciera: body.credito?.institucionFinanciera || '',
-      montoCredito: Number(body.credito?.montoCredito || 0),
-      plazoMeses: Number(body.credito?.plazoMeses || 0),
-      tasaInteresAnual: Number(body.credito?.tasaInteresAnual || 0),
-      pagoMensual: Number(body.credito?.pagoMensual || 0),
-      tieneInmuebleGarantia: body.credito?.tieneInmuebleGarantia === 'true',
-      tipoInmueble: body.credito?.tipoInmueble || '',
-      direccionInmueble: body.credito?.direccionInmueble || '',
-      valorComercial: Number(body.credito?.valorComercial || 0),
-      observaciones: body.credito?.observaciones || '',
-      inmuebleGarantia: {
-        documentos: {
-          escritura: req.files?.escritura?.[0]?.path || person.credito?.inmuebleGarantia?.documentos?.escritura || '',
-          adicional: req.files?.adicional?.[0]?.path || person.credito?.inmuebleGarantia?.documentos?.adicional || ''
-        }
-      }
+    // Documentos personales
+    const documentos = {
+      rfc: person.documentos?.rfc,
+      curp: person.documentos?.curp,
+      nss: person.documentos?.nss
     };
+    filesArray.forEach(file => {
+      if (file.fieldname === 'rfcFile') documentos.rfc = file.path;
+      if (file.fieldname === 'curpFile') documentos.curp = file.path;
+      if (file.fieldname === 'nssFile') documentos.nss = file.path;
+    });
+    person.documentos = documentos;
+
+    // Escritura y documento adicional
+    let escrituraPath = person.credito?.inmuebleGarantia?.documentos?.escritura || '';
+    let adicionalPath = person.credito?.inmuebleGarantia?.documentos?.adicional || '';
+    filesArray.forEach(file => {
+      if (file.fieldname === 'escritura') escrituraPath = file.path;
+      if (file.fieldname === 'adicional') adicionalPath = file.path;
+    });
+
+    // Procesar seguros médicos actualizados
+    const nuevosSeguros = [];
+    if (Array.isArray(body.datosMedicos)) {
+      body.datosMedicos.forEach((seguro, index) => {
+        const archivos = filesArray
+          .filter(f => f.fieldname.startsWith(`insuranceFile_${index}_`))
+          .map(f => f.path);
+
+        nuevosSeguros.push({
+          aseguradora: seguro.aseguradora || '',
+          numeroPoliza: seguro.numeroPoliza || '',
+          fechaInicioVigencia: seguro.fechaInicioVigencia ? new Date(seguro.fechaInicioVigencia) : null,
+          fechaVencimiento: seguro.fechaVencimiento ? new Date(seguro.fechaVencimiento) : null,
+          tipoSeguro: seguro.tipoSeguro || '',
+          tipoSangre: seguro.tipoSangre || '',
+          beneficiarios: seguro.beneficiarios || '',
+          prima: seguro.prima || '',
+          archivoSeguro: archivos
+        });
+      });
+    } else if (typeof body.datosMedicos === 'object') {
+      const archivos = filesArray
+        .filter(f => f.fieldname.startsWith(`insuranceFile_0_`))
+        .map(f => f.path);
+
+      nuevosSeguros.push({
+        aseguradora: body.datosMedicos.aseguradora || '',
+        numeroPoliza: body.datosMedicos.numeroPoliza || '',
+        fechaInicioVigencia: body.datosMedicos.fechaInicioVigencia ? new Date(body.datosMedicos.fechaInicioVigencia) : null,
+        fechaVencimiento: body.datosMedicos.fechaVencimiento ? new Date(body.datosMedicos.fechaVencimiento) : null,
+        tipoSeguro: body.datosMedicos.tipoSeguro || '',
+        tipoSangre: body.datosMedicos.tipoSangre || '',
+        beneficiarios: body.datosMedicos.beneficiarios || '',
+        prima: body.datosMedicos.prima || '',
+        archivoSeguro: archivos
+      });
+    }
+
+    // Sustituir por completo o agregar al arreglo existente
+    if (nuevosSeguros.length > 0) {
+      person.datosMedicos = nuevosSeguros;
+    }
+
+    // Actualizar crédito
+    // Procesar créditos financieros actualizados
+    const nuevosCreditos = [];
+    if (Array.isArray(body.creditos)) {
+      body.creditos.forEach((credito, index) => {
+        const archivoCredito = filesArray
+          .filter(f => f.fieldname.startsWith(`creditFile_${index}_`))
+          .map(f => f.path);
+
+        nuevosCreditos.push({
+          institucionFinanciera: credito.institucionFinanciera || '',
+          montoCredito: Number(credito.montoCredito || 0),
+          plazoMeses: Number(credito.plazoMeses || 0),
+          tasaInteresAnual: Number(credito.tasaInteresAnual || 0),
+          pagoMensual: Number(credito.pagoMensual || 0),
+          tieneInmuebleGarantia: credito.tieneInmuebleGarantia === true || credito.tieneInmuebleGarantia === 'true',
+          tipoInmueble: credito.tipoInmueble || '',
+          direccionInmueble: credito.direccionInmueble || '',
+          valorComercial: Number(credito.valorComercial || 0),
+          observaciones: credito.observaciones || '',
+          archivoCredito
+        });
+      });
+    }
+    else if (typeof body.creditos === 'object') {
+      const archivoCredito = filesArray
+        .filter(f => f.fieldname.startsWith(`creditFile_0_`))
+        .map(f => f.path);
+
+      nuevosCreditos.push({
+        institucionFinanciera: body.creditos.institucionFinanciera || '',
+        montoCredito: Number(body.creditos.montoCredito || 0),
+        plazoMeses: Number(body.creditos.plazoMeses || 0),
+        tasaInteresAnual: Number(body.creditos.tasaInteresAnual || 0),
+        pagoMensual: Number(body.creditos.pagoMensual || 0),
+        tieneInmuebleGarantia: body.creditos.tieneInmuebleGarantia === 'true',
+        tipoInmueble: body.creditos.tipoInmueble || '',
+        direccionInmueble: body.creditos.direccionInmueble || '',
+        valorComercial: Number(body.creditos.valorComercial || 0),
+        observaciones: body.creditos.observaciones || '',
+        archivoCredito
+      });
+    }
+
+    if (nuevosCreditos.length > 0) {
+      person.creditos = nuevosCreditos;
+    }
 
 
     const updated = await person.save();
     res.json(updated);
+
   } catch (err) {
+    console.error('❌ Error al actualizar persona física:', err);
     res.status(400).json({ message: err.message });
   }
 };
+
 
 
 // Eliminar una persona física
@@ -186,8 +323,13 @@ const deletePhysicalPerson = async (req, res) => {
       archivos.push(person.credito.inmuebleGarantia.documentos.escritura);
     if (person.credito?.inmuebleGarantia?.documentos?.adicional)
       archivos.push(person.credito.inmuebleGarantia.documentos.adicional);
-    if (person.insuranceDocument) archivos.push(person.insuranceDocument);
 
+
+    if (Array.isArray(person.datosMedicos)) {
+      person.datosMedicos.forEach(seguro => {
+        if (seguro.archivoSeguro) archivos.push(seguro.archivoSeguro);
+      });
+    }
 
     // Elimina los archivos físicamente
     deleteFiles(archivos);
@@ -227,14 +369,23 @@ const uploadDocuments = async (req, res) => {
 
 function parseNestedFormData(body) {
   const result = {};
+  const arrayRegex = /^([^\[\]]+)\[(\d+)\]\[([^\[\]]+)\]$/;
+
   for (const key in body) {
-    const keys = key.split('.');
-    if (keys.length === 2) {
-      const [parent, child] = keys;
+    const value = body[key];
+    const match = key.match(arrayRegex);
+
+    if (match) {
+      const [, arrayName, index, propName] = match;
+      result[arrayName] = result[arrayName] || [];
+      result[arrayName][index] = result[arrayName][index] || {};
+      result[arrayName][index][propName] = value;
+    } else if (key.includes('.')) {
+      const [parent, child] = key.split('.');
       result[parent] = result[parent] || {};
-      result[parent][child] = body[key];
+      result[parent][child] = value;
     } else {
-      result[key] = body[key];
+      result[key] = value;
     }
   }
   return result;

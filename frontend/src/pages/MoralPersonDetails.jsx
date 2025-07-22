@@ -122,79 +122,62 @@ const MoralPersonDetails = () => {
         >
           <Card>
             <CardHeader>
-              <CardTitle>Crédito Financiero</CardTitle>
+              <CardTitle>Créditos Financieros</CardTitle>
             </CardHeader>
             <CardContent>
-              {person?.credito ? (
-                <div className="text-base space-y-3 leading-relaxed">
-                  <p><strong>Institución:</strong> {person.credito.institucionFinanciera || 'N/A'}</p>
-                  <p><strong>Monto:</strong> ${person.credito.montoCredito?.toLocaleString() || 'N/A'}</p>
-                  <p><strong>Plazo:</strong> {person.credito.plazoMeses || 'N/A'} meses</p>
-                  <p><strong>Interés Anual:</strong> {person.credito.tasaInteresAnual || 'N/A'}%</p>
-                  <p><strong>Pago Mensual:</strong> ${person.credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
-                  <p><strong>Tiene inmueble en garantía:</strong> {person.credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
+              {Array.isArray(person.creditos) && person.creditos.length > 0 ? (
+                person.creditos.map((credito, index) => (
+                  <div key={index} className="mb-6 border-b pb-4">
+                    <h4 className="font-semibold text-gray-700 mb-2">Crédito #{index + 1}</h4>
+                    <p><strong>Institución:</strong> {credito.institucionFinanciera || 'N/A'}</p>
+                    <p><strong>Monto:</strong> ${credito.montoCredito?.toLocaleString() || 'N/A'}</p>
+                    <p><strong>Plazo:</strong> {credito.plazoMeses || 'N/A'} meses</p>
+                    <p><strong>Interés Anual:</strong> {credito.tasaInteresAnual || 'N/A'}%</p>
+                    <p><strong>Pago Mensual:</strong> ${credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
+                    <p><strong>¿Inmueble en Garantía?:</strong> {credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
 
-                  {person.credito.tieneInmuebleGarantia && (
-                    <>
-                      <p><strong>Tipo de Inmueble:</strong> {person.credito.inmuebleGarantia?.tipoInmueble || 'N/A'}</p>
-                      <p><strong>Dirección:</strong> {person.credito.inmuebleGarantia?.direccionInmueble || 'N/A'}</p>
-                      <p><strong>Valor Comercial:</strong> ${person.credito.inmuebleGarantia?.valorComercial?.toLocaleString() || 'N/A'}</p>
+                    {credito.tieneInmuebleGarantia && (
+                      <>
+                        <p><strong>Tipo de Inmueble:</strong> {credito.tipoInmueble || 'N/A'}</p>
+                        <p><strong>Dirección del Inmueble:</strong> {credito.direccionInmueble || 'N/A'}</p>
+                        <p><strong>Valor Comercial:</strong> ${credito.valorComercial?.toLocaleString() || 'N/A'}</p>
+                      </>
+                    )}
 
-                      {/* Escritura */}
-                      <div>
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Escritura</h3>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                          <span>
-                            {person.credito.inmuebleGarantia?.documentos?.escritura ? 'Disponible' : 'No especificado'}
-                          </span>
-                          {person.credito.inmuebleGarantia?.documentos?.escritura && (
-                            <a
-                              href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.escritura}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="outline" size="sm">
-                                <FileText className="h-4 w-4 mr-1" />
-                                Ver archivo
-                              </Button>
-                            </a>
-                          )}
-                        </div>
+                    {credito.observaciones && (
+                      <p><strong>Observaciones:</strong> {credito.observaciones}</p>
+                    )}
+
+                    {Array.isArray(credito.archivos) && credito.archivos.length > 0 && (
+                      <div className="mt-3">
+                        <h5 className="text-sm font-medium text-muted-foreground mb-1">Archivos PDF</h5>
+                        <ul className="list-disc list-inside space-y-1">
+                          {credito.archivos.map((ruta, i) => (
+                            <li key={i} className="flex items-center justify-between">
+                              <span>Archivo {i + 1}</span>
+                              <a
+                                href={`${BACKEND_URL}/${ruta}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                <Button variant="outline" size="sm">
+                                  <FileText className="h-4 w-4 mr-1" />
+                                  Ver PDF
+                                </Button>
+                              </a>
+                            </li>
+                          ))}
+                        </ul>
                       </div>
-
-                      {/* Documento Adicional */}
-                      <div className="mt-4">
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Documento Adicional</h3>
-                        <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-                          <span>
-                            {person.credito.inmuebleGarantia?.documentos?.adicional ? 'Disponible' : 'No especificado'}
-                          </span>
-                          {person.credito.inmuebleGarantia?.documentos?.adicional && (
-                            <a
-                              href={`${BACKEND_URL}/${person.credito.inmuebleGarantia.documentos.adicional}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              <Button variant="outline" size="sm">
-                                <FileText className="h-4 w-4 mr-1" />
-                                Ver archivo
-                              </Button>
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    </>
-                  )}
-
-                  {person.credito.observaciones && (
-                    <p><strong>Observaciones:</strong> {person.credito.observaciones}</p>
-                  )}
-                </div>
+                    )}
+                  </div>
+                ))
               ) : (
-                <p className="text-gray-500 italic">No se ha registrado información de crédito.</p>
+                <p className="text-gray-500 italic">No se han registrado créditos financieros.</p>
               )}
             </CardContent>
           </Card>
+
         </motion.div>
       </div>
 

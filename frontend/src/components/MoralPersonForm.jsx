@@ -18,25 +18,70 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     regimenFiscal: '',
     domicilioFiscal: '',
     fechaConstitucion: '',
-    credito: {
-      institucionFinanciera: '',
-      montoCredito: '',
-      plazoMeses: '',
-      tasaInteresAnual: '',
-      pagoMensual: '',
-      tieneInmuebleGarantia: false,
-      tipoInmueble: '',
-      direccionInmueble: '',
-      valorComercial: '',
-      observaciones: '',
-    },
+    creditos: [
+      {
+        institucionFinanciera: '',
+        montoCredito: '',
+        plazoMeses: '',
+        tasaInteresAnual: '',
+        pagoMensual: '',
+        tieneInmuebleGarantia: false,
+        tipoInmueble: '',
+        direccionInmueble: '',
+        valorComercial: '',
+        observaciones: '',
+        archivos: [] // Para los PDF por crédito
+      }
+    ],
     documentos: {
-      escritura: null,
-      adicional: null,
       rfcFile: null,
       additionalDocs: []
     }
   });
+  const addCredito = () => {
+    setFormData((prev) => ({
+      ...prev,
+      creditos: [
+        ...prev.creditos,
+        {
+          institucionFinanciera: '',
+          montoCredito: '',
+          plazoMeses: '',
+          tasaInteresAnual: '',
+          pagoMensual: '',
+          tieneInmuebleGarantia: false,
+          tipoInmueble: '',
+          direccionInmueble: '',
+          valorComercial: '',
+          observaciones: '',
+          archivos: []
+        }
+      ]
+    }));
+  };
+  const removeCredito = (index) => {
+    setFormData((prev) => {
+      const nuevos = [...prev.creditos];
+      nuevos.splice(index, 1);
+      return { ...prev, creditos: nuevos };
+    });
+  };
+  const updateCredito = (index, key, value) => {
+    setFormData((prev) => {
+      const creditos = [...prev.creditos];
+      creditos[index][key] = value;
+      return { ...prev, creditos };
+    });
+  };
+  const handleFileChange = (e, index) => {
+    const files = Array.from(e.target.files);
+    setFormData((prev) => {
+      const updatedCreditos = [...prev.creditos];
+      updatedCreditos[index].archivos = files;
+      return { ...prev, creditos: updatedCreditos };
+    });
+  };
+
 
   useEffect(() => {
     if (initialData) {
@@ -83,11 +128,20 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
     const data = new FormData();
 
     Object.entries(formData).forEach(([key, value]) => {
-      if (key === 'credito') {
-        Object.entries(value).forEach(([subKey, subValue]) => {
-          data.append(`credito.${subKey}`, subValue);
+      if (key === 'creditos') {
+        value.forEach((credito, index) => {
+          Object.entries(credito).forEach(([subKey, subValue]) => {
+            if (subKey === 'archivos') {
+              subValue.forEach((archivo) => {
+                data.append(`creditFile_${index}_${archivo.name}`, archivo);
+              });
+            } else {
+              data.append(`creditos[${index}][${subKey}]`, subValue);
+            }
+          });
         });
-      } else if (key === 'documentos') {
+      }
+      else if (key === 'documentos') {
         Object.entries(value).forEach(([docKey, fileOrFiles]) => {
           if (!fileOrFiles) return;
 
@@ -151,83 +205,124 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
 
         </div>
         {/* Crédito Financiero */}
+        {/* Créditos Financieros Múltiples */}
         <div className="pt-4 border-t">
-          <h3 className="text-lg font-semibold text-gray-700 mb-2">Crédito Financiero</h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="credito.institucionFinanciera">Institución Financiera</Label>
-              <Input id="credito.institucionFinanciera" name="credito.institucionFinanciera" value={formData.credito.institucionFinanciera} onChange={handleChange} />
-            </div>
-            <div>
-              <Label htmlFor="credito.montoCredito">Monto Total del Crédito</Label>
-              <Input type="number" id="credito.montoCredito" name="credito.montoCredito" value={formData.credito.montoCredito} onChange={handleChange} />
-            </div>
-            <div>
-              <Label htmlFor="credito.plazoMeses">Plazo (Meses)</Label>
-              <Input type="number" id="credito.plazoMeses" name="credito.plazoMeses" value={formData.credito.plazoMeses} onChange={handleChange} />
-            </div>
-            <div>
-              <Label htmlFor="credito.tasaInteresAnual">Tasa de Interés Anual (%)</Label>
-              <Input type="number" step="0.01" id="credito.tasaInteresAnual" name="credito.tasaInteresAnual" value={formData.credito.tasaInteresAnual} onChange={handleChange} />
-            </div>
-            <div>
-              <Label htmlFor="credito.pagoMensual">Pago Mensual</Label>
-              <Input type="number" id="credito.pagoMensual" name="credito.pagoMensual" value={formData.credito.pagoMensual} onChange={handleChange} />
-            </div>
-            <div>
-              <Label>¿Tiene inmueble en garantía?</Label>
-              <Select
-                value={formData.credito.tieneInmuebleGarantia ? 'yes' : 'no'}
-                onValueChange={(value) =>
-                  setFormData((prev) => ({
-                    ...prev,
-                    credito: {
-                      ...prev.credito,
-                      tieneInmuebleGarantia: value === 'yes'
-                    }
-                  }))
-                }
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccione una opción" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="yes">Sí</SelectItem>
-                  <SelectItem value="no">No</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Créditos Financieros</h3>
 
-            {formData.credito.tieneInmuebleGarantia && (
-              <>
+          {formData.creditos.map((credito, index) => (
+            <div key={index} className="border p-4 mb-4 rounded-md space-y-4 bg-gray-50">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="credito.tipoInmueble">Tipo de Inmueble</Label>
-                  <Input id="credito.tipoInmueble" name="credito.tipoInmueble" value={formData.credito.tipoInmueble} onChange={handleChange} />
+                  <Label>Institución Financiera</Label>
+                  <Input
+                    value={credito.institucionFinanciera}
+                    onChange={(e) => updateCredito(index, 'institucionFinanciera', e.target.value)}
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="credito.direccionInmueble">Dirección del Inmueble</Label>
-                  <Input id="credito.direccionInmueble" name="credito.direccionInmueble" value={formData.credito.direccionInmueble} onChange={handleChange} />
+                  <Label>Monto del Crédito</Label>
+                  <Input
+                    value={credito.montoCredito}
+                    onChange={(e) => updateCredito(index, 'montoCredito', e.target.value)}
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="credito.valorComercial">Valor Estimado</Label>
-                  <Input type="number" id="credito.valorComercial" name="credito.valorComercial" value={formData.credito.valorComercial} onChange={handleChange} />
+                  <Label>Plazo (Meses)</Label>
+                  <Input
+                    value={credito.plazoMeses}
+                    onChange={(e) => updateCredito(index, 'plazoMeses', e.target.value)}
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="escritura">Subir Escritura (PDF)</Label>
-                  <Input type="file" id="escritura" name="escritura" accept="application/pdf" onChange={handleChange} />
+                  <Label>Tasa Interés Anual (%)</Label>
+                  <Input
+                    step="0.01"
+                    value={credito.tasaInteresAnual}
+                    onChange={(e) => updateCredito(index, 'tasaInteresAnual', e.target.value)}
+                  />
                 </div>
                 <div>
-                  <Label htmlFor="adicional">Subir Documento Adicional (PDF)</Label>
-                  <Input type="file" id="adicional" name="adicional" accept="application/pdf" onChange={handleChange} />
+                  <Label>Pago Mensual</Label>
+                  <Input
+                    value={credito.pagoMensual}
+                    onChange={(e) => updateCredito(index, 'pagoMensual', e.target.value)}
+                  />
                 </div>
-              </>
-            )}
-            <div className="col-span-full">
-              <Label htmlFor="credito.observaciones">Observaciones</Label>
-              <textarea id="credito.observaciones" name="credito.observaciones" value={formData.credito.observaciones} onChange={handleChange} className="w-full border rounded px-2 py-1" />
+                <div>
+                  <Label>¿Tiene inmueble en garantía?</Label>
+                  <Select
+                    value={credito.tieneInmuebleGarantia ? 'yes' : 'no'}
+                    onValueChange={(value) =>
+                      updateCredito(index, 'tieneInmuebleGarantia', value === 'yes')
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccione una opción" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="yes">Sí</SelectItem>
+                      <SelectItem value="no">No</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {credito.tieneInmuebleGarantia && (
+                  <>
+                    <div>
+                      <Label>Tipo de Inmueble</Label>
+                      <Input
+                        value={credito.tipoInmueble}
+                        onChange={(e) => updateCredito(index, 'tipoInmueble', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Dirección del Inmueble</Label>
+                      <Input
+                        value={credito.direccionInmueble}
+                        onChange={(e) => updateCredito(index, 'direccionInmueble', e.target.value)}
+                      />
+                    </div>
+                    <div>
+                      <Label>Valor Comercial</Label>
+                      <Input
+                        value={credito.valorComercial}
+                        onChange={(e) => updateCredito(index, 'valorComercial', e.target.value)}
+                      />
+                    </div>
+                  </>
+                )}
+                <div className="col-span-full">
+                  <Label>Observaciones</Label>
+                  <textarea
+                    value={credito.observaciones}
+                    onChange={(e) => updateCredito(index, 'observaciones', e.target.value)}
+                    className="w-full border rounded px-2 py-1"
+                  />
+                </div>
+                <div className="col-span-full">
+                  <Label>Documentos PDF</Label>
+                  <Input
+                    type="file"
+                    name={`creditFile_${index}`}
+                    accept="application/pdf"
+                    multiple
+                    onChange={(e) => handleFileChange(e, index)}
+                  />
+                </div>
+              </div>
+              {formData.creditos.length > 1 && (
+                <Button type="button" variant="destructive" onClick={() => removeCredito(index)}>
+                  Eliminar Crédito
+                </Button>
+              )}
             </div>
-          </div>
+          ))}
+
+          <Button type="button" variant="outline" onClick={addCredito}>
+            Agregar Crédito
+          </Button>
         </div>
+
         {/* Botones */}
         <div className="flex justify-end space-x-2 border-t pt-4">
           <Button type="button" variant="outline" onClick={onCancel}>Cancelar</Button>

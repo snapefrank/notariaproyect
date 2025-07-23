@@ -39,6 +39,7 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
         <div>
           <h3 className="text-sm font-medium text-muted-foreground mb-2">Información Adicional</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <Info label="Propietario" value={ownerName || artwork.ownerExternalName || 'Propietario no especificado'} />
             <Info label="Artista" value={artwork.artist} />
             <Info label="Año" value={artwork.year} />
             <Info label="Técnica" value={artwork.technique} />
@@ -47,7 +48,6 @@ const ArtworkInformation = ({ artwork, ownerName }) => {
             <Info label="Ubicación" value={artwork.location} />
             <Info label="Valor" value={formatCurrency(artwork.value)} />
             <Info label="Fecha de Adquisición" value={formatDate(artwork.acquisitionDate)} />
-            <Info label="Propietario" value={ownerName || 'Propietario sin nombre'} />
           </div>
         </div>
 

@@ -79,39 +79,51 @@ exports.updateMoralPerson = async (req, res) => {
     const person = await MoralPerson.findById(req.params.id);
     if (!person) return res.status(404).json({ message: 'Persona no encontrada' });
 
-    const body = req.body;
+    const filesArray = req.files || [];
+    const parsedBody = parseNestedFormData(req.body);
 
-    person.nombre = body.nombre || person.nombre;
-    person.rfc = body.rfc || person.rfc;
-    person.regimenFiscal = body.regimenFiscal || person.regimenFiscal;
-    person.domicilioFiscal = body.domicilioFiscal || person.domicilioFiscal;
-    person.fechaConstitucion = body.fechaConstitucion || person.fechaConstitucion;
+    // Datos principales
+    person.nombre = parsedBody.nombre || person.nombre;
+    person.rfc = parsedBody.rfc || person.rfc;
+    person.regimenFiscal = parsedBody.regimenFiscal || person.regimenFiscal;
+    person.domicilioFiscal = parsedBody.domicilioFiscal || person.domicilioFiscal;
+    person.fechaConstitucion = parsedBody.fechaConstitucion || person.fechaConstitucion;
+
+    // RFC file
     const rfcFileObj = filesArray.find(f => f.fieldname === 'rfcFile');
-    const additionalDocs = filesArray
-      .filter(f => f.fieldname === 'adicional')
-      .map(f => f.path);
-
     if (rfcFileObj) {
       person.rfcFile = rfcFileObj.path;
     }
 
-    if (additionalDocs.length > 0) {
-      person.additionalDocs = additionalDocs;
+    // Documentos adicionales (suma en lugar de reemplazo)
+    const nuevosDocs = filesArray
+      .filter(f => f.fieldname === 'adicional')
+      .map(f => f.path);
+
+    if (nuevosDocs.length > 0) {
+      person.additionalDocs = [...(person.additionalDocs || []), ...nuevosDocs];
     }
 
-
-
-    const filesArray = req.files || [];
-    const parsedBody = parseNestedFormData(body);
+    // Créditos financieros (conserva archivos si ya existen)
     const nuevosCreditos = [];
-
     if (Array.isArray(parsedBody.creditos)) {
       parsedBody.creditos.forEach((credito, index) => {
-        const archivoCredito = filesArray
+        const archivosNuevos = filesArray
           .filter(f => f.fieldname.startsWith(`creditFile_${index}_`))
           .map(f => f.path);
 
+        let archivosAnteriores = [];
+
+        if (credito._id) {
+          const creditoExistente = person.creditos.find(c => c._id.toString() === credito._id);
+          if (creditoExistente && Array.isArray(creditoExistente.archivoCredito)) {
+            archivosAnteriores = creditoExistente.archivoCredito;
+          }
+        }
+
+
         nuevosCreditos.push({
+          _id: credito._id || undefined,
           institucionFinanciera: credito.institucionFinanciera || '',
           montoCredito: Number(credito.montoCredito || 0),
           plazoMeses: Number(credito.plazoMeses || 0),
@@ -122,22 +134,22 @@ exports.updateMoralPerson = async (req, res) => {
           direccionInmueble: credito.direccionInmueble || '',
           valorComercial: Number(credito.valorComercial || 0),
           observaciones: credito.observaciones || '',
-          archivoCredito
+          archivoCredito: [...archivosAnteriores, ...archivosNuevos]
         });
       });
-    }
 
-    if (nuevosCreditos.length > 0) {
       person.creditos = nuevosCreditos;
     }
 
-
     const updated = await person.save();
     res.json(updated);
+
   } catch (err) {
+    console.error('❌ Error al actualizar persona moral:', err);
     res.status(400).json({ message: err.message });
   }
 };
+
 
 // Eliminar una persona moral
 exports.deleteMoralPerson = async (req, res) => {

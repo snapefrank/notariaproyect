@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useArtworks } from '@/contexts/ArtworkContext';
-import { usePhysicalPersons } from '@/contexts/PhysicalPersonContext';
-import { useMoralPersons } from '@/contexts/MoralPersonContext';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
@@ -10,11 +8,9 @@ import { motion } from 'framer-motion';
 import axios from 'axios';
 import debounce from 'lodash.debounce';
 import { apiBase } from '@/lib/constants';
-;
 
 const ArtworkForm = ({ onCancel, initialData = {} }) => {
   const { addArtwork, updateArtwork } = useArtworks();
-
 
   const [formData, setFormData] = useState({
     artist: '',
@@ -34,7 +30,20 @@ const ArtworkForm = ({ onCancel, initialData = {} }) => {
 
   const [certificateFile, setCertificateFile] = useState(null);
   const [photoFiles, setPhotoFiles] = useState([]);
-  const [ownerQuery, setOwnerQuery] = useState('');
+
+  const [ownerQuery, setOwnerQuery] = useState(() => {
+    if (initialData.ownerType === 'MoralPerson' && initialData.ownerData?.razonSocial) {
+      return initialData.ownerData.razonSocial;
+    } else if (initialData.ownerType === 'PhysicalPerson' && initialData.ownerData?.nombres) {
+      return `${initialData.ownerData.nombres} ${initialData.ownerData.apellidoPaterno || ''} ${initialData.ownerData.apellidoMaterno || ''}`.trim();
+    } else if (initialData.ownerType === 'Personalizado' && initialData.ownerExternalName) {
+      return initialData.ownerExternalName;
+    } else {
+      return '';
+    }
+  });
+
+
   const [ownerSuggestions, setOwnerSuggestions] = useState([]);
 
   useEffect(() => {
@@ -60,10 +69,11 @@ const ArtworkForm = ({ onCancel, initialData = {} }) => {
   const handleChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
+
   const fetchOwnerSuggestions = debounce(async (query) => {
     if (!query) return setOwnerSuggestions([]);
     try {
-      const res = await axios.get(`${apiBase}/search/persons?query=${query}`);
+      const res = await axios.get(`${apiBase}/api/search/persons?query=${query}`);
       setOwnerSuggestions(res.data);
     } catch (error) {
       console.error('Error al buscar propietarios:', error);
@@ -75,24 +85,44 @@ const ArtworkForm = ({ onCancel, initialData = {} }) => {
     fetchOwnerSuggestions(ownerQuery);
   }, [ownerQuery]);
 
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
+
+    const isMongoId = /^[0-9a-fA-F]{24}$/.test(formData.ownerId);
+
+    if (formData.ownerId && isMongoId) {
+      data.append('ownerId', formData.ownerId);
+      data.append('ownerType', formData.ownerType);
+      data.append('owner', ownerQuery);
+    } else {
+      data.append('ownerExternalName', ownerQuery.trim());
+      data.append('ownerType', 'Personalizado');
+      data.append('owner', ownerQuery.trim());
+    }
+
+
     Object.entries(formData).forEach(([key, value]) => {
-      data.append(key, value);
+      if (!['ownerId', 'ownerType', 'ownerExternalName'].includes(key)) {
+        data.append(key, value);
+      }
     });
+
     if (certificateFile) data.append('certificate', certificateFile);
     photoFiles.forEach(file => data.append('photos', file));
 
-    if (initialData._id) {
-      await updateArtwork(initialData._id, data);
-    } else {
-      await addArtwork(data);
+    try {
+      if (initialData._id) {
+        await updateArtwork(initialData._id, data);
+      } else {
+        await addArtwork(data);
+      }
+      onCancel();
+    } catch (error) {
+      console.error('Error al guardar la obra:', error);
     }
-
-    onCancel();
   };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -105,30 +135,19 @@ const ArtworkForm = ({ onCancel, initialData = {} }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Nombre del Artista</Label>
-            <Input
-              value={formData.artist}
-              onChange={e => handleChange('artist', e.target.value)}
-              required
-            />
+            <Input value={formData.artist} onChange={e => handleChange('artist', e.target.value)} required />
           </div>
 
           <div>
             <Label>Tipo de Obra</Label>
-            <Input
-              value={formData.type}
-              onChange={e => handleChange('type', e.target.value)}
-            />
+            <Input value={formData.type} onChange={e => handleChange('type', e.target.value)} />
           </div>
 
           <div>
             <Label>Título de la Obra</Label>
-            <Input
-              value={formData.title}
-              onChange={e => handleChange('title', e.target.value)}
-              required
-            />
+            <Input value={formData.title} onChange={e => handleChange('title', e.target.value)} required />
           </div>
-          {/* Campo de autocompletado propietario */}
+
           <div className="md:col-span-2 relative">
             <Label>Propietario</Label>
             <Input
@@ -163,82 +182,50 @@ const ArtworkForm = ({ onCancel, initialData = {} }) => {
               </ul>
             )}
           </div>
+
           <div>
             <Label>Técnica</Label>
-            <Input
-              value={formData.technique}
-              onChange={e => handleChange('technique', e.target.value)}
-            />
+            <Input value={formData.technique} onChange={e => handleChange('technique', e.target.value)} />
           </div>
 
           <div>
             <Label>Año</Label>
-            <Input
-              type="number"
-              value={formData.year}
-              onChange={e => handleChange('year', e.target.value)}
-            />
+            <Input type="number" value={formData.year} onChange={e => handleChange('year', e.target.value)} />
           </div>
 
           <div>
             <Label>Medidas</Label>
-            <Input
-              value={formData.dimensions}
-              onChange={e => handleChange('dimensions', e.target.value)}
-            />
+            <Input value={formData.dimensions} onChange={e => handleChange('dimensions', e.target.value)} />
           </div>
 
           <div className="md:col-span-2">
             <Label>Descripción</Label>
-            <Textarea
-              value={formData.description}
-              onChange={e => handleChange('description', e.target.value)}
-              rows={3}
-            />
+            <Textarea value={formData.description} onChange={e => handleChange('description', e.target.value)} rows={3} />
           </div>
 
           <div>
             <Label>Fecha de Adquisición</Label>
-            <Input
-              type="date"
-              value={formData.acquisitionDate}
-              onChange={e => handleChange('acquisitionDate', e.target.value)}
-            />
+            <Input type="date" value={formData.acquisitionDate} onChange={e => handleChange('acquisitionDate', e.target.value)} />
           </div>
 
           <div>
             <Label>Valor</Label>
-            <Input
-              type="number"
-              value={formData.value}
-              onChange={e => handleChange('value', e.target.value)}
-            />
+            <Input type="number" value={formData.value} onChange={e => handleChange('value', e.target.value)} />
           </div>
 
           <div className="md:col-span-2">
             <Label>Ubicación</Label>
-            <Input
-              value={formData.location}
-              onChange={e => handleChange('location', e.target.value)}
-            />
+            <Input value={formData.location} onChange={e => handleChange('location', e.target.value)} />
           </div>
+
           <div className="md:col-span-2">
             <Label>Certificado (PDF)</Label>
-            <Input
-              type="file"
-              accept=".pdf"
-              onChange={e => setCertificateFile(e.target.files[0])}
-            />
+            <Input type="file" accept=".pdf" onChange={e => setCertificateFile(e.target.files[0])} />
           </div>
 
           <div className="md:col-span-2">
             <Label>Fotos de la Obra</Label>
-            <Input
-              type="file"
-              accept="image/*"
-              multiple
-              onChange={e => setPhotoFiles(Array.from(e.target.files))}
-            />
+            <Input type="file" accept="image/*" multiple onChange={e => setPhotoFiles(Array.from(e.target.files))} />
           </div>
         </div>
 

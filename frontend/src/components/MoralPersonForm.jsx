@@ -81,20 +81,33 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
       return { ...prev, creditos: updatedCreditos };
     });
   };
-
+  const formatDateToInput = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
 
   useEffect(() => {
     if (initialData) {
       setFormData((prev) => ({
         ...prev,
-        ...initialData,
-        credito: {
-          ...prev.credito,
-          ...initialData.credito
+        nombre: initialData.nombre || '',
+        rfc: initialData.rfc || '',
+        regimenFiscal: initialData.regimenFiscal || '',
+        domicilioFiscal: initialData.domicilioFiscal || '',
+        fechaConstitucion: formatDateToInput(initialData.fechaConstitucion),
+        creditos: initialData.creditos || prev.creditos,
+        documentos: {
+          ...prev.documentos
+          // Si quieres conservar archivos antiguos, deberías mapearlos aquí
         }
       }));
     }
   }, [initialData]);
+
 
   const handleChange = (e) => {
     const { name, value, type, checked, files } = e.target;

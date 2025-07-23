@@ -31,7 +31,6 @@ exports.createProperty = async (req, res) => {
   try {
     const body = req.body;
     const files = req.files;
-
     const deedFiles = files?.deedFiles?.map(f => f.filename) || [];
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || '';
     const rentContractCustomName = body.rentContractCustomName || '';
@@ -41,8 +40,6 @@ exports.createProperty = async (req, res) => {
       : typeof body.extraDocsCustomNames === 'string'
         ? [body.extraDocsCustomNames]
         : [];
-
-
 
     // ✅ Leer imágenes existentes si vienen (por prevención)
     let imagenesExistentes = [];
@@ -162,16 +159,41 @@ exports.updateProperty = async (req, res) => {
 
     const nuevasFotos = files?.propertyPhotos?.map(f => f.filename) || [];
     const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
-    const extraDocsFiles = files?.extraDocs?.map(f => f.filename) || existing.extraDocs?.archivos || [];
-    const extraDocsCustomNames = Array.isArray(body.extraDocsCustomNames)
+    // 🟢 Paso 1: Cargar los actuales
+    let archivosActuales = existing.extraDocs?.archivos || [];
+    let nombresActuales = existing.extraDocs?.nombresPersonalizados || [];
+
+    // 🟢 Paso 2: Nuevos archivos (si llegaron)
+    const nuevosArchivos = files?.extraDocs?.map(f => f.filename) || [];
+    const nuevosNombres = Array.isArray(body.extraDocsCustomNames)
       ? body.extraDocsCustomNames
       : typeof body.extraDocsCustomNames === 'string'
         ? [body.extraDocsCustomNames]
-        : existing.extraDocs?.nombresPersonalizados || [];
-    const deedFiles = files?.deedFiles?.map(f => f.filename) || existing.deedFiles || [];
+        : [];
+
+    // 🟢 Paso 3: Si hay nuevos, se agregan
+    if (nuevosArchivos.length > 0) {
+      archivosActuales = [...archivosActuales, ...nuevosArchivos];
+      nombresActuales = [...nombresActuales, ...nuevosNombres];
+    }
+
+    // 🟢 Paso 4: Si no hay nuevos pero sí se quieren renombrar los existentes
+    if (nuevosArchivos.length === 0 && nuevosNombres.length === nombresActuales.length) {
+      nombresActuales = nuevosNombres;
+    }
+
+    let escrituraActual = existing.deed?.archivos || [];
+    const nuevaEscritura = files?.deedFiles?.map(f => f.filename) || [];
+
+    if (nuevaEscritura.length > 0) {
+      escrituraActual = [...escrituraActual, ...nuevaEscritura];
+    }
+
     const deedCustomName = body.deedCustomName || existing.deed?.nombrePersonalizado || '';
-    const rentContractUrl = files?.rentContractFile?.[0]?.filename || existing.rentContractUrl || '';
-    const rentContractCustomName = body.rentContractCustomName || existing.rentContractCustomName || '';
+    const rentContractUrl =
+      files?.rentContractFile?.[0]?.filename || existing.rentContractUrl || '';
+    const rentContractCustomName =
+      body.rentContractCustomName || existing.rentContractCustomName || '';
 
 
     // ✅ Combinar locales
@@ -184,7 +206,6 @@ exports.updateProperty = async (req, res) => {
 
       const fotosAnteriores = existing.locals?.[index]?.photos || [];
       const fotosFinales = Array.from(new Set([...fotosAnteriores, ...nuevasFotosLocal]));
-
       const rentContractFile =
         files?.[`localRentContract_${index}`]?.[0]?.filename ||
         existing.locals?.[index]?.rentContractUrl ||
@@ -226,8 +247,8 @@ exports.updateProperty = async (req, res) => {
         deedNumber: body.deedNumber,
         deedDate: normalizeDate(body.deedDate),
         deed: {
-          archivos: deedFiles,
-          nombrePersonalizado: deedCustomName,
+          archivos: escrituraActual,
+          nombrePersonalizado: deedCustomName || existing.deed?.nombrePersonalizado || '',
         },
         notary: body.notary,
         cadastralKey: body.cadastralKey,
@@ -250,8 +271,8 @@ exports.updateProperty = async (req, res) => {
         rentContractCustomName,
         photos: fotosFinales,
         extraDocs: {
-          archivos: extraDocsFiles,
-          nombresPersonalizados: extraDocsCustomNames
+          archivos: archivosActuales,
+          nombresPersonalizados: nombresActuales
         },
         locals: nuevosLocales,
         updatedAt: new Date(),

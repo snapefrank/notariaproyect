@@ -120,6 +120,20 @@ const ArtworksPage = () => {
                   <div key={artwork._id} className="p-4 border rounded-md shadow-sm bg-white">
                     <h2 className="text-lg font-semibold">{artwork.title}</h2>
                     <p className="text-sm text-muted-foreground">Artista: {artwork.artist}</p>
+                    {artwork.value && (
+                      <p className="text-sm text-muted-foreground">Valor: ${Number(artwork.value).toLocaleString('es-MX')}</p>
+                    )}
+                    {artwork.ownerExternalName ? (
+                      <p className="text-sm text-muted-foreground">Propietario: {artwork.ownerExternalName}</p>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">
+                        Propietario:{' '}
+                        {artwork.ownerType === 'PhysicalPerson'
+                          ? `${artwork.propietario?.nombres || ''} ${artwork.propietario?.apellidoPaterno || ''} ${artwork.propietario?.apellidoMaterno || ''}`.trim()
+                          : artwork.propietario?.razonSocial || 'No disponible'}
+                      </p>
+                    )}
+
                     <div className="mt-2 flex justify-between items-center">
                       <Button variant="link" className="text-sm" onClick={() => navigate(`/artworks/${artwork._id}`)}>Ver detalles</Button>
                       <div className="flex space-x-2">

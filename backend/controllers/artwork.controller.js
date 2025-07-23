@@ -1,11 +1,25 @@
 const Artwork = require('../models/Artwork');
 const path = require('path');
 const fs = require('fs');
+const mongoose = require('mongoose');
 
 // Obtener todas las piezas de arte
 exports.getAllArtworks = async (req, res) => {
   try {
-    const artworks = await Artwork.find();
+    const artworks = await Artwork.find().lean();
+
+    for (const artwork of artworks) {
+      if (artwork.ownerId && mongoose.Types.ObjectId.isValid(artwork.ownerId)) {
+        const model = artwork.ownerType === 'PhysicalPerson' ? 'PhysicalPerson'
+          : artwork.ownerType === 'MoralPerson' ? 'MoralPerson'
+            : null;
+
+        if (model) {
+          const owner = await mongoose.model(model).findById(artwork.ownerId).lean();
+          artwork.ownerData = owner || null;
+        }
+      }
+    }
     res.json(artworks);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -15,8 +29,19 @@ exports.getAllArtworks = async (req, res) => {
 // Obtener una pieza de arte por ID
 exports.getArtworkById = async (req, res) => {
   try {
-    const artwork = await Artwork.findById(req.params.id);
+    let artwork = await Artwork.findById(req.params.id).lean();
+
+
     if (!artwork) return res.status(404).json({ message: 'Obra no encontrada' });
+    if (artwork.ownerId && mongoose.Types.ObjectId.isValid(artwork.ownerId)) {
+      const model = artwork.ownerType === 'PhysicalPerson' ? 'PhysicalPerson'
+        : artwork.ownerType === 'MoralPerson' ? 'MoralPerson'
+          : null;
+      if (model) {
+        const owner = await mongoose.model(model).findById(artwork.ownerId).lean();
+        artwork.ownerData = owner || null;
+      }
+    }
     res.json(artwork);
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -39,7 +64,7 @@ exports.createArtwork = async (req, res) => {
       location,
       ownerId,
       ownerType,
-      ownerExternalName // campo opcional
+      ownerExternalName
     } = req.body;
 
     const certificatePath = req.files?.certificate?.[0]
@@ -47,6 +72,11 @@ exports.createArtwork = async (req, res) => {
       : '';
 
     const photoPaths = req.files?.photos?.map(file => `uploads/artworks/photos/${file.filename}`) || [];
+
+    // Validación de ID de propietario (opcional)
+    if (ownerId && !mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res.status(400).json({ error: 'ID de propietario no válido' });
+    }
 
     const newArtwork = new Artwork({
       artist,
@@ -77,14 +107,60 @@ exports.createArtwork = async (req, res) => {
 // Actualizar una pieza de arte
 exports.updateArtwork = async (req, res) => {
   try {
-    const updates = { ...req.body };
+    const existingArtwork = await Artwork.findById(req.params.id);
+    if (!existingArtwork) return res.status(404).json({ message: 'Obra no encontrada' });
 
+    const {
+      artist,
+      type,
+      title,
+      technique,
+      year,
+      dimensions,
+      description,
+      acquisitionDate,
+      value,
+      location,
+      ownerId,
+      ownerType,
+      ownerExternalName
+    } = req.body;
+
+    const updates = {
+      artist,
+      type,
+      title,
+      technique,
+      year,
+      dimensions,
+      description,
+      acquisitionDate,
+      value,
+      location,
+      ownerId: ownerId || existingArtwork.ownerId,
+      ownerType: ownerType || existingArtwork.ownerType,
+      ownerExternalName: (ownerType === 'Personalizado')
+        ? (ownerExternalName || existingArtwork.ownerExternalName)
+        : null,
+
+    };
+
+    // Validar ID de propietario (si se envía)
+    if (ownerId && !mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res.status(400).json({ error: 'ID de propietario no válido' });
+    }
+
+    // Certificado nuevo
     if (req.files?.certificate) {
       updates.certificatePath = `uploads/artworks/certificates/${req.files.certificate[0].filename}`;
     }
 
+    // Fotos nuevas: agregar a las existentes
     if (req.files?.photos) {
-      updates.photoPaths = req.files.photos.map(file => `uploads/artworks/photos/${file.filename}`);
+      const nuevasFotos = req.files.photos.map(file => `uploads/artworks/photos/${file.filename}`);
+      updates.photoPaths = [...(existingArtwork.photoPaths || []), ...nuevasFotos];
+    } else {
+      updates.photoPaths = existingArtwork.photoPaths;
     }
 
     const updatedArtwork = await Artwork.findByIdAndUpdate(req.params.id, updates, { new: true });

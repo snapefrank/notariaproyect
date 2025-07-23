@@ -65,6 +65,8 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
 
   const [tieneSeguro, setTieneSeguro] = useState(false);
   const [tieneCredito, setTieneCredito] = useState(false);
+  const [sexoError, setSexoError] = useState(false);
+
 
   const handleDocFileChange = (e) => {
     const { name, files } = e.target;
@@ -154,7 +156,12 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+    if (!formData.sexo || formData.sexo.trim() === '') {
+      setSexoError(true);
+      return;
+    } else {
+      setSexoError(false);
+    }
     const data = new FormData();
 
     // Campos simples y objetos anidados
@@ -265,9 +272,10 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
             <Label htmlFor="sexo">Sexo</Label>
             <Select
               value={formData.sexo}
-              onValueChange={(value) =>
-                setFormData((prev) => ({ ...prev, sexo: value }))
-              }
+              onValueChange={(value) => {
+                setFormData((prev) => ({ ...prev, sexo: value }));
+                setSexoError(false);
+              }}
             >
               <SelectTrigger>
                 <SelectValue placeholder="Selecciona" />
@@ -277,7 +285,11 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
                 <SelectItem value="F">Femenino</SelectItem>
               </SelectContent>
             </Select>
+            {sexoError && (
+              <p className="text-sm text-red-500 mt-1">Por favor selecciona el sexo.</p>
+            )}
           </div>
+
 
         </div>
         <div className="space-y-4">

@@ -3,8 +3,8 @@ const mongoose = require('mongoose');
 const artworkSchema = new mongoose.Schema({
   title: { type: String, required: true },           // Título de la obra
   artist: { type: String, required: true },          // Nombre del artista
-  type: { type: String, required: true },            // Tipo de obra (pintura, escultura, etc.)
-  technique: { type: String, required: true },       // Técnica usada
+  type: { type: String },                            // Tipo de obra (pintura, escultura, etc.)
+  technique: { type: String },                       // Técnica usada
   year: { type: Number },                            // Año de la obra
   dimensions: { type: String },                      // Medidas (ej. "60x80 cm")
 
@@ -16,21 +16,25 @@ const artworkSchema = new mongoose.Schema({
   location: { type: String },
   description: { type: String },
 
-  // 🔹 Dueño registrado en el sistema
-  propietario: {
+  // 🔹 Relación con personas físicas o morales
+  ownerId: {
     type: mongoose.Schema.Types.ObjectId,
-    refPath: 'tipoPropietario',
-    required: false
+    refPath: 'ownerType',
+    required: function () {
+      return this.ownerType !== 'Personalizado' && !this.ownerExternalName;
+    }
   },
-  tipoPropietario: {
+  ownerType: {
     type: String,
-    enum: ['PhysicalPerson', 'MoralPerson'],
-    required: false
+    enum: ['PhysicalPerson', 'MoralPerson', 'Personalizado'],
+    required: true
   },
-  ownerExternalName: { type: String }
-
-
-
+  ownerExternalName: {
+    type: String,
+    required: function () {
+      return this.ownerType === 'Personalizado';
+    }
+  }
 
 }, { timestamps: true });
 

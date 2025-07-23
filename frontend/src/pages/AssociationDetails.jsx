@@ -18,7 +18,7 @@ import NotFoundMessage from '@/components/associationDetails/NotFoundMessage';
 const AssociationDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { associations, getAssociationById, updateAssociation, deleteAssociation } = useAssociations();
+  const { associations, fetchAssociationById, updateAssociation, deleteAssociation } = useAssociations();
 
   const [association, setAssociation] = useState(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -26,8 +26,9 @@ const AssociationDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchAssociationData = () => {
-      const found = getAssociationById(id);
+    const fetchAssociationData = async () => {
+      setIsLoading(true);
+      const found = await fetchAssociationById(id); // ✅ Aquí sí esperamos la promesa
       if (found) {
         setAssociation(found);
       }
@@ -35,7 +36,8 @@ const AssociationDetails = () => {
     };
 
     fetchAssociationData();
-  }, [id, associations, getAssociationById]);
+  }, [id, fetchAssociationById]);
+
 
   const handleUpdateAssociation = (formData) => {
     updateAssociation(id, formData);

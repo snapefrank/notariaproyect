@@ -73,10 +73,17 @@ exports.updateAssociation = async (req, res) => {
     }
 
     if (req.files?.additionalFiles?.length) {
-      association.additionalFiles = req.files.additionalFiles.map(file =>
+      const nuevosArchivos = req.files.additionalFiles.map(file =>
         'uploads/associations/extra-docs/' + file.filename
       );
+
+      // Suma los nuevos a los anteriores
+      association.additionalFiles = [
+        ...(association.additionalFiles || []),
+        ...nuevosArchivos
+      ];
     }
+
 
     const updated = await association.save();
     res.json(updated);
@@ -93,6 +100,20 @@ exports.deleteAssociation = async (req, res) => {
     res.json({ message: 'Asociación eliminada correctamente' });
   } catch (err) {
     console.error('❌ Error al eliminar asociación:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// Obtener una sola asociación por ID
+exports.getAssociationById = async (req, res) => {
+  try {
+    const association = await Association.findById(req.params.id);
+    if (!association) {
+      return res.status(404).json({ message: 'Asociación no encontrada' });
+    }
+    res.json(association);
+  } catch (err) {
+    console.error('❌ Error al obtener asociación por ID:', err);
     res.status(500).json({ message: err.message });
   }
 };

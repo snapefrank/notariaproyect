@@ -184,7 +184,7 @@ const AssociationsPage = () => {
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="sm:max-w-[600px]">
           <DialogHeader>
-            <DialogTitle>Editar Asociación</DialogTitle>
+            <DialogTitle>Editar Asociaciónss</DialogTitle>
           </DialogHeader>
           {selectedAssociation && (
             <AssociationForm

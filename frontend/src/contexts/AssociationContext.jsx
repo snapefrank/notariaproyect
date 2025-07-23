@@ -65,13 +65,24 @@ export const AssociationProvider = ({ children }) => {
     return associations.find((assoc) => assoc._id === id);
   };
 
+  const fetchAssociationById = async (id) => {
+    try {
+      const response = await axios.get(`${API_URL}/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching association by ID:', error);
+      return null;
+    }
+  };
+
   return (
     <AssociationContext.Provider value={{
       associations,
       addAssociation,
       updateAssociation,
       deleteAssociation,
-      getAssociationById // 👈 ahora está disponible
+      getAssociationById,
+      fetchAssociationById
     }}>
       {children}
     </AssociationContext.Provider>

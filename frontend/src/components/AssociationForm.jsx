@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
-const AssociationForm = ({ onSubmit, onCancel }) => {
+const AssociationForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     nombre: '',
     apoderadoLegal: '',
@@ -17,6 +17,26 @@ const AssociationForm = ({ onSubmit, onCancel }) => {
   const [deedFile, setDeedFile] = useState(null);
   const [rfcFile, setRfcFile] = useState(null);
   const [additionalFiles, setAdditionalFiles] = useState([]);
+  const [existingAdditionalFiles, setExistingAdditionalFiles] = useState([]);
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        nombre: initialData.nombre || '',
+        apoderadoLegal: initialData.apoderadoLegal || '',
+        numeroEscritura: initialData.numeroEscritura || '',
+        fechaEscritura: initialData.fechaEscritura
+          ? initialData.fechaEscritura.slice(0, 10)
+          : '',
+        regimenFiscal: initialData.regimenFiscal || '',
+        rfc: initialData.rfc || '',
+      });
+
+      if (Array.isArray(initialData.additionalFiles)) {
+        setExistingAdditionalFiles(initialData.additionalFiles);
+      }
+    }
+  }, [initialData]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,6 +60,18 @@ const AssociationForm = ({ onSubmit, onCancel }) => {
     onSubmit(data);
   };
 
+  const handleAddAdditionalFiles = (e) => {
+    const newFiles = Array.from(e.target.files);
+    setAdditionalFiles(prev => [...prev, ...newFiles]);
+  };
+
+  const handleRemoveExistingFile = (index) => {
+    const updated = [...existingAdditionalFiles];
+    updated.splice(index, 1);
+    setExistingAdditionalFiles(updated);
+    // ⚠️ OJO: si quieres eliminar del servidor también, necesitas enviar esa info al backend.
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -49,72 +81,27 @@ const AssociationForm = ({ onSubmit, onCancel }) => {
       className="p-4 space-y-6 max-h-[80vh] overflow-y-auto"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <Label htmlFor="nombre">Nombre de la asociación</Label>
-          <Input
-            type="text"
-            id="nombre"
-            name="nombre"
-            value={formData.nombre}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="apoderadoLegal">Apoderado legal</Label>
-          <Input
-            type="text"
-            id="apoderadoLegal"
-            name="apoderadoLegal"
-            value={formData.apoderadoLegal}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="numeroEscritura">Número de escritura</Label>
-          <Input
-            type="text"
-            id="numeroEscritura"
-            name="numeroEscritura"
-            value={formData.numeroEscritura}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="fechaEscritura">Fecha de escritura</Label>
-          <Input
-            type="date"
-            id="fechaEscritura"
-            name="fechaEscritura"
-            value={formData.fechaEscritura}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="regimenFiscal">Régimen fiscal</Label>
-          <Input
-            type="text"
-            id="regimenFiscal"
-            name="regimenFiscal"
-            value={formData.regimenFiscal}
-            onChange={handleChange}
-            required
-          />
-        </div>
-        <div>
-          <Label htmlFor="rfc">RFC</Label>
-          <Input
-            type="text"
-            id="rfc"
-            name="rfc"
-            value={formData.rfc}
-            onChange={handleChange}
-            required
-          />
-        </div>
+        {[
+          { name: 'nombre', label: 'Nombre de la asociación' },
+          { name: 'apoderadoLegal', label: 'Apoderado legal' },
+          { name: 'numeroEscritura', label: 'Número de escritura' },
+          { name: 'fechaEscritura', label: 'Fecha de escritura', type: 'date' },
+          { name: 'regimenFiscal', label: 'Régimen fiscal' },
+          { name: 'rfc', label: 'RFC' },
+        ].map(({ name, label, type = 'text' }) => (
+          <div key={name}>
+            <Label htmlFor={name}>{label}</Label>
+            <Input
+              type={type}
+              id={name}
+              name={name}
+              value={formData[name]}
+              onChange={handleChange}
+              required
+            />
+          </div>
+        ))}
+
         <div>
           <Label htmlFor="deedFile">Escritura (PDF)</Label>
           <Input
@@ -124,7 +111,21 @@ const AssociationForm = ({ onSubmit, onCancel }) => {
             accept=".pdf"
             onChange={(e) => setDeedFile(e.target.files[0])}
           />
+          {initialData.deedFile && (
+            <p className="text-sm text-gray-500 mt-1">
+              Archivo actual:{' '}
+              <a
+                href={`${import.meta.env.VITE_API_URL}/${initialData.deedFile}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Ver escritura
+              </a>
+            </p>
+          )}
         </div>
+
         <div>
           <Label htmlFor="rfcFile">Archivo RFC (PDF)</Label>
           <Input
@@ -134,7 +135,21 @@ const AssociationForm = ({ onSubmit, onCancel }) => {
             accept=".pdf"
             onChange={(e) => setRfcFile(e.target.files[0])}
           />
+          {initialData.rfcFile && (
+            <p className="text-sm text-gray-500 mt-1">
+              Archivo actual:{' '}
+              <a
+                href={`${import.meta.env.VITE_API_URL}/${initialData.rfcFile}`}
+                target="_blank"
+                rel="noreferrer"
+                className="underline"
+              >
+                Ver RFC
+              </a>
+            </p>
+          )}
         </div>
+
         <div>
           <Label htmlFor="additionalFiles">Documentos adicionales</Label>
           <Input
@@ -143,8 +158,34 @@ const AssociationForm = ({ onSubmit, onCancel }) => {
             name="additionalFiles"
             multiple
             accept=".pdf,.jpg,.jpeg,.png"
-            onChange={(e) => setAdditionalFiles(Array.from(e.target.files))}
+            onChange={handleAddAdditionalFiles}
           />
+
+          {/* Mostrar archivos existentes */}
+          {existingAdditionalFiles.length > 0 && (
+            <ul className="mt-2 text-sm text-gray-700 space-y-1">
+              {existingAdditionalFiles.map((fileUrl, index) => (
+                <li key={index} className="flex justify-between items-center">
+                  <a
+                    href={`${import.meta.env.VITE_API_URL}/${fileUrl}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="underline"
+                  >
+                    Documento {index + 1}
+                  </a>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleRemoveExistingFile(index)}
+                  >
+                    ❌
+                  </Button>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
 
         <div className="flex justify-end space-x-2">

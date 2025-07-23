@@ -39,7 +39,7 @@ const apiBase = import.meta.env.VITE_API_URL;
 const PropertyDetails = () => {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { getPropertyById, updateProperty, deleteProperty, refreshProperty, updatePropertyStatus  } = useAssets();
+  const { getPropertyById, updateProperty, deleteProperty, refreshProperty, updatePropertyStatus } = useAssets();
   const { documents } = useDocuments();
 
   const [property, setProperty] = useState(null);
@@ -57,6 +57,8 @@ const PropertyDetails = () => {
   const [showEditLocalDialog, setShowEditLocalDialog] = useState(false);
   const [localToDeleteIndex, setLocalToDeleteIndex] = useState(null);
   const [saleDocs, setSaleDocs] = useState([]);
+  const [pdfData, setPdfData] = useState({ url: null, title: null });
+
 
 
   useEffect(() => {
@@ -89,49 +91,73 @@ const PropertyDetails = () => {
     navigate('/properties');
   };
 
-const handleSellProperty = async () => {
-  if (!sellDate) {
-    alert('La fecha de venta es obligatoria.');
-    return;
-  }
+  const handleSellProperty = async () => {
+    if (!sellDate) {
+      alert('La fecha de venta es obligatoria.');
+      return;
+    }
 
-  const formData = new FormData();
-  formData.append('soldDate', sellDate);
-  formData.append('soldNote', sellNote);
-  saleDocs.forEach((file) => {
-    formData.append('saleDocs', file);
-  });
-
-  try {
-    const response = await fetch(`${API_URL}/${id}/mark-as-sold`, {
-      method: 'POST',
-      body: formData,
+    const formData = new FormData();
+    formData.append('soldDate', sellDate);
+    formData.append('soldNote', sellNote);
+    saleDocs.forEach((file) => {
+      formData.append('saleDocs', file);
     });
 
-    if (!response.ok) throw new Error('Error al marcar como vendido.');
+    try {
+      const response = await fetch(`${API_URL}/${id}/mark-as-sold`, {
+        method: 'POST',
+        body: formData,
+      });
 
-    const updated = await response.json();
+      if (!response.ok) throw new Error('Error al marcar como vendido.');
 
-    // ✅ Actualiza el inmueble en el contexto global sin recargar
-    updatePropertyStatus(id, updated);
+      const updated = await response.json();
 
-    // ✅ Opcionalmente actualiza también el estado local de este componente
-    setProperty(updated);
+      // ✅ Actualiza el inmueble en el contexto global sin recargar
+      updatePropertyStatus(id, updated);
 
-    setShowSellDialog(false);
+      // ✅ Opcionalmente actualiza también el estado local de este componente
+      setProperty(updated);
 
-    // ✅ Redireccionar solo si ya no quieres mostrarlo aquí
-    navigate(`/inmuebles-vendidos/${id}`);
-  } catch (error) {
-    console.error('Error al marcar como vendido:', error);
-    alert('Ocurrió un error al actualizar el inmueble.');
-  }
-};
+      setShowSellDialog(false);
+
+      // ✅ Redireccionar solo si ya no quieres mostrarlo aquí
+      navigate(`/inmuebles-vendidos/${id}`);
+    } catch (error) {
+      console.error('Error al marcar como vendido:', error);
+      alert('Ocurrió un error al actualizar el inmueble.');
+    }
+  };
 
 
 
   if (isLoading) return <LoadingSpinner />;
   if (!property) return <NotFoundMessage onBack={() => navigate('/properties')} />;
+
+  const DocumentItem = ({ label, fileUrl, onView }) => (
+    <div className="flex items-center justify-between bg-gray-100 p-3 rounded-md">
+      <span className="font-medium text-sm">{label}</span>
+      <div className="space-x-2">
+        <Button size="sm" variant="outline" onClick={() => onView({ url: fileUrl, title: label })}>
+          Visualizar
+        </Button>
+        <Button size="sm" onClick={() => {
+          const a = document.createElement('a');
+          a.href = fileUrl;
+          a.download = label || 'documento';
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }}>
+          Descargar
+        </Button>
+      </div>
+    </div>
+  );
+
 
   return (
     <div className="container mx-auto px-4 py-6 space-y-6">
@@ -171,17 +197,14 @@ const handleSellProperty = async () => {
               <p><strong>Fin de renta:</strong> {local.rentEndDate?.substring(0, 10)}</p>
 
               {local.rentContractUrl && (
-                <p>
-                  <strong>Contrato:</strong>{' '}
-                  <a
-                    href={`${apiBase}/uploads/locals/contracts/${local.rentContractUrl}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 underline"
-                  >
-                    Ver contrato
-                  </a>
-                </p>
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-1">Contrato de Renta</h4>
+                  <DocumentItem
+                    label={`Contrato Local ${index + 1}`}
+                    fileUrl={`${apiBase}/uploads/locals/contracts/${local.rentContractUrl}`}
+                    onView={setPdfData}
+                  />
+                </div>
               )}
 
               {local.photos && local.photos.length > 0 && (
@@ -405,8 +428,16 @@ const handleSellProperty = async () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={!!pdfData.url} onOpenChange={() => setPdfData({ url: null, title: null })}>
+        <DialogContent className="max-w-5xl w-full h-[90vh]">
+          <iframe
+            src={pdfData.url}
+            title={pdfData.title || "PDF Viewer"}
+            className="w-full h-full border-none"
+          ></iframe>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
-
 export default PropertyDetails;

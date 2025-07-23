@@ -43,7 +43,11 @@ const PhysicalPersonDetails = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [pdfData, setPdfData] = useState({ url: null, title: null });
   const BACKEND_URL = import.meta.env.VITE_API_URL;
+
+
+
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
@@ -53,6 +57,29 @@ const PhysicalPersonDetails = () => {
       month: 'long',
       day: 'numeric',
     });
+  };
+  const isSeguroVacio = (seguro) => {
+    return !seguro.tipoSangre &&
+      !seguro.aseguradora &&
+      !seguro.tipoSeguro &&
+      !seguro.beneficiarios &&
+      !seguro.fechaInicioVigencia &&
+      !seguro.fechaVencimiento &&
+      !seguro.numeroPoliza &&
+      !seguro.prima &&
+      (!seguro.archivoSeguro || seguro.archivoSeguro.length === 0);
+  };
+
+  const isCreditoVacio = (credito) => {
+    return !credito.institucionFinanciera &&
+      !credito.montoCredito &&
+      !credito.plazoMeses &&
+      !credito.tasaInteresAnual &&
+      !credito.pagoMensual &&
+      !credito.tieneInmuebleGarantia &&
+      (!credito.tipoInmueble && !credito.direccionInmueble && !credito.valorComercial) &&
+      (!credito.archivoCredito || credito.archivoCredito.length === 0) &&
+      !credito.observaciones;
   };
 
   useEffect(() => {
@@ -96,6 +123,57 @@ const PhysicalPersonDetails = () => {
   if (isLoading) return <LoadingSpinner />;
   if (!person) return <NotFoundMessage onBack={() => navigate('/personas-fisicas')} />;
 
+  const DocumentItem = ({ label, filePath }) => (
+    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+      <span>{label}</span>
+      <div className="space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
+              console.warn("❗ Ruta inválida para:", label, filePath);
+              alert("Archivo no disponible o ruta inválida.");
+              return;
+            }
+
+            const fullUrl = `${BACKEND_URL}/${filePath.replace(/^\/+/, '')}`;
+            console.log("📄 Visualizando archivo:", label, fullUrl);
+            setPdfData({ url: fullUrl, title: label });
+          }}
+        >
+          Visualizar
+        </Button>
+
+
+
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            if (!filePath) {
+              console.warn("❗ Archivo no definido para:", label);
+              alert("Archivo no disponible o ruta inválida.");
+              return;
+            }
+            const a = document.createElement('a');
+            const fullUrl = filePath.startsWith('http') ? filePath : `${BACKEND_URL}/${filePath}`;
+            a.href = fullUrl;
+            a.download = label;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+      </div>
+    </div>
+  );
+
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-6">
@@ -126,129 +204,136 @@ const PhysicalPersonDetails = () => {
         >
           <Card>
             <CardHeader>
-              <CardTitle>Informacion del Seguro</CardTitle>
+              <CardTitle>Información del Seguro</CardTitle>
             </CardHeader>
             <CardContent>
-              {Array.isArray(person.datosMedicos) && person.datosMedicos.length > 0 ? (
+              {Array.isArray(person.datosMedicos) &&
+                person.datosMedicos.some(seguro => !isSeguroVacio(seguro)) ? (
                 <div className="space-y-6">
-                  {person.datosMedicos.map((seguro, index) => (
-                    <div key={index} className="border rounded-md p-4">
-                      <h4 className="font-semibold mb-2">Seguro #{index + 1}</h4>
-                      <div className="space-y-1 text-base leading-relaxed">
-                        <p><strong>Tipo de Sangre:</strong> {seguro.tipoSangre || 'No especificado'}</p>
-                        <p><strong>Aseguradora:</strong> {seguro.aseguradora || 'No especificado'}</p>
-                        <p><strong>Tipo de Seguro:</strong> {seguro.tipoSeguro || 'No especificado'}</p>
-                        <p><strong>Beneficiarios:</strong> {seguro.beneficiarios || 'No especificado'}</p>
-                        <p><strong>Inicio de Vigencia:</strong> {formatDate(seguro.fechaInicioVigencia)}</p>
-                        <p><strong>Vencimiento:</strong> {formatDate(seguro.fechaVencimiento)}</p>
-                        <p><strong>Número de Póliza:</strong> {seguro.numeroPoliza || 'No especificado'}</p>
-                        <p><strong>Prima:</strong> {seguro.prima || 'No especificado'}</p>
-                        {/* Archivos del Seguro */}
-                        {Array.isArray(seguro.archivoSeguro) && seguro.archivoSeguro.length > 0 && (
-                          <div className="mt-2">
-                            <h4 className="text-sm font-medium text-muted-foreground mb-1">Archivos del Seguro</h4>
-                            <ul className="space-y-2">
-                              {seguro.archivoSeguro.map((ruta, archivoIndex) => (
-                                <li
-                                  key={archivoIndex}
-                                  className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
-                                >
-                                  <span>Archivo {archivoIndex + 1}</span>
-                                  <a
-                                    href={`${BACKEND_URL}/${ruta}`}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                  >
-                                    <Button variant="outline" size="sm">
-                                      <FileText className="h-4 w-4 mr-1" />
-                                      Ver archivo
-                                    </Button>
-                                  </a>
-                                </li>
-                              ))}
-                            </ul>
-                          </div>
-                        )}
+                  {person.datosMedicos.map((seguro, index) =>
+                    isSeguroVacio(seguro) ? null : (
+                      <div key={index} className="border rounded-md p-4">
+                        <h4 className="font-semibold mb-2">Seguro #{index + 1}</h4>
+                        <div className="space-y-1 text-base leading-relaxed">
+                          <p><strong>Tipo de Sangre:</strong> {seguro.tipoSangre || 'No especificado'}</p>
+                          <p><strong>Aseguradora:</strong> {seguro.aseguradora || 'No especificado'}</p>
+                          <p><strong>Tipo de Seguro:</strong> {seguro.tipoSeguro || 'No especificado'}</p>
+                          <p><strong>Beneficiarios:</strong> {seguro.beneficiarios || 'No especificado'}</p>
+                          <p><strong>Inicio de Vigencia:</strong> {formatDate(seguro.fechaInicioVigencia)}</p>
+                          <p><strong>Vencimiento:</strong> {formatDate(seguro.fechaVencimiento)}</p>
+                          <p><strong>Número de Póliza:</strong> {seguro.numeroPoliza || 'No especificado'}</p>
+                          <p><strong>Prima:</strong> {seguro.prima || 'No especificado'}</p>
+                          {Array.isArray(seguro.archivoSeguro) && seguro.archivoSeguro.length > 0 && (
+                            <div className="mt-2 space-y-2">
+                              <h4 className="text-sm font-medium text-muted-foreground mb-1">Archivos del Seguro</h4>
+                              {seguro.archivoSeguro.map((archivo, i) => {
+                                const url = typeof archivo === 'string'
+                                  ? archivo
+                                  : archivo?.url || archivo?.archivo || null;
 
+                                if (!url) {
+                                  console.warn("⚠️ No se pudo determinar la URL del archivo:", archivo);
+                                  return null;
+                                }
+
+                                const label = typeof archivo === 'string'
+                                  ? `Archivo ${i + 1}`
+                                  : archivo?.nombre || `Archivo ${i + 1}`;
+
+                                return (
+                                  <DocumentItem
+                                    key={i}
+                                    label={label}
+                                    filePath={url}
+                                  />
+                                );
+                              })}
+
+
+                            </div>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               ) : (
-                <span>No especificado</span>
+                <p className="text-muted-foreground italic">No tiene seguros registrados.</p>
               )}
             </CardContent>
             <div className="flex justify-end mt-2">
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={() => setIsEditDialogOpen(true)}
-              >
+              <Button variant="secondary" size="sm" onClick={() => setIsEditDialogOpen(true)}>
                 Agregar o Editar Seguro
               </Button>
             </div>
           </Card>
+
           <Card className="mt-6">
             <CardHeader>
               <CardTitle>Créditos Financieros</CardTitle>
             </CardHeader>
             <CardContent>
-              {Array.isArray(person.creditos) && person.creditos.length > 0 ? (
-                person.creditos.map((credito, index) => (
-                  <div key={index} className="mb-6 border rounded-md p-4 space-y-3">
-                    <h4 className="font-semibold text-gray-700">Crédito #{index + 1}</h4>
-                    <p><strong>Institución:</strong> {credito.institucionFinanciera || 'N/A'}</p>
-                    <p><strong>Monto:</strong> ${credito.montoCredito?.toLocaleString() || 'N/A'}</p>
-                    <p><strong>Plazo:</strong> {credito.plazoMeses || 'N/A'} meses</p>
-                    <p><strong>Interés Anual:</strong> {credito.tasaInteresAnual || 'N/A'}%</p>
-                    <p><strong>Pago Mensual:</strong> ${credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
-                    <p><strong>Tiene inmueble en garantía:</strong> {credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
+              {Array.isArray(person.creditos) &&
+                person.creditos.some(credito => !isCreditoVacio(credito)) ? (
+                person.creditos.map((credito, index) =>
+                  isCreditoVacio(credito) ? null : (
+                    <div key={index} className="mb-6 border rounded-md p-4 space-y-3">
+                      <h4 className="font-semibold text-gray-700">Crédito #{index + 1}</h4>
+                      <p><strong>Institución:</strong> {credito.institucionFinanciera || 'N/A'}</p>
+                      <p><strong>Monto:</strong> ${credito.montoCredito?.toLocaleString() || 'N/A'}</p>
+                      <p><strong>Plazo:</strong> {credito.plazoMeses || 'N/A'} meses</p>
+                      <p><strong>Interés Anual:</strong> {credito.tasaInteresAnual || 'N/A'}%</p>
+                      <p><strong>Pago Mensual:</strong> ${credito.pagoMensual?.toLocaleString() || 'N/A'}</p>
+                      <p><strong>Tiene inmueble en garantía:</strong> {credito.tieneInmuebleGarantia ? 'Sí' : 'No'}</p>
 
-                    {credito.tieneInmuebleGarantia && (
-                      <>
-                        <p><strong>Tipo de Inmueble:</strong> {credito.tipoInmueble || 'N/A'}</p>
-                        <p><strong>Dirección:</strong> {credito.direccionInmueble || 'N/A'}</p>
-                        <p><strong>Valor Comercial:</strong> ${credito.valorComercial?.toLocaleString() || 'N/A'}</p>
-                      </>
-                    )}
+                      {credito.tieneInmuebleGarantia && (
+                        <>
+                          <p><strong>Tipo de Inmueble:</strong> {credito.tipoInmueble || 'N/A'}</p>
+                          <p><strong>Dirección:</strong> {credito.direccionInmueble || 'N/A'}</p>
+                          <p><strong>Valor Comercial:</strong> ${credito.valorComercial?.toLocaleString() || 'N/A'}</p>
+                        </>
+                      )}
 
-                    {/* Mostrar siempre los documentos si existen */}
-                    {Array.isArray(credito.archivoCredito) && credito.archivoCredito.length > 0 && (
-                      <div className="mt-4">
-                        <h3 className="text-sm font-medium text-muted-foreground mb-1">Documentos del Crédito</h3>
-                        <ul className="space-y-2">
-                          {credito.archivoCredito.map((ruta, archivoIndex) => (
-                            <li
-                              key={archivoIndex}
-                              className="flex items-center justify-between p-2 bg-gray-100 rounded-md"
-                            >
-                              <span>Archivo {archivoIndex + 1}</span>
-                              <a
-                                href={`${BACKEND_URL}/${ruta}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <Button variant="outline" size="sm">
-                                  <FileText className="h-4 w-4 mr-1" />
-                                  Ver archivo
-                                </Button>
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                      {Array.isArray(credito.archivoCredito) && credito.archivoCredito.length > 0 && (
+                        <div className="mt-4 space-y-2">
+                          <h3 className="text-sm font-medium text-muted-foreground mb-1">Documentos del Crédito</h3>
+                          {credito.archivoCredito.map((archivo, i) => {
+                            const url = typeof archivo === 'string'
+                              ? archivo
+                              : archivo?.url || archivo?.archivo || null;
 
-                    {credito.observaciones && (
-                      <p><strong>Observaciones:</strong> {credito.observaciones}</p>
-                    )}
-                  </div>
-                ))
+                            if (!url) {
+                              console.warn("⚠️ No se pudo determinar la URL del archivo de crédito:", archivo);
+                              return null;
+                            }
+
+                            const label = typeof archivo === 'string'
+                              ? `Archivo ${i + 1}`
+                              : archivo?.nombre || `Archivo ${i + 1}`;
+
+                            return (
+                              <DocumentItem
+                                key={i}
+                                label={label}
+                                filePath={url}
+                              />
+                            );
+                          })}
+
+                        </div>
+                      )}
+                      {credito.observaciones && (
+                        <p><strong>Observaciones:</strong> {credito.observaciones}</p>
+                      )}
+                    </div>
+                  )
+                )
               ) : (
-                <p className="text-gray-500 italic">No se ha registrado información de crédito.</p>
+                <p className="text-muted-foreground italic">No tiene créditos financieros registrados.</p>
               )}
             </CardContent>
           </Card>
+
 
         </motion.div>
       </div>
@@ -286,6 +371,16 @@ const PhysicalPersonDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <Dialog open={!!pdfData.url} onOpenChange={() => setPdfData({ url: null, title: null })}>
+        <DialogContent className="max-w-5xl w-full h-[90vh]">
+          <iframe
+            src={pdfData.url}
+            title={pdfData.title}
+            className="w-full h-full border-none"
+          ></iframe>
+        </DialogContent>
+      </Dialog>
+
     </div>
   );
 };

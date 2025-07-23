@@ -1,10 +1,12 @@
-import React from 'react';
-import { FileText } from 'lucide-react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { apiBase } from '@/lib/constants';
 
 const PhysicalPersonInformation = ({ person }) => {
+  const [pdfData, setPdfData] = useState({ url: null, title: null });
+
   const nombreCompleto =
     person.nombreCompleto ||
     `${person.nombre || ''} ${person.apellidoPaterno || ''} ${person.apellidoMaterno || ''}`.trim();
@@ -21,74 +23,74 @@ const PhysicalPersonInformation = ({ person }) => {
 
   const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
 
+  const DocumentItem = ({ label, filePath }) => (
+    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+      <span>{label}</span>
+      <div className="space-x-2">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(filePath), title: label })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(filePath);
+            a.download = label;
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+      </div>
+    </div>
+  );
+
   return (
     <div className="space-y-6">
       {/* TARJETA DE INFORMACIÓN PERSONAL */}
       <Card>
         <CardHeader>
-          <CardTitle>Información Personal</CardTitle>
+          <CardTitle>Información Personals</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6">
-
           {/* RFC */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <span>{person.rfc || 'No especificado'}</span>
-              {person.documentos?.rfc && (
-                <a
-                  href={buildFileUrl(person.documentos.rfc)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-1" />
-                    Ver archivo
-                  </Button>
-                </a>
-              )}
-            </div>
+            {person.documentos?.rfc ? (
+              <DocumentItem label="RFC" filePath={person.documentos.rfc} />
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-md">No especificado</div>
+            )}
           </div>
 
           {/* CURP */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">CURP</h3>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <span>{person.curp || 'No especificado'}</span>
-              {person.documentos?.curp && (
-                <a
-                  href={buildFileUrl(person.documentos.curp)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-1" />
-                    Ver archivo
-                  </Button>
-                </a>
-              )}
-            </div>
+            {person.documentos?.curp ? (
+              <DocumentItem label="CURP" filePath={person.documentos.curp} />
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-md">No especificado</div>
+            )}
           </div>
 
           {/* NSS */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">NSS</h3>
-            <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-              <span>{person.nss || 'No especificado'}</span>
-              {person.documentos?.nss && (
-                <a
-                  href={buildFileUrl(person.documentos.nss)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-1" />
-                    Ver archivo
-                  </Button>
-                </a>
-              )}
-            </div>
+            {person.documentos?.nss ? (
+              <DocumentItem label="NSS" filePath={person.documentos.nss} />
+            ) : (
+              <div className="p-3 bg-gray-50 rounded-md">No especificado</div>
+            )}
           </div>
 
           {/* Fecha de Nacimiento */}
@@ -118,6 +120,17 @@ const PhysicalPersonInformation = ({ person }) => {
           </div>
         </CardContent>
       </Card>
+
+      {/* MODAL PARA VER PDF */}
+      <Dialog open={!!pdfData.url} onOpenChange={() => setPdfData({ url: null, title: null })}>
+        <DialogContent className="max-w-5xl w-full h-[90vh]">
+          <iframe
+            src={pdfData.url}
+            title={pdfData.title}
+            className="w-full h-full border-none"
+          ></iframe>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

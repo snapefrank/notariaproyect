@@ -51,14 +51,18 @@ exports.createMoralPerson = async (req, res) => {
         });
       });
     }
+    const rfcFileObj = filesArray.find(f => f.fieldname === 'rfcFile');
+    const additionalDocs = filesArray
+      .filter(f => f.fieldname === 'adicional')
+      .map(f => f.path);
     const newPerson = new MoralPerson({
       nombre: parsedBody.nombre,
       rfc: parsedBody.rfc,
       regimenFiscal: parsedBody.regimenFiscal,
       domicilioFiscal: parsedBody.domicilioFiscal,
       fechaConstitucion: parsedBody.fechaConstitucion,
-      rfcFile: req.files?.rfcFile?.[0]?.path || '',
-      additionalDocs: req.files?.adicional?.map(file => file.path) || [],
+      rfcFile: rfcFileObj?.path || '',
+      additionalDocs,
       creditos,
     });
 
@@ -82,13 +86,19 @@ exports.updateMoralPerson = async (req, res) => {
     person.regimenFiscal = body.regimenFiscal || person.regimenFiscal;
     person.domicilioFiscal = body.domicilioFiscal || person.domicilioFiscal;
     person.fechaConstitucion = body.fechaConstitucion || person.fechaConstitucion;
-    if (req.files?.rfcFile?.[0]) {
-      person.rfcFile = req.files.rfcFile[0].path;
+    const rfcFileObj = filesArray.find(f => f.fieldname === 'rfcFile');
+    const additionalDocs = filesArray
+      .filter(f => f.fieldname === 'adicional')
+      .map(f => f.path);
+
+    if (rfcFileObj) {
+      person.rfcFile = rfcFileObj.path;
     }
 
-    if (req.files?.adicional) {
-      person.additionalDocs = req.files.adicional.map(file => file.path);
+    if (additionalDocs.length > 0) {
+      person.additionalDocs = additionalDocs;
     }
+
 
 
     const filesArray = req.files || [];

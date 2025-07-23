@@ -31,7 +31,9 @@ const propertySchema = new mongoose.Schema({
   usufruct: { type: String },                            // Usufructo
   deedNumber: { type: String, required: true },          // Número de escritura
   deedDate: { type: Date, required: true },              // Fecha de escritura
-  deedFiles: [{ type: String }],                         // Archivo de escritura
+  deed: {
+    archivos: [String], nombrePersonalizado: String
+  },      // Archivo de escritura
   notary: { type: String, required: true },              // Notaría
   cadastralKey: { type: String, required: true },        // Clave catastral
   location: { type: String, required: true },            // Ubicación en google maps
@@ -54,10 +56,17 @@ const propertySchema = new mongoose.Schema({
   rentStartDate: { type: Date },
   rentEndDate: { type: Date },
   rentContractUrl: { type: String },
+  rentContractCustomName: { type: String, default: '' },
+
 
   // Archivos generales del inmueble
   photos: [{ type: String }],
-  extraDocs: [{ type: String }],
+  extraDocs: {
+    archivos: [{ type: String }],
+    nombresPersonalizados: [{ type: String }]
+  },
+
+
 
   // Locales incluidos dentro del inmueble
   locals: [localSchema],

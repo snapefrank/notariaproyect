@@ -30,7 +30,7 @@ const PropertyInformation = ({ property }) => {
     rentStart,
     rentEnd,
     rentContractUrl,
-    extraDocs = [],
+    rentContractCustomName,
     photos = [],
   } = property;
 
@@ -126,34 +126,57 @@ const PropertyInformation = ({ property }) => {
             </div>
           </div>
         )}
-        {(rentContractUrl || extraDocs.length > 0) && (
+        {(rentContractUrl || property.extraDocs?.archivos?.length > 0) && (
           <div className="pt-6 border-t space-y-3">
             <h3 className="text-base font-semibold">Documentos</h3>
-            {property.deedFiles?.length > 0 &&
-              property.deedFiles.map((filename, idx) => (
-                <DocumentItem
-                  key={idx}
-                  label={`Escritura ${property.deedFiles.length > 1 ? idx + 1 : ''}`}
-                  fileUrl={`${apiBase}/uploads/properties/deeds/${filename}`}
-                  onView={setPdfData}
-                />
-              ))}
+            {property.deed?.archivos?.length > 0 && (
+              <div className="space-y-2">
+                {property.deed.archivos.map((filename, idx) => (
+                  <DocumentItem
+                    key={idx}
+                    label={
+                      property.deed.nombrePersonalizado?.trim()
+                        ? `${property.deed.nombrePersonalizado}${property.deed.archivos.length > 1 ? ` (${idx + 1})` : ''}`
+                        : `Escritura ${property.deed.archivos.length > 1 ? idx + 1 : ''}`
+                    }
+                    fileUrl={`${apiBase}/uploads/properties/deeds/${filename}`}
+                    onView={setPdfData}
+                  />
+                ))}
+              </div>
+            )}
 
             {isRented && rentContractUrl && (
               <DocumentItem
-                label="Contrato de Arrendamiento"
+                label={
+                  rentContractCustomName?.trim()
+                    ? rentContractCustomName
+                    : "Contrato de Arrendamiento"
+                }
                 fileUrl={`${apiBase}/uploads/properties/rent-contracts/${rentContractUrl}`}
                 onView={setPdfData}
               />
             )}
-            {extraDocs.map((filename, idx) => (
-              <DocumentItem
-                key={idx}
-                label={`Documento Adicional ${idx + 1}`}
-                fileUrl={`${apiBase}/uploads/properties/extra-docs/${filename}`}
-                onView={setPdfData}
-              />
-            ))}
+            {property.extraDocs?.archivos?.length > 0 && (
+              <div className="space-y-2">
+                {property.extraDocs.archivos.map((filename, idx) => {
+                  const nombres = property.extraDocs.nombresPersonalizados || [];
+                  const nombre = nombres[idx]?.trim();
+                  const label = nombre && nombre.length > 0
+                    ? nombre
+                    : `Documento Adicional ${idx + 1}`;
+
+                  return (
+                    <DocumentItem
+                      key={idx}
+                      label={label}
+                      fileUrl={`${apiBase}/uploads/properties/extra-docs/${filename}`}
+                      onView={setPdfData}
+                    />
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 

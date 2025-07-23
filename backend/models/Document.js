@@ -14,7 +14,8 @@ const documentSchema = new mongoose.Schema({
   assetId: String,
   clientId: String,
   tags: [String],
-  createdBy: String
+  createdBy: String,
+  nombrePersonalizado: { type: String, default: '' }, 
 });
 
 module.exports = mongoose.model('Document', documentSchema);

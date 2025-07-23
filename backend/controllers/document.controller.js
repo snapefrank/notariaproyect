@@ -19,6 +19,7 @@ exports.createDocument = async (req, res) => {
   try {
     const newDoc = new Document({
       ...req.body,
+      nombrePersonalizado: req.body.nombrePersonalizado || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
@@ -40,6 +41,7 @@ exports.updateDocument = async (req, res) => {
       id,
       {
         ...req.body,
+        nombrePersonalizado: req.body.nombrePersonalizado || '',
         updatedAt: new Date().toISOString()
       },
       { new: true }
@@ -100,6 +102,7 @@ exports.uploadDocumentWithFile = async (req, res) => {
 
     const newDoc = new Document({
       ...body,
+      nombrePersonalizado: req.body.nombrePersonalizado || '',
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       fileUrl: req.file ? `/uploads/documents/${req.file.filename}` : null,

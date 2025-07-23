@@ -23,10 +23,12 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
     assetId: '',
     clientId: '',
     status: 'activo', // ✅ agregar
-    createdBy: user?.username || 'unknown'
+    createdBy: user?.username || 'unknown',
+    nombrePersonalizado: '',
   });
 
   const [file, setFile] = useState(null);
+  const [hasFile, setHasFile] = useState(false);
   const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
@@ -70,23 +72,23 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
   };
 
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  try {
-    const formToSend = { ...formData };
-    delete formToSend.id;
-    delete formToSend._id;
+    try {
+      const formToSend = { ...formData };
+      delete formToSend.id;
+      delete formToSend._id;
 
-    if (file) {
-      formToSend.file = file; // solo se agrega como propiedad para que el context lo maneje
+      if (file) {
+        formToSend.file = file; // solo se agrega como propiedad para que el context lo maneje
+      }
+
+      onSubmit(formToSend); // el contexto se encarga de guardar
+    } catch (error) {
+      console.error('Error al procesar el documento:', error);
+      alert('Error al procesar el documento');
     }
-
-    onSubmit(formToSend); // el contexto se encarga de guardar
-  } catch (error) {
-    console.error('Error al procesar el documento:', error);
-    alert('Error al procesar el documento');
-  }
-};
+  };
 
 
   return (
@@ -225,15 +227,29 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
           </div>
 
           {/* ARCHIVO */}
-          <div className="md:col-span-2">
-            <Label htmlFor="file">Archivo (PDF o imagen)</Label>
+          <div className="md:col-span-2 space-y-2">
+            <Label>Subir archivo</Label>
             <Input
               type="file"
-              id="file"
-              accept=".pdf,image/jpeg,image/png"
-              onChange={(e) => setFile(e.target.files[0])}
+              name="file"
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => {
+                setFile(e.target.files[0]);
+                setHasFile(e.target.files.length > 0);
+              }}
             />
+            {hasFile && (
+              <div>
+                <Label>¿Cómo deseas nombrar este documento?</Label>
+                <Input
+                  placeholder="Ej. Certificado de autenticidad"
+                  value={formData.nombrePersonalizado || ''}
+                  onChange={(e) => handleChange({ target: { name: 'nombrePersonalizado', value: e.target.value } })}
+                />
+              </div>
+            )}
           </div>
+
         </div>
 
         {/* BOTONES */}

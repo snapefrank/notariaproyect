@@ -52,10 +52,16 @@ const DocumentInformation = ({ document: doc }) => {
             <div className="p-4 border rounded-md flex items-center justify-between bg-gray-100">
               <div className="flex items-center">
                 <FileText className="h-5 w-5 text-primary mr-2" />
-                <span>Documento adjunto</span>
+                <span>{doc.nombrePersonalizado?.trim() || 'Documento adjunto'}</span>
               </div>
               <div className="space-x-2">
-                <Button size="sm" variant="outline" onClick={() => setPdfData({ url: fullUrl, title: 'Documento adjunto' })}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() =>
+                    setPdfData({ url: fullUrl, title: doc.nombrePersonalizado?.trim() || 'Documento adjunto' })
+                  }
+                >
                   Visualizar
                 </Button>
                 <Button
@@ -63,7 +69,7 @@ const DocumentInformation = ({ document: doc }) => {
                   onClick={() => {
                     const a = window.document.createElement('a');
                     a.href = fullUrl;
-                    a.download = 'documento.pdf';
+                    a.download = doc.nombrePersonalizado?.trim() || 'documento.pdf';
                     a.target = '_blank';
                     a.rel = 'noopener noreferrer';
                     document.body.appendChild(a);

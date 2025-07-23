@@ -40,6 +40,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     rentStartDate: initialData.rentStartDate || '',
     rentEndDate: initialData.rentEndDate || '',
     type: initialData.type || '',
+    deedCustomName: initialData.deedCustomName || '',
   });
 
   // Archivos
@@ -49,6 +50,12 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [existingPhotos, setExistingPhotos] = useState(initialData.photos || []);
   const [locales, setLocales] = useState(initialData.locals || []);
   const [propertyPhotos, setPropertyPhotos] = useState([]);
+  const [hasDeedFile, setHasDeedFile] = useState(false);
+  const [extraDocsCustomNames, setExtraDocsCustomNames] = useState([]);
+  const [hasExtraDocs, setHasExtraDocs] = useState(false);
+  const [rentContractCustomName, setRentContractCustomName] = useState('');
+
+
 
 
   // Autocompletado para propietario
@@ -86,6 +93,12 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       setter(files[0]);
     }
   };
+  const handleDeedFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    setDeedFiles(files);
+    setHasDeedFile(files.length > 0);
+  };
+
 
   const handleLocalChange = (index, field, value) => {
     const updated = [...locales];
@@ -127,6 +140,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     fetchOwnerSuggestions(ownerQuery);
   }, [ownerQuery]);
 
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     const data = new FormData();
@@ -147,13 +161,12 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }
 
     Object.entries(formData).forEach(([key, value]) => {
-      if (key !== 'owner') {
-        const isNumberField = ['valor_total', 'totalArea', 'rentedArea', 'rentCost', 'encumbranceAmount'].includes(key);
-        const cleanedValue = isNumberField
-          ? value === '' || isNaN(Number(value)) ? '' : Number(value)
-          : value;
-        data.append(key, cleanedValue);
-      }
+      if (['owner', 'deedCustomName'].includes(key)) return; // ❌ omitimos aquí
+      const isNumberField = ['valor_total', 'totalArea', 'rentedArea', 'rentCost', 'encumbranceAmount'].includes(key);
+      const cleanedValue = isNumberField
+        ? value === '' || isNaN(Number(value)) ? '' : Number(value)
+        : value;
+      data.append(key, cleanedValue);
     });
 
     data.append('propietario', finalOwner);
@@ -162,12 +175,24 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     data.append('location', formData.location);
 
     deedFiles.forEach(file => data.append('deedFiles', file));
+    if (formData.deedCustomName) {
+      data.set('deedCustomName', formData.deedCustomName);
+    }
     if (rentContractFile) data.append('rentContractFile', rentContractFile);
+    if (rentContractCustomName) {
+      data.set('rentContractCustomName', rentContractCustomName);
+    }
+
 
     data.append('imagenesExistentes', JSON.stringify(existingPhotos));
 
     propertyPhotos.forEach(file => data.append('propertyPhotos', file));
     extraDocs.forEach(file => data.append('extraDocs', file));
+    extraDocsCustomNames.forEach(name => {
+      data.append('extraDocsCustomNames[]', name);
+    });
+
+
 
     data.append('locals', JSON.stringify(locales.map(({ photos, rentContractFile, ...rest }) => rest)));
 
@@ -199,6 +224,10 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     locales.forEach((local, index) => {
       console.log(`📦 Local ${index + 1}: contrato a enviar =>`, local.rentContractFile?.[0]?.name || '❌ NO SELECCIONADO');
     });
+
+    if (formData.deedDate) {
+      data.set('deedDate', formData.deedDate);
+    }
 
     onSubmit(data);
   };
@@ -292,7 +321,26 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               required
             />
           </div>
-
+          <div className="col-span-2 space-y-2">
+            <Label>Subir archivo de escritura</Label>
+            <Input
+              type="file"
+              name="deedFiles"
+              accept=".pdf,.doc,.docx"
+              multiple
+              onChange={handleDeedFileChange}
+            />
+            {hasDeedFile && (
+              <div>
+                <Label>¿Cómo deseas nombrar este documento?</Label>
+                <Input
+                  placeholder="Ej. Escritura Pública No. 123"
+                  value={formData.deedCustomName || ''}
+                  onChange={(e) => handleChange('deedCustomName', e.target.value)}
+                />
+              </div>
+            )}
+          </div>
           <div>
             <Label>Fecha de escritura</Label>
             <Input
@@ -301,18 +349,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               onChange={(e) => handleChange('deedDate', e.target.value)}
               required
             />
-          </div>
-
-          <div>
-            <Label>Subir archivo de escritura</Label>
-            <Input
-              type="file"
-              name="deedFiles"           
-              accept=".pdf,.doc,.docx"
-              multiple
-              onChange={(e) => handleFileChange(e, setDeedFiles, true)}
-            />
-
           </div>
 
           <div>
@@ -456,15 +492,28 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
                   onChange={(e) => handleChange('rentEndDate', e.target.value)}
                 />
               </div>
-
-              <div>
+              <div className="col-span-2 space-y-2">
                 <Label>Subir contrato de renta</Label>
                 <Input
                   type="file"
                   accept=".pdf,.doc,.docx"
-                  onChange={(e) => handleFileChange(e, setRentContractFile)}
+                  onChange={(e) => {
+                    handleFileChange(e, setRentContractFile);
+                    setHasRentContractFile(e.target.files.length > 0);
+                  }}
                 />
+                {rentContractFile && (
+                  <div>
+                    <Label>¿Cómo deseas nombrar este contrato?</Label>
+                    <Input
+                      placeholder="Ej. Contrato Plaza Comercial XYZ"
+                      value={rentContractCustomName}
+                      onChange={(e) => setRentContractCustomName(e.target.value)}
+                    />
+                  </div>
+                )}
               </div>
+
             </>
           )}
 
@@ -477,29 +526,39 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               onChange={(e) => handleFileChange(e, setPropertyPhotos, true)}
             />
           </div>
-          <div className="col-span-2">
-            <Label>Fotos existentes del inmueble</Label>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-              {existingPhotos?.map((photoUrl, idx) => (
-                <img
-                  key={idx}
-                  src={`${apiBase}${photoUrl}`}
-                  alt={`Foto ${idx + 1}`}
-                  className="w-full h-auto rounded shadow"
-                />
-              ))}
-            </div>
-          </div>
-
-          <div className="col-span-2">
-            <Label>Documentos adicionales</Label>
+          <div className="col-span-2 space-y-2">
+            <Label>Subir documentos adicionales</Label>
             <Input
               type="file"
               accept=".pdf,.doc,.docx"
               multiple
-              onChange={(e) => handleFileChange(e, setExtraDocs, true)}
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                handleFileChange(e, setExtraDocs, true);
+                setHasExtraDocs(files.length > 0);
+                setExtraDocsCustomNames(files.map(() => '')); // Inicializa nombres vacíos
+              }}
             />
+            {hasExtraDocs && extraDocs.length > 0 && (
+              <div className="space-y-2">
+                <Label>¿Cómo deseas nombrar estos documentos?</Label>
+                {extraDocs.map((file, idx) => (
+                  <Input
+                    key={idx}
+                    placeholder={`Nombre para: ${file.name}`}
+                    value={extraDocsCustomNames[idx] || ''}
+                    onChange={(e) => {
+                      const updated = [...extraDocsCustomNames];
+                      updated[idx] = e.target.value;
+                      setExtraDocsCustomNames(updated);
+                    }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
+
+
         </div>
 
         <div className="col-span-2">
@@ -589,4 +648,3 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   );
 };
 export default PropertyForm;
-

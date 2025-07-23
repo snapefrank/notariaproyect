@@ -198,13 +198,18 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
             <Label htmlFor="fechaConstitucion">Fecha de Constitución</Label>
             <Input type="date" id="fechaConstitucion" name="fechaConstitucion" value={formData.fechaConstitucion} onChange={handleChange} required />
           </div>
-          <div>
-            <Label htmlFor="additionalDocs">Subir Documentos Adicionales (PDF)</Label>
-            <Input type="file" id="additionalDocs" name="additionalDocs" multiple accept="application/pdf" onChange={handleChange} />
-          </div>
+          <Input
+            type="file"
+            id="adicional"
+            name="adicional"
+            multiple
+            accept="application/pdf"
+            onChange={handleChange}
+          />
+
 
         </div>
-        {/* Crédito Financiero */}
+
         {/* Créditos Financieros Múltiples */}
         <div className="pt-4 border-t">
           <h3 className="text-lg font-semibold text-gray-700 mb-2">Créditos Financieros</h3>

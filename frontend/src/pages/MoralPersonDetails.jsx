@@ -148,11 +148,11 @@ const MoralPersonDetails = () => {
                       <p><strong>Observaciones:</strong> {credito.observaciones}</p>
                     )}
 
-                    {Array.isArray(credito.archivos) && credito.archivos.length > 0 && (
+                    {Array.isArray(credito.archivoCredito) && credito.archivoCredito.length > 0 && (
                       <div className="mt-3">
                         <h5 className="text-sm font-medium text-muted-foreground mb-1">Archivos PDF</h5>
                         <ul className="list-disc list-inside space-y-1">
-                          {credito.archivos.map((ruta, i) => (
+                          {credito.archivoCredito.map((ruta, i) => (
                             <li key={i} className="flex items-center justify-between">
                               <span>Archivo {i + 1}</span>
                               <a

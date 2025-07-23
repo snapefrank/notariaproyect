@@ -34,7 +34,15 @@ exports.createProperty = async (req, res) => {
 
     const deedFiles = files?.deedFiles?.map(f => f.filename) || [];
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || '';
-    const extraDocs = files?.extraDocs?.map(f => f.filename) || [];
+    const rentContractCustomName = body.rentContractCustomName || '';
+    const extraDocsFiles = files?.extraDocs?.map(f => f.filename) || [];
+    const extraDocsCustomNames = Array.isArray(body.extraDocsCustomNames)
+      ? body.extraDocsCustomNames
+      : typeof body.extraDocsCustomNames === 'string'
+        ? [body.extraDocsCustomNames]
+        : [];
+
+
 
     // ✅ Leer imágenes existentes si vienen (por prevención)
     let imagenesExistentes = [];
@@ -72,6 +80,7 @@ exports.createProperty = async (req, res) => {
         return res.status(400).json({ error: 'ID de propietario no válido' });
       }
     }
+    const deedCustomName = body.deedCustomName || '';
 
     const newProperty = new Property({
       name: body.name,
@@ -82,7 +91,10 @@ exports.createProperty = async (req, res) => {
       usufruct: body.usufruct,
       deedNumber: body.deedNumber,
       deedDate: normalizeDate(body.deedDate),
-      deedFiles,
+      deed: {
+        archivos: deedFiles,
+        nombrePersonalizado: deedCustomName,
+      },
       notary: body.notary,
       cadastralKey: body.cadastralKey,
       location: Array.isArray(body.location) ? body.location[0] : String(body.location).trim(),
@@ -98,8 +110,12 @@ exports.createProperty = async (req, res) => {
       rentStartDate: normalizeDate(body.rentStartDate),
       rentEndDate: normalizeDate(body.rentEndDate),
       rentContractUrl,
+      rentContractCustomName,
       photos: fotosFinales,
-      extraDocs,
+      extraDocs: {
+        archivos: extraDocsFiles,
+        nombresPersonalizados: extraDocsCustomNames
+      },
       locals,
       status: body.status,
       soldDate: normalizeDate(body.soldDate),
@@ -116,6 +132,7 @@ exports.createProperty = async (req, res) => {
     res.status(500).json({ message: 'Error interno del servidor', error: err.message });
   }
 };
+
 
 // PUT update property
 exports.updateProperty = async (req, res) => {
@@ -145,9 +162,17 @@ exports.updateProperty = async (req, res) => {
 
     const nuevasFotos = files?.propertyPhotos?.map(f => f.filename) || [];
     const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
-    const extraDocs = files?.extraDocs?.map(f => f.filename) || existing.extraDocs || [];
+    const extraDocsFiles = files?.extraDocs?.map(f => f.filename) || existing.extraDocs?.archivos || [];
+    const extraDocsCustomNames = Array.isArray(body.extraDocsCustomNames)
+      ? body.extraDocsCustomNames
+      : typeof body.extraDocsCustomNames === 'string'
+        ? [body.extraDocsCustomNames]
+        : existing.extraDocs?.nombresPersonalizados || [];
     const deedFiles = files?.deedFiles?.map(f => f.filename) || existing.deedFiles || [];
+    const deedCustomName = body.deedCustomName || existing.deed?.nombrePersonalizado || '';
     const rentContractUrl = files?.rentContractFile?.[0]?.filename || existing.rentContractUrl || '';
+    const rentContractCustomName = body.rentContractCustomName || existing.rentContractCustomName || '';
+
 
     // ✅ Combinar locales
     const incomingLocals = JSON.parse(body.locals || '[]');
@@ -200,10 +225,13 @@ exports.updateProperty = async (req, res) => {
         usufruct: body.usufruct,
         deedNumber: body.deedNumber,
         deedDate: normalizeDate(body.deedDate),
-        deedFiles,
+        deed: {
+          archivos: deedFiles,
+          nombrePersonalizado: deedCustomName,
+        },
         notary: body.notary,
         cadastralKey: body.cadastralKey,
-        location: Array.isArray(body.location) ? body.location[0] : body.location ? String(body.location).trim(): '',
+        location: Array.isArray(body.location) ? body.location[0] : body.location ? String(body.location).trim() : '',
         totalArea: parseOptionalFloat(body.totalArea),
         hasEncumbrance: body.hasEncumbrance,
         encumbranceInstitution: body.encumbranceInstitution,
@@ -219,8 +247,12 @@ exports.updateProperty = async (req, res) => {
         rentStartDate: normalizeDate(body.rentStartDate),
         rentEndDate: normalizeDate(body.rentEndDate),
         rentContractUrl,
+        rentContractCustomName,
         photos: fotosFinales,
-        extraDocs,
+        extraDocs: {
+          archivos: extraDocsFiles,
+          nombresPersonalizados: extraDocsCustomNames
+        },
         locals: nuevosLocales,
         updatedAt: new Date(),
         type: body.type,

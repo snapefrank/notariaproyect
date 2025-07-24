@@ -20,7 +20,8 @@ const AssociationForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [existingAdditionalFiles, setExistingAdditionalFiles] = useState([]);
 
   useEffect(() => {
-    if (initialData) {
+    // Solo actualiza si existe initialData y tiene al menos un campo clave
+    if (initialData && initialData.nombre) {
       setFormData({
         nombre: initialData.nombre || '',
         apoderadoLegal: initialData.apoderadoLegal || '',
@@ -36,7 +37,8 @@ const AssociationForm = ({ initialData = {}, onSubmit, onCancel }) => {
         setExistingAdditionalFiles(initialData.additionalFiles);
       }
     }
-  }, [initialData]);
+  }, [initialData?.nombre]); // ✅ Dependencia controlada: evita re-render infinito
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;

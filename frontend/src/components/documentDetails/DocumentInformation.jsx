@@ -8,12 +8,15 @@ import { apiBase } from '@/lib/constants';
 const DocumentInformation = ({ document: doc }) => {
   const [pdfData, setPdfData] = useState({ url: null, title: null });
 
-  const fullUrl = `${apiBase}${doc.fileUrl.startsWith('/') ? '' : '/'}${doc.fileUrl}`;
+  const fullUrl = doc?.fileUrl && typeof doc.fileUrl === 'string'
+  ? `${apiBase}${doc.fileUrl.startsWith('/') ? '' : '/'}${doc.fileUrl}`
+  : null;
+
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Detalles del Documento</CardTitle>
+        <CardTitle>Detalles del Documentos</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
 
@@ -46,43 +49,44 @@ const DocumentInformation = ({ document: doc }) => {
           </div>
         </div>
 
-        {doc.fileUrl && (
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-2">Archivo</h3>
-            <div className="p-4 border rounded-md flex items-center justify-between bg-gray-100">
-              <div className="flex items-center">
-                <FileText className="h-5 w-5 text-primary mr-2" />
-                <span>{doc.nombrePersonalizado?.trim() || 'Documento adjunto'}</span>
-              </div>
-              <div className="space-x-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() =>
-                    setPdfData({ url: fullUrl, title: doc.nombrePersonalizado?.trim() || 'Documento adjunto' })
-                  }
-                >
-                  Visualizar
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={() => {
-                    const a = window.document.createElement('a');
-                    a.href = fullUrl;
-                    a.download = doc.nombrePersonalizado?.trim() || 'documento.pdf';
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    document.body.appendChild(a);
-                    a.click();
-                    document.body.removeChild(a);
-                  }}
-                >
-                  Descargar
-                </Button>
-              </div>
-            </div>
-          </div>
-        )}
+{typeof doc?.fileUrl === 'string' && fullUrl && (
+  <div>
+    <h3 className="text-sm font-medium text-muted-foreground mb-2">Archivo</h3>
+    <div className="p-4 border rounded-md flex items-center justify-between bg-gray-100">
+      <div className="flex items-center">
+        <FileText className="h-5 w-5 text-primary mr-2" />
+        <span>{doc.nombrePersonalizado?.trim() || 'Documento adjunto'}</span>
+      </div>
+      <div className="space-x-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            setPdfData({ url: fullUrl, title: doc.nombrePersonalizado?.trim() || 'Documento adjunto' })
+          }
+        >
+          Visualizar
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => {
+            const a = window.document.createElement('a');
+            a.href = fullUrl;
+            a.download = doc.nombrePersonalizado?.trim() || 'documento.pdf';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+      </div>
+    </div>
+  </div>
+)}
+
 
         {/* Modal para visualizar PDF */}
         <Dialog open={!!pdfData.url} onOpenChange={() => setPdfData({ url: null, title: null })}>

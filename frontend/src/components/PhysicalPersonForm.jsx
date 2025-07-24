@@ -61,8 +61,7 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
   });
   const [insuranceFile, setInsuranceFile] = useState([]);
   const [creditFiles, setCreditFiles] = useState([]);
-
-
+  const [additionalPersonalDocs, setAdditionalPersonalDocs] = useState([]);
   const [tieneSeguro, setTieneSeguro] = useState(false);
   const [tieneCredito, setTieneCredito] = useState(false);
   const [sexoError, setSexoError] = useState(false);
@@ -212,6 +211,14 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         });
       }
     });
+    if (additionalPersonalDocs.length > 0) {
+      additionalPersonalDocs.forEach((file, index) => {
+        if (file) {
+          data.append(`additionalDocs`, file);
+        }
+      });
+    }
+
 
 
 
@@ -264,6 +271,21 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
             <Input id="nss" name="nss" value={formData.nss} onChange={handleChange} required />
             <Input type="file" name="nssFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
+          <div className="col-span-2">
+            <Label htmlFor="additionalDocs">Documentos personales adicionales</Label>
+            <Input
+              type="file"
+              id="additionalDocs"
+              name="additionalDocs"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => {
+                const files = Array.from(e.target.files);
+                setAdditionalPersonalDocs(files);
+              }}
+            />
+          </div>
+
           <div>
             <Label htmlFor="direccion">Dirección</Label>
             <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange} required />

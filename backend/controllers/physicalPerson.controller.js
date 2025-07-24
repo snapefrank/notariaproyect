@@ -60,6 +60,14 @@ const createPhysicalPerson = async (req, res) => {
       if (file.fieldname === 'escritura') escrituraPath = file.path;
       if (file.fieldname === 'adicional') adicionalPath = file.path;
     });
+    // Procesar documentos personales adicionales
+    const documentosAdicionales = filesArray
+      .filter(file => file.fieldname === 'additionalDocs')
+      .map(file => ({
+        nombre: file.originalname,
+        url: file.path
+      }));
+
 
     // Procesar seguros médicos
     const datosMedicos = [];
@@ -133,6 +141,7 @@ const createPhysicalPerson = async (req, res) => {
       documentos,
       datosMedicos,
       creditos,
+      documentosAdicionales
     });
 
     const saved = await newPerson.save();
@@ -199,6 +208,20 @@ const updatePhysicalPerson = async (req, res) => {
       }
     });
     person.documentos = documentos;
+    // Procesar nuevos documentos personales adicionales
+    const nuevosDocs = filesArray
+      .filter(file => file.fieldname === 'additionalDocs')
+      .map(file => ({
+        nombre: file.originalname,
+        url: file.path
+      }));
+
+    // Conservar los anteriores (si los hay) y agregar nuevos
+    person.documentosAdicionales = [
+      ...(person.documentosAdicionales || []),
+      ...nuevosDocs
+    ];
+
     const nuevosSeguros = [];
 
     if (Array.isArray(body.datosMedicos)) {

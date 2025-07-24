@@ -118,6 +118,23 @@ const PhysicalPersonInformation = ({ person }) => {
               <span>{person.direccion || 'No especificada'}</span>
             </div>
           </div>
+
+          {/* Documentos adicionales */}
+          {person.documentosAdicionales?.length > 0 && (
+            <div>
+              <h3 className="text-sm font-medium text-muted-foreground mb-1">Documentos Personales Adicionales</h3>
+              <div className="space-y-2">
+                {person.documentosAdicionales.map((doc, index) => (
+                  <DocumentItem
+                    key={index}
+                    label={doc.nombre || `Documento ${index + 1}`}
+                    filePath={doc.url}
+                  />
+                ))}
+              </div>
+            </div>
+          )}
+
         </CardContent>
       </Card>
 

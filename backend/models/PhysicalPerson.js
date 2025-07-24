@@ -16,6 +16,12 @@ const physicalPersonSchema = new mongoose.Schema({
     curp: { type: String },
     nss: { type: String }
   },
+  documentosAdicionales: [
+    {
+      nombre: { type: String },
+      url: { type: String }
+    }
+  ],
   datosMedicos: [{
     tipoSangre: { type: String },
     aseguradora: { type: String },

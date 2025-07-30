@@ -94,22 +94,34 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
       className="document-card"
     >
       <Card className="h-full overflow-hidden border-t-4 shadow-md hover:shadow-lg transition-shadow">
-        <CardHeader className="pb-2">
-          <div className="flex justify-between items-start">
-            <div className="flex-1">
-              {(assetType === 'property' || assetType === 'artwork') && (
-                <Badge variant="outline" className="mb-2">
-                  {getTypeLabel()}
-                </Badge>
-              )}
-              <div className="flex items-center gap-2">
-                {getIcon()}
-                <CardTitle className="text-xl line-clamp-1">{getTitle()}</CardTitle>
-              </div>
-              <CardDescription className="mt-1">{getSubtitle()}</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
+<CardHeader className="pb-2">
+  <div className="flex justify-between items-start">
+    <div className="flex-1">
+      {/* Badge de tipo (Residencial, Comercial, etc.) */}
+      {(assetType === 'property' || assetType === 'artwork') && (
+        <Badge variant="outline" className="mb-2">
+          {getTypeLabel()}
+        </Badge>
+      )}
+
+      {/* ✅ NUEVO: Badge de estado de alquiler SOLO si es propiedad */}
+      {assetType === 'property' && (
+        asset.isRented ? (
+          <Badge className="bg-green-600 text-white mb-2 ml-2">Alquilado</Badge>
+        ) : (
+          <Badge className="bg-gray-400 text-white mb-2 ml-2">Disponible</Badge>
+        )
+      )}
+
+      <div className="flex items-center gap-2">
+        {getIcon()}
+        <CardTitle className="text-xl line-clamp-1">{getTitle()}</CardTitle>
+      </div>
+      <CardDescription className="mt-1">{getSubtitle()}</CardDescription>
+    </div>
+  </div>
+</CardHeader>
+
 
         <CardContent className="pb-2">
           {/* Miniatura de imagen para artwork */}

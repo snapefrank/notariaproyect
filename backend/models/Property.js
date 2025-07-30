@@ -36,7 +36,7 @@ const propertySchema = new mongoose.Schema({
   },      // Archivo de escritura
   notary: { type: String, required: true },              // Notaría
   cadastralKey: { type: String, required: true },        // Clave catastral
-  location: { type: String, required: true },            // Ubicación en google maps
+  location: { type: String },            // Ubicación en google maps
 
   totalArea: { type: Number, required: true },           // Superficie total
 

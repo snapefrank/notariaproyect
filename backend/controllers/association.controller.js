@@ -117,3 +117,75 @@ exports.getAssociationById = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+const fs = require('fs');
+const path = require('path');
+
+// 🗑 Eliminar RFC file
+exports.deleteRfcFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const association = await Association.findById(id);
+    if (!association) return res.status(404).json({ message: 'Asociación no encontrada' });
+
+    if (association.rfcFile) {
+      const filePath = path.resolve(association.rfcFile);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      association.rfcFile = '';
+      await association.save();
+    }
+
+    res.json({ message: 'RFC eliminado correctamente', association });
+  } catch (err) {
+    console.error('❌ Error al eliminar RFC:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 🗑 Eliminar Escritura file
+exports.deleteDeedFile = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const association = await Association.findById(id);
+    if (!association) return res.status(404).json({ message: 'Asociación no encontrada' });
+
+    if (association.deedFile) {
+      const filePath = path.resolve(association.deedFile);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      association.deedFile = '';
+      await association.save();
+    }
+
+    res.json({ message: 'Escritura eliminada correctamente', association });
+  } catch (err) {
+    console.error('❌ Error al eliminar escritura:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+// 🗑 Eliminar documento adicional por índice
+exports.deleteAdditionalFile = async (req, res) => {
+  try {
+    const { id, fileIndex } = req.params;
+    const association = await Association.findById(id);
+    if (!association) return res.status(404).json({ message: 'Asociación no encontrada' });
+
+    const index = Number(fileIndex);
+    if (isNaN(index) || index < 0 || index >= association.additionalFiles.length) {
+      return res.status(400).json({ message: 'Índice de archivo inválido' });
+    }
+
+    // 📄 Borrar archivo físicamente
+    const filePath = path.resolve(association.additionalFiles[index]);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    // ❌ Eliminar del array
+    association.additionalFiles.splice(index, 1);
+    await association.save();
+
+    res.json({ message: 'Documento adicional eliminado correctamente', association });
+  } catch (err) {
+    console.error('❌ Error al eliminar documento adicional:', err);
+    res.status(500).json({ message: err.message });
+  }
+};

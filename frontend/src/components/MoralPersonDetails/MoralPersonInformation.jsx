@@ -3,8 +3,9 @@ import { FileText } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { apiBase } from '@/lib/constants';
+import axios from 'axios';
 
-const MoralPersonInformation = ({ person }) => {
+const MoralPersonInformation = ({ person, onRefresh }) => {
   const formatDate = (isoString) => {
     if (!isoString) return 'No especificada';
     const date = new Date(isoString);
@@ -16,6 +17,29 @@ const MoralPersonInformation = ({ person }) => {
   };
 
   const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
+
+  const handleDeleteDocument = async (filePath) => {
+    if (!filePath) return alert('❌ Archivo no encontrado');
+
+    const docId = filePath.split('/').pop();
+
+    if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
+
+    try {
+      await axios.delete(`${apiBase}/api/moral-persons/${person._id}/document/${docId}`);
+      alert('✅ Documento eliminado correctamente');
+
+      if (onRefresh) {
+        onRefresh(); // 🔄 refresca datos
+      } else {
+        window.location.reload();
+      }
+    } catch (err) {
+      console.error('❌ Error al eliminar documento:', err);
+      alert('❌ Hubo un error al eliminar el documento');
+    }
+  };
+
 
   return (
     <div className="space-y-6">
@@ -39,16 +63,36 @@ const MoralPersonInformation = ({ person }) => {
             <div className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
               <span>{person.rfc || 'No especificado'}</span>
               {person.rfcFile && (
-                <a
-                  href={buildFileUrl(person.rfcFile)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  <Button variant="outline" size="sm">
-                    <FileText className="h-4 w-4 mr-1" />
-                    Ver archivo
+                <div className="flex gap-2">
+                  <a href={buildFileUrl(person.rfcFile)} target="_blank" rel="noopener noreferrer">
+                    <Button variant="outline" size="sm">
+                      <FileText className="h-4 w-4 mr-1" />
+                      Ver archivo
+                    </Button>
+                  </a>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    onClick={async () => {
+                      if (!window.confirm('¿Seguro que deseas eliminar el archivo de RFC?')) return;
+                      try {
+                        await axios.delete(`${apiBase}/api/moral-persons/${person._id}/rfc`);
+                        alert('✅ RFC eliminado correctamente');
+                        if (onRefresh) {
+                          onRefresh();
+                        } else {
+                          window.location.reload();
+                        }
+                      } catch (err) {
+                        console.error('❌ Error al eliminar RFC:', err);
+                        alert('❌ Error al eliminar el RFC');
+                      }
+                    }}
+                    className="bg-red-600 text-white"
+                  >
+                    🗑
                   </Button>
-                </a>
+                </div>
               )}
             </div>
           </div>
@@ -85,16 +129,22 @@ const MoralPersonInformation = ({ person }) => {
                 {person.additionalDocs.map((docPath, index) => (
                   <li key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
                     <span>Documento {index + 1}</span>
-                    <a
-                      href={buildFileUrl(docPath)}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      <Button variant="outline" size="sm">
-                        <FileText className="h-4 w-4 mr-1" />
-                        Ver archivo
+                    <div className="flex gap-2">
+                      <a href={buildFileUrl(docPath)} target="_blank" rel="noopener noreferrer">
+                        <Button variant="outline" size="sm">
+                          <FileText className="h-4 w-4 mr-1" />
+                          Ver archivo
+                        </Button>
+                      </a>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => handleDeleteDocument(docPath)}
+                        className="bg-red-600 text-white"
+                      >
+                        🗑
                       </Button>
-                    </a>
+                    </div>
                   </li>
                 ))}
               </ul>

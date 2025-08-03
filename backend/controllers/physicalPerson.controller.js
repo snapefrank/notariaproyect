@@ -367,6 +367,78 @@ function deleteFiles(filePaths = []) {
     }
   });
 }
+// ✅ Eliminar un documento específico de una persona física
+const deletePhysicalPersonDocument = async (req, res) => {
+  try {
+    const { id, docId } = req.params;
+    const person = await PhysicalPerson.findById(id);
+    if (!person) return res.status(404).json({ message: 'Persona no encontrada' });
+
+    let eliminado = false;
+
+    // 📄 1. Eliminar RFC, CURP o NSS (si coincide la ruta exacta)
+    for (let key of ['rfc', 'curp', 'nss']) {
+      if (person.documentos?.[key] && person.documentos[key].includes(docId)) {
+        // 🗑 Borra archivo físico
+        if (fs.existsSync(person.documentos[key])) fs.unlinkSync(person.documentos[key]);
+        // ❌ Borra referencia en Mongo
+        person.documentos[key] = '';
+        eliminado = true;
+      }
+    }
+
+    // 📄 2. Eliminar documentos adicionales
+    if (!eliminado && Array.isArray(person.documentosAdicionales)) {
+      const docIndex = person.documentosAdicionales.findIndex(d => d.url.includes(docId));
+      if (docIndex !== -1) {
+        const doc = person.documentosAdicionales[docIndex];
+        if (fs.existsSync(doc.url)) fs.unlinkSync(doc.url);
+        person.documentosAdicionales.splice(docIndex, 1);
+        eliminado = true;
+      }
+    }
+
+    // 📄 3. Eliminar de seguros médicos
+    if (!eliminado && Array.isArray(person.datosMedicos)) {
+      person.datosMedicos.forEach(seguro => {
+        if (Array.isArray(seguro.archivoSeguro)) {
+          const index = seguro.archivoSeguro.findIndex(file => file.includes(docId));
+          if (index !== -1) {
+            if (fs.existsSync(seguro.archivoSeguro[index])) fs.unlinkSync(seguro.archivoSeguro[index]);
+            seguro.archivoSeguro.splice(index, 1);
+            eliminado = true;
+          }
+        }
+      });
+    }
+
+    // 📄 4. Eliminar de créditos financieros
+    if (!eliminado && Array.isArray(person.creditos)) {
+      person.creditos.forEach(credito => {
+        if (Array.isArray(credito.archivoCredito)) {
+          const index = credito.archivoCredito.findIndex(file => file.includes(docId));
+          if (index !== -1) {
+            if (fs.existsSync(credito.archivoCredito[index])) fs.unlinkSync(credito.archivoCredito[index]);
+            credito.archivoCredito.splice(index, 1);
+            eliminado = true;
+          }
+        }
+      });
+    }
+
+    if (!eliminado) {
+      return res.status(404).json({ message: 'Documento no encontrado en esta persona física' });
+    }
+
+    await person.save();
+    res.json({ message: 'Documento eliminado correctamente' });
+
+  } catch (error) {
+    console.error('❌ Error al eliminar documento de persona física:', error);
+    res.status(500).json({ message: 'Error al eliminar documento', error: error.message });
+  }
+};
+
 
 
 module.exports = {
@@ -375,5 +447,6 @@ module.exports = {
   createPhysicalPerson,
   updatePhysicalPerson,
   deletePhysicalPerson,
-  uploadDocuments
+  uploadDocuments,
+  deletePhysicalPersonDocument
 };

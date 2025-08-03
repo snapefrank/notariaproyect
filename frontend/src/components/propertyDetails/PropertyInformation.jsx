@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import axios from 'axios';
-import { apiBase } from '@/lib/constants';
+
 
 
 const PropertyInformation = ({ property }) => {
@@ -40,6 +40,33 @@ const PropertyInformation = ({ property }) => {
   const ownerName = typeof owner === 'object'
     ? owner.nombre || owner.name || 'Propietario no identificado'
     : 'No especificado';
+
+
+  const handleDeletePhoto = async (photoName) => {
+  if (!window.confirm('¿Seguro que deseas eliminar esta foto?')) return;
+
+  try {
+    await axios.delete(`${apiBase}/api/properties/${property._id}/photo/${photoName}`);
+    alert('✅ Foto eliminada correctamente');
+    window.location.reload();
+  } catch (err) {
+    console.error('❌ Error al eliminar foto:', err);
+    alert('❌ Hubo un error al eliminar la foto');
+  }
+};
+
+const handleDeleteDocument = async (docName) => {
+  if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
+
+  try {
+    await axios.delete(`${apiBase}/api/properties/${property._id}/document/${docName}`);
+    alert('✅ Documento eliminado correctamente');
+    window.location.reload();
+  } catch (err) {
+    console.error('❌ Error al eliminar documento:', err);
+    alert('❌ Hubo un error al eliminar el documento');
+  }
+};
 
   const formatLocalDate = (dateStr) => {
     if (!dateStr) return 'No especificado';
@@ -140,7 +167,9 @@ const PropertyInformation = ({ property }) => {
                         : `Escritura ${property.deed.archivos.length > 1 ? idx + 1 : ''}`
                     }
                     fileUrl={`${apiBase}/uploads/properties/deeds/${filename}`}
+                    filename={filename}
                     onView={setPdfData}
+                    onDelete={handleDeleteDocument}
                   />
                 ))}
               </div>
@@ -154,7 +183,9 @@ const PropertyInformation = ({ property }) => {
                     : "Contrato de Arrendamiento"
                 }
                 fileUrl={`${apiBase}/uploads/properties/rent-contracts/${rentContractUrl}`}
+                filename={rentContractUrl}
                 onView={setPdfData}
+                onDelete={handleDeleteDocument}
               />
             )}
             {property.extraDocs?.archivos?.length > 0 && (
@@ -171,7 +202,9 @@ const PropertyInformation = ({ property }) => {
                       key={idx}
                       label={label}
                       fileUrl={`${apiBase}/uploads/properties/extra-docs/${filename}`}
+                      filename={filename}
                       onView={setPdfData}
+                      onDelete={handleDeleteDocument}
                     />
                   );
                 })}
@@ -185,21 +218,28 @@ const PropertyInformation = ({ property }) => {
             <h3 className="text-base font-semibold mb-2">Fotos del Inmueble</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {photos.map((filename, index) => (
-                <button
-                  key={index}
-                  onClick={() => setSelectedImage(`${apiBase}/uploads/properties/photos/${filename}`)}
-                  className="focus:outline-none"
-                >
+                <div key={index} className="relative group">
                   <img
                     src={`${apiBase}/uploads/properties/photos/${filename}`}
                     alt={`Foto ${index + 1}`}
-                    className="rounded-md w-full h-32 object-cover shadow-sm hover:ring-2 hover:ring-blue-500"
+                    className="rounded-md w-full h-32 object-cover shadow-sm hover:ring-2 hover:ring-blue-500 cursor-pointer"
+                    onClick={() => setSelectedImage(`${apiBase}/uploads/properties/photos/${filename}`)}
                   />
-                </button>
+
+                  {/* Botón de eliminar */}
+                  <button
+                    onClick={() => handleDeletePhoto(filename)}
+                    className="absolute top-2 right-2 bg-red-600 text-white px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                    title="Eliminar foto"
+                  >
+                    🗑
+                  </button>
+                </div>
               ))}
             </div>
           </div>
         )}
+
 
         {property.status === 'sold' &&
           property.saleDocuments &&
@@ -215,7 +255,9 @@ const PropertyInformation = ({ property }) => {
                   key={index}
                   label={`Documento de Venta ${index + 1}`}
                   fileUrl={`${apiBase}/uploads/properties/sale-docs/${filename}`}
+                  filename={filename}
                   onView={setPdfData}
+                  onDelete={handleDeleteDocument}
                 />
               ))}
             </div>
@@ -255,18 +297,18 @@ const Info = ({ label, value }) => (
   </div>
 );
 
-const DocumentItem = ({ label, fileUrl, onView }) => (
+const DocumentItem = ({ label, fileUrl, filename, onView, onDelete }) => (
   <div className="flex items-center justify-between bg-gray-100 p-3 rounded-md">
     <span className="font-medium text-sm">{label}</span>
-    <div className="space-x-2">
+    <div className="space-x-2 flex items-center">
       <Button size="sm" variant="outline" onClick={() => onView({ url: fileUrl, title: label })}>
         Visualizar
       </Button>
       <Button size="sm" onClick={() => {
         const a = document.createElement('a');
         a.href = fileUrl;
-        a.download = label || 'documento'; // Usa el label como nombre de archivo o 'documento' por defecto
-        a.target = '_blank'; // Asegura que no se abra en la misma ventana
+        a.download = label || 'documento';
+        a.target = '_blank';
         a.rel = 'noopener noreferrer';
         document.body.appendChild(a);
         a.click();
@@ -274,9 +316,20 @@ const DocumentItem = ({ label, fileUrl, onView }) => (
       }}>
         Descargar
       </Button>
+      {/* Botón de eliminar */}
+      <Button
+        size="sm"
+        variant="destructive"
+        onClick={() => onDelete(filename)}
+        className="bg-red-600 text-white"
+      >
+        🗑
+      </Button>
     </div>
   </div>
 );
+
+
 
 export default PropertyInformation;
 

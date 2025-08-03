@@ -75,7 +75,10 @@ const AssociationDetails = () => {
           transition={{ duration: 0.3 }}
           className="lg:col-span-2"
         >
-          <AssociationInformation association={association} />
+          <AssociationInformation
+            association={association}
+            onRefresh={() => fetchAssociationById(id).then(setAssociation)}
+          />
         </motion.div>
 
         {/* Si después hay información relacionada, puedes agregarla aquí */}

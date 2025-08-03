@@ -60,4 +60,10 @@ router.put(
 
 router.delete('/:id', artworkController.deleteArtwork);
 
+// 🆕 Eliminar una foto específica
+router.delete('/:id/photo/:photoIndex', artworkController.deleteArtworkPhoto);
+
+// 🆕 Eliminar el certificado PDF
+router.delete('/:id/certificate', artworkController.deleteArtworkCertificate);
+
 module.exports = router;

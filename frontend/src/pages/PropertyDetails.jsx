@@ -157,6 +157,82 @@ const PropertyDetails = () => {
       </div>
     </div>
   );
+  const createFormDataForProperty = (propertyData, updatedLocals) => {
+    const formData = new FormData();
+
+    // 🔹 Datos básicos del inmueble
+    Object.keys(propertyData).forEach(key => {
+      if (key !== "locals" && key !== "_id") {
+        const value = propertyData[key];
+
+        // ✅ Conversión de valores vacíos para evitar NaN
+        if (value === "" || value === null || value === undefined) {
+          return;
+        }
+
+        // ✅ Si el campo debería ser numérico, convertir a número
+        if (
+          ["valor_total", "encumbranceAmount", "totalArea", "rentedArea", "rentCost"].includes(key)
+        ) {
+          const num = Number(value);
+          if (!isNaN(num)) {
+            formData.append(key, num);
+          }
+          return;
+        }
+
+        formData.append(key, value);
+      }
+    });
+
+    // 🔹 Agregar los locales actualizados
+    formData.append("locals", JSON.stringify(updatedLocals));
+
+    return formData;
+  };
+
+
+  const handleDeleteLocalContract = async (propertyId, localIndex) => {
+    if (!window.confirm("¿Seguro que deseas eliminar el contrato de este local?")) return;
+
+    try {
+      const response = await fetch(`${API_URL}/${propertyId}/locals/${localIndex}/contract`, {
+        method: "DELETE"
+      });
+
+      if (!response.ok) throw new Error("Error al eliminar el contrato");
+
+      const updatedProperty = await response.json();
+      setProperty(updatedProperty.property);
+
+      alert("✅ Contrato eliminado correctamente");
+    } catch (error) {
+      console.error("❌ Error al eliminar contrato:", error);
+      alert("No se pudo eliminar el contrato");
+    }
+  };
+
+
+  const handleDeleteLocalPhoto = async (propertyId, localIndex, filename) => {
+    if (!window.confirm("¿Seguro que deseas eliminar esta foto?")) return;
+
+    try {
+      const response = await fetch(`${API_URL}/${propertyId}/locals/${localIndex}/photos/${filename}`, {
+        method: "DELETE"
+      });
+
+      if (!response.ok) throw new Error("Error al eliminar la foto");
+
+      const updatedProperty = await response.json();
+      setProperty(updatedProperty.property);
+
+      alert("✅ Foto eliminada correctamente");
+    } catch (error) {
+      console.error("❌ Error al eliminar foto:", error);
+      alert("No se pudo eliminar la foto");
+    }
+  };
+
 
 
   return (
@@ -195,38 +271,70 @@ const PropertyDetails = () => {
               <p><strong>Costo de renta:</strong> ${local.rentCost}</p>
               <p><strong>Inicio de renta:</strong> {local.rentStartDate?.substring(0, 10)}</p>
               <p><strong>Fin de renta:</strong> {local.rentEndDate?.substring(0, 10)}</p>
-
               {local.rentContractUrl && (
                 <div className="mt-4">
                   <h4 className="text-sm font-semibold text-muted-foreground mb-1">Contrato de Renta</h4>
-                  <DocumentItem
-                    label={`Contrato Local ${index + 1}`}
-                    fileUrl={`${apiBase}/uploads/locals/contracts/${local.rentContractUrl}`}
-                    onView={setPdfData}
-                  />
+                  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+                    <div className="flex items-center space-x-2">
+                      <span className="font-medium">Contrato Local {index + 1}</span>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <Button size="sm" variant="outline" onClick={() => setPdfData({ url: `${apiBase}/uploads/locals/contracts/${local.rentContractUrl}`, title: `Contrato Local ${index + 1}` })}>
+                        Visualizar
+                      </Button>
+                      <Button size="sm" onClick={() => {
+                        const a = document.createElement('a');
+                        a.href = `${apiBase}/uploads/locals/contracts/${local.rentContractUrl}`;
+                        a.download = `Contrato Local ${index + 1}`;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                      }}>
+                        Descargar
+                      </Button>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="text-red-500 hover:bg-red-100"
+                        title="Eliminar contrato"
+                        onClick={() => handleDeleteLocalContract(property._id, index)}
+                      >
+                        🗑
+                      </Button>
+                    </div>
+                  </div>
                 </div>
               )}
+
 
               {local.photos && local.photos.length > 0 && (
                 <div className="pt-4 border-t mt-4">
                   <h4 className="text-sm font-semibold mb-2">Fotos del local</h4>
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                     {local.photos.map((filename, i) => (
-                      <button
-                        key={i}
-                        onClick={() => setSelectedImage(`${apiBase}/uploads/locals/photos/${filename}`)}
-                        className="focus:outline-none"
-                      >
+                      <div key={i} className="relative group">
                         <img
                           src={`${apiBase}/uploads/locals/photos/${filename}`}
                           alt={`Foto ${i + 1}`}
                           className="rounded-md w-full h-32 object-cover shadow-sm hover:ring-2 hover:ring-blue-500"
                         />
-                      </button>
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="absolute top-1 right-1 text-red-500 bg-white/70 hover:bg-red-100"
+                          title="Eliminar foto"
+                          onClick={() => handleDeleteLocalPhoto(property._id, index, filename)}
+                        >
+                          🗑
+                        </Button>
+                      </div>
                     ))}
                   </div>
                 </div>
               )}
+
 
               <div className="flex gap-2 mt-4">
                 <Button

@@ -3,8 +3,10 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { apiBase } from '@/lib/constants';
+import axios from 'axios';
 
-const PhysicalPersonInformation = ({ person }) => {
+
+const PhysicalPersonInformation = ({ person, onRefresh }) => {
   const [pdfData, setPdfData] = useState({ url: null, title: null });
 
   const nombreCompleto =
@@ -20,13 +22,34 @@ const PhysicalPersonInformation = ({ person }) => {
       year: 'numeric'
     });
   };
+  const handleDeleteDocument = async (filePath) => {
+    if (!filePath) return alert('❌ Archivo no encontrado');
+
+    // Sacar el nombre real del archivo (docId)
+    const docId = filePath.split('/').pop();
+
+    if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
+
+    try {
+      await axios.delete(`${apiBase}/api/physical-persons/${person._id}/document/${docId}`);
+      alert('✅ Documento eliminado correctamente');
+      
+      // 🔄 Refrescar datos en el padre
+      if (onRefresh) {
+        await onRefresh(); // 🔄 Solo refresca los datos desde el backend
+      }
+    } catch (err) {
+      console.error('❌ Error al eliminar documento:', err);
+      alert('❌ Hubo un error al eliminar el documento');
+    }
+  };
 
   const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
 
   const DocumentItem = ({ label, filePath }) => (
     <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
       <span>{label}</span>
-      <div className="space-x-2">
+      <div className="space-x-2 flex items-center">
         <Button
           variant="outline"
           size="sm"
@@ -49,6 +72,16 @@ const PhysicalPersonInformation = ({ person }) => {
           }}
         >
           Descargar
+        </Button>
+
+        {/* ✅ BOTÓN ELIMINAR */}
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(filePath)}
+          className="bg-red-600 text-white"
+        >
+          🗑
         </Button>
       </div>
     </div>

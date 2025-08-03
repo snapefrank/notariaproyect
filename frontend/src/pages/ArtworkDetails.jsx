@@ -140,7 +140,15 @@ const ArtworkDetails = () => {
           transition={{ duration: 0.3 }}
           className="lg:col-span-2"
         >
-          <ArtworkInformation artwork={artwork} ownerName={ownerName} />
+          <ArtworkInformation
+            artwork={artwork}
+            ownerName={ownerName}
+            onRefresh={async () => {
+              const response = await axios.get(`${ARTWORK_API}/${id}`);
+              setArtwork(response.data);
+            }}
+          />
+
         </motion.div>
 
         <motion.div

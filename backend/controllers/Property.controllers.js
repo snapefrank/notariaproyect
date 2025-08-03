@@ -417,6 +417,108 @@ exports.deleteLocalFromProperty = async (req, res) => {
     res.status(500).json({ message: 'Error al eliminar local', error: error.message });
   }
 };
+
+const fs = require('fs');
+const path = require('path');
+
+// ✅ Eliminar una foto específica de un inmueble
+exports.deletePropertyPhoto = async (req, res) => {
+  try {
+    const { id, photoId } = req.params;
+
+    // 🔍 Buscar propiedad
+    const property = await Property.findById(id);
+    if (!property) return res.status(404).json({ message: 'Inmueble no encontrado' });
+
+    // ⚠️ Validar que exista la foto en el array
+    const photoIndex = property.photos.findIndex(p => p === photoId);
+    if (photoIndex === -1) {
+      return res.status(404).json({ message: 'Foto no encontrada en este inmueble' });
+    }
+
+    // 🗑 Borrar archivo físico
+    const filePath = path.join('backend/uploads/properties/photos', property.photos[photoIndex]);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // 🗂 Borrar referencia de Mongo
+    property.photos.splice(photoIndex, 1);
+    await property.save();
+
+    res.json({ message: 'Foto eliminada correctamente' });
+  } catch (error) {
+    console.error('❌ Error al eliminar foto:', error);
+    res.status(500).json({ message: 'Error interno al eliminar foto', error: error.message });
+  }
+};
+
+// ✅ Eliminar un documento (escritura, extraDocs, contrato de renta o venta) de un inmueble
+exports.deletePropertyDocument = async (req, res) => {
+  try {
+    const { id, docId } = req.params;
+    const property = await Property.findById(id);
+
+    if (!property) {
+      return res.status(404).json({ message: 'Inmueble no encontrado' });
+    }
+
+    let found = false;
+    let filePath = '';
+
+    // 🟢 1. Buscar en Escrituras
+    if (property.deed?.archivos?.includes(docId)) {
+      property.deed.archivos = property.deed.archivos.filter(file => file !== docId);
+      filePath = path.join('backend/uploads/properties/deeds', docId);
+      found = true;
+    }
+
+    // 🟢 2. Buscar en Documentos adicionales
+    if (!found && property.extraDocs?.archivos?.includes(docId)) {
+      const index = property.extraDocs.archivos.indexOf(docId);
+      property.extraDocs.archivos.splice(index, 1);
+      if (Array.isArray(property.extraDocs.nombresPersonalizados)) {
+        property.extraDocs.nombresPersonalizados.splice(index, 1);
+      }
+      filePath = path.join('backend/uploads/properties/extra-docs', docId);
+      found = true;
+    }
+
+    // 🟢 3. Buscar en Contrato de renta
+    if (!found && property.rentContractUrl === docId) {
+      property.rentContractUrl = '';
+      property.rentContractCustomName = '';
+      filePath = path.join('backend/uploads/properties/rent-contracts', docId);
+      found = true;
+    }
+
+    // 🟢 4. Buscar en Documentos de venta
+    if (!found && property.saleDocuments?.includes(docId)) {
+      property.saleDocuments = property.saleDocuments.filter(file => file !== docId);
+      filePath = path.join('backend/uploads/properties/sale-docs', docId);
+      found = true;
+    }
+
+    if (!found) {
+      return res.status(404).json({ message: 'Documento no encontrado en este inmueble' });
+    }
+
+    // 🗑 Eliminar archivo físico si existe
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // 💾 Guardar cambios en MongoDB
+    await property.save();
+
+    res.json({ message: 'Documento eliminado correctamente' });
+  } catch (error) {
+    console.error('❌ Error al eliminar documento:', error);
+    res.status(500).json({ message: 'Error interno al eliminar documento', error: error.message });
+  }
+};
+
+
 // GET: Obtener inmueble por ID
 exports.getPropertyById = async (req, res) => {
   try {
@@ -458,5 +560,66 @@ exports.markAsSold = async (req, res) => {
   } catch (error) {
     console.error('❌ Error al marcar como vendido:', error);
     res.status(500).json({ message: 'Error al marcar como vendido', error: error.message });
+  }
+};
+// DELETE: Eliminar una foto específica de un local
+// DELETE: Eliminar una foto específica de un local
+exports.deleteLocalPhoto = async (req, res) => {
+  try {
+    const { propertyId, index, filename } = req.params;
+    const localIndex = parseInt(index);
+
+    const property = await Property.findById(propertyId);
+    if (!property) return res.status(404).json({ message: 'Inmueble no encontrado' });
+
+    if (isNaN(localIndex) || localIndex < 0 || localIndex >= property.locals.length) {
+      return res.status(400).json({ message: 'Índice de local inválido' });
+    }
+
+    // 🔹 Filtrar la foto a eliminar
+    property.locals[localIndex].photos = property.locals[localIndex].photos.filter(photo => photo !== filename);
+
+    // 🔹 Eliminar archivo físico
+    const filePath = path.join('backend/uploads/locals/photos', filename);
+    if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+
+    await property.save();
+    res.json({ message: '✅ Foto eliminada del local correctamente', property });
+  } catch (error) {
+    console.error('❌ Error al eliminar foto de local:', error);
+    res.status(500).json({ message: 'Error al eliminar foto de local', error: error.message });
+  }
+};
+
+// DELETE: Eliminar el contrato de renta de un local
+exports.deleteLocalContract = async (req, res) => {
+  try {
+    const { propertyId, index } = req.params;
+    const localIndex = parseInt(index);
+
+    const property = await Property.findById(propertyId);
+    if (!property) return res.status(404).json({ message: 'Inmueble no encontrado' });
+
+    if (isNaN(localIndex) || localIndex < 0 || localIndex >= property.locals.length) {
+      return res.status(400).json({ message: 'Índice de local inválido' });
+    }
+
+    // 🔹 Obtener contrato actual
+    const contractFile = property.locals[localIndex].rentContractUrl;
+
+    // 🔹 Limpiar contrato en DB
+    property.locals[localIndex].rentContractUrl = '';
+
+    // 🔹 Eliminar archivo físico si existe
+    if (contractFile) {
+      const filePath = path.join('backend/uploads/locals/contracts', contractFile);
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+    }
+
+    await property.save();
+    res.json({ message: '✅ Contrato de renta eliminado correctamente', property });
+  } catch (error) {
+    console.error('❌ Error al eliminar contrato de local:', error);
+    res.status(500).json({ message: 'Error al eliminar contrato del local', error: error.message });
   }
 };

@@ -160,6 +160,72 @@ exports.deleteMoralPerson = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+const fs = require('fs');
+const path = require('path');
+
+// ✅ ELIMINAR DOCUMENTO ADICIONAL DE PERSONA MORAL
+exports.deleteMoralPersonDocument = async (req, res) => {
+  try {
+    const { id, docId } = req.params;
+
+    const person = await MoralPerson.findById(id);
+    if (!person) {
+      return res.status(404).json({ message: 'Persona moral no encontrada' });
+    }
+
+    // 🔍 Buscar documento en additionalDocs (ruta exacta)
+    const docIndex = person.additionalDocs.findIndex(d => d.endsWith(docId));
+    if (docIndex === -1) {
+      return res.status(404).json({ message: 'Documento no encontrado' });
+    }
+
+    // 🗑 Borrar archivo físico del servidor
+    const filePath = path.join(person.additionalDocs[docIndex]);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // 📦 Borrar del arreglo en la base de datos
+    person.additionalDocs.splice(docIndex, 1);
+    await person.save();
+
+    res.json({ message: '✅ Documento eliminado correctamente' });
+  } catch (error) {
+    console.error('❌ Error al eliminar documento de persona moral:', error);
+    res.status(500).json({ message: 'Error interno al eliminar documento', error: error.message });
+  }
+};
+exports.deleteMoralPersonRfc = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const person = await MoralPerson.findById(id);
+
+    if (!person) return res.status(404).json({ message: 'Persona moral no encontrada' });
+
+    if (!person.rfcFile) {
+      return res.status(404).json({ message: 'No hay archivo de RFC para eliminar' });
+    }
+
+    // 🗑 Borrar archivo físico
+    const filePath = person.rfcFile;
+    const fs = require('fs');
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // 🗂 Borrar referencia en Mongo
+    person.rfcFile = '';
+    await person.save();
+
+    res.json({ message: '✅ RFC eliminado correctamente' });
+  } catch (error) {
+    console.error('❌ Error al eliminar RFC:', error);
+    res.status(500).json({ message: 'Error interno al eliminar RFC', error: error.message });
+  }
+};
+
+
 function parseNestedFormData(body) {
   const result = {};
   const arrayRegex = /^([^\[\]]+)\[(\d+)\]\[([^\[\]]+)\]$/;

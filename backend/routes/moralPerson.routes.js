@@ -18,4 +18,10 @@ router.put('/:id', uploadCombined, moralPersonController.updateMoralPerson);
 // Eliminar una persona moral
 router.delete('/:id', moralPersonController.deleteMoralPerson);
 
+// ✅ Eliminar un documento específico de Persona Moral
+router.delete('/:id/document/:docId', moralPersonController.deleteMoralPersonDocument);
+
+router.delete('/:id/rfc', moralPersonController.deleteMoralPersonRfc);
+
+
 module.exports = router;

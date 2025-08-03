@@ -18,4 +18,8 @@ router.put('/:id', uploadCombined, physicalPersonController.updatePhysicalPerson
 // Eliminar una persona física
 router.delete('/:id', physicalPersonController.deletePhysicalPerson);
 
+// ✅ Eliminar un documento específico de una persona física
+router.delete('/:id/document/:docId', physicalPersonController.deletePhysicalPersonDocument);
+
+
 module.exports = router;

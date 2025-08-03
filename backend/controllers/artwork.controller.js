@@ -180,3 +180,55 @@ exports.deleteArtwork = async (req, res) => {
     res.status(500).json({ message: err.message });
   }
 };
+
+exports.deleteArtworkPhoto = async (req, res) => {
+  try {
+    const { id, photoIndex } = req.params;
+    const artwork = await Artwork.findById(id);
+    if (!artwork) return res.status(404).json({ message: 'Obra no encontrada' });
+
+    const index = parseInt(photoIndex);
+    if (isNaN(index) || index < 0 || index >= artwork.photoPaths.length) {
+      return res.status(400).json({ message: 'Índice de foto inválido' });
+    }
+
+    const photoToDelete = artwork.photoPaths[index];
+
+    // 1️⃣ Eliminar físicamente la foto del servidor
+    if (photoToDelete && fs.existsSync(photoToDelete)) {
+      fs.unlinkSync(photoToDelete);
+    }
+
+    // 2️⃣ Quitar del array
+    artwork.photoPaths.splice(index, 1);
+
+    await artwork.save();
+    res.json({ message: 'Foto eliminada', artwork });
+  } catch (err) {
+    console.error('❌ Error al eliminar foto:', err);
+    res.status(500).json({ message: 'Error al eliminar foto', error: err.message });
+  }
+};
+
+// 🆕 Eliminar el certificado de una obra de arte
+exports.deleteArtworkCertificate = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const artwork = await Artwork.findById(id);
+    if (!artwork) return res.status(404).json({ message: 'Obra no encontrada' });
+
+    // 1️⃣ Eliminar físicamente el archivo del certificado si existe
+    if (artwork.certificatePath && fs.existsSync(artwork.certificatePath)) {
+      fs.unlinkSync(artwork.certificatePath);
+    }
+
+    // 2️⃣ Eliminar la referencia en la base de datos
+    artwork.certificatePath = '';
+    await artwork.save();
+
+    res.json({ message: 'Certificado eliminado', artwork });
+  } catch (err) {
+    console.error('❌ Error al eliminar certificado:', err);
+    res.status(500).json({ message: 'Error al eliminar certificado', error: err.message });
+  }
+};

@@ -135,4 +135,17 @@ router.put(
 // DELETE: Eliminar local por índice
 router.delete('/:propertyId/locals/:index', controller.deleteLocalFromProperty);
 
+// DELETE: Eliminar una foto específica de un inmueble
+router.delete('/:id/photo/:photoId', controller.deletePropertyPhoto);
+
+// DELETE: Eliminar un documento específico de un inmueble
+router.delete('/:id/document/:docId', controller.deletePropertyDocument);
+
+// 🗑 Eliminar foto de un local
+router.delete('/:propertyId/locals/:index/photos/:filename', controller.deleteLocalPhoto);
+
+// 🗑 Eliminar contrato de un local
+router.delete('/:propertyId/locals/:index/contract', controller.deleteLocalContract);
+
+
 module.exports = router;

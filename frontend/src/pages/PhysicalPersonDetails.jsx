@@ -194,7 +194,10 @@ const PhysicalPersonDetails = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3 }}
         >
-          <PhysicalPersonInformation person={person} />
+          <PhysicalPersonInformation person={person} onRefresh={() => {
+            fetchPhysicalPersonById(id).then(setPerson);
+          }} />
+
         </motion.div>
 
         <motion.div

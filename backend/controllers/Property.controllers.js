@@ -242,6 +242,7 @@ exports.updateProperty = async (req, res) => {
         name: body.name,
         propietario,
         tipoPropietario: body.tipoPropietario,
+        owner: body.tipoPropietario === 'Personalizado' ? body.owner : '',
         valor_total: parseOptionalFloat(body.valor_total) ?? 0,
         usufruct: body.usufruct,
         deedNumber: body.deedNumber,

@@ -124,7 +124,6 @@ const DocumentForm = ({ initialData, onSubmit, onCancel }) => {
               onChange={handleChange}
               placeholder="Ingrese una descripción"
               rows={3}
-              required
             />
           </div>
 

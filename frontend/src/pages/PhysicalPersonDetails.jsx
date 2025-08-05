@@ -120,57 +120,83 @@ const PhysicalPersonDetails = () => {
     }
   };
 
+  const handleDeleteDocument = async ({ docId, type = null, mainIndex = null, fileIndex = null }) => {
+    if (!window.confirm('¿Deseas eliminar este archivo? Esta acción no se puede deshacer.')) return;
+
+    try {
+      let deleteUrl;
+
+      if (type && mainIndex !== null && fileIndex !== null) {
+        // Documento dentro de seguro o crédito (ruta corregida)
+        deleteUrl = `${BACKEND_URL}/api/physical-persons/${id}/nested-doc/${type}/${mainIndex}/${fileIndex}`;
+      } else {
+        // Documento simple: RFC, CURP, NSS, etc.
+        deleteUrl = `${BACKEND_URL}/api/physical-persons/${id}/document/${docId}`;
+      }
+
+      const response = await fetch(deleteUrl, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Error al eliminar documento');
+
+      const updated = await fetchPhysicalPersonById(id);
+      setPerson(updated);
+    } catch (error) {
+      console.error('❌ Error al eliminar documento:', error);
+      alert('Error al eliminar el documento. Intente nuevamente.');
+    }
+  };
+
+
+
+
   if (isLoading) return <LoadingSpinner />;
   if (!person) return <NotFoundMessage onBack={() => navigate('/personas-fisicas')} />;
 
-  const DocumentItem = ({ label, filePath }) => (
-    <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-      <span>{label}</span>
-      <div className="space-x-2">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
-              console.warn("❗ Ruta inválida para:", label, filePath);
-              alert("Archivo no disponible o ruta inválida.");
-              return;
-            }
+  const DocumentItem = ({ label, filePath, onDelete }) => (
+    <div className="space-x-2 flex items-center">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          if (!filePath || typeof filePath !== 'string' || filePath.trim() === '') {
+            console.warn("❗ Ruta inválida para:", label, filePath);
+            alert("Archivo no disponible o ruta inválida.");
+            return;
+          }
 
-            const fullUrl = `${BACKEND_URL}/${filePath.replace(/^\/+/, '')}`;
-            console.log("📄 Visualizando archivo:", label, fullUrl);
-            setPdfData({ url: fullUrl, title: label });
-          }}
-        >
-          Visualizar
-        </Button>
+          const fullUrl = `${BACKEND_URL}/${filePath.replace(/^\/+/, '')}`;
+          setPdfData({ url: fullUrl, title: label });
+        }}
+      >
+        Visualizar
+      </Button>
 
+      <Button
+        variant="default"
+        size="sm"
+        onClick={() => {
+          const a = document.createElement('a');
+          const fullUrl = filePath.startsWith('http') ? filePath : `${BACKEND_URL}/${filePath}`;
+          a.href = fullUrl;
+          a.download = label;
+          a.target = '_blank';
+          a.rel = 'noopener noreferrer';
+          document.body.appendChild(a);
+          a.click();
+          document.body.removeChild(a);
+        }}
+      >
+        Descargar
+      </Button>
 
-
-        <Button
-          variant="default"
-          size="sm"
-          onClick={() => {
-            if (!filePath) {
-              console.warn("❗ Archivo no definido para:", label);
-              alert("Archivo no disponible o ruta inválida.");
-              return;
-            }
-            const a = document.createElement('a');
-            const fullUrl = filePath.startsWith('http') ? filePath : `${BACKEND_URL}/${filePath}`;
-            a.href = fullUrl;
-            a.download = label;
-            a.target = '_blank';
-            a.rel = 'noopener noreferrer';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-          }}
-        >
-          Descargar
-        </Button>
-      </div>
+      <Button
+        variant="destructive"
+        size="icon"
+        onClick={onDelete}
+      >
+        🗑️
+      </Button>
     </div>
+
   );
 
 
@@ -248,11 +274,10 @@ const PhysicalPersonDetails = () => {
                                     key={i}
                                     label={label}
                                     filePath={url}
+                                    onDelete={() => handleDeleteDocument({ type: 'insurance', mainIndex: index, fileIndex: i })}
                                   />
                                 );
                               })}
-
-
                             </div>
                           )}
                         </div>
@@ -319,6 +344,7 @@ const PhysicalPersonDetails = () => {
                                 key={i}
                                 label={label}
                                 filePath={url}
+                                onDelete={() => handleDeleteDocument({ type: 'credit', mainIndex: index, fileIndex: i })}
                               />
                             );
                           })}
@@ -336,8 +362,6 @@ const PhysicalPersonDetails = () => {
               )}
             </CardContent>
           </Card>
-
-
         </motion.div>
       </div>
 

@@ -99,7 +99,6 @@ const AssociationForm = ({ initialData = {}, onSubmit, onCancel }) => {
               name={name}
               value={formData[name]}
               onChange={handleChange}
-              required
             />
           </div>
         ))}

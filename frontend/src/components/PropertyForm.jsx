@@ -247,7 +247,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
             <Input
               value={formData.name}
               onChange={(e) => handleChange('name', e.target.value)}
-              required
             />
           </div>
           <div>
@@ -276,7 +275,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
                 setSelectedOwnerId('');
               }}
               placeholder="Escriba el nombre del propietario"
-              required
             />
             {ownerSuggestions.length > 0 && (
               <ul className="absolute z-10 bg-white border border-gray-300 rounded mt-1 w-full max-h-40 overflow-y-auto shadow">
@@ -318,7 +316,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
             <Input
               value={formData.deedNumber}
               onChange={(e) => handleChange('deedNumber', e.target.value)}
-              required
             />
           </div>
           <div className="col-span-2 space-y-2">
@@ -347,7 +344,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               type="date"
               value={formData.deedDate}
               onChange={(e) => handleChange('deedDate', e.target.value)}
-              required
             />
           </div>
 
@@ -356,7 +352,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
             <Input
               value={formData.notary}
               onChange={(e) => handleChange('notary', e.target.value)}
-              required
             />
           </div>
 
@@ -365,7 +360,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
             <Input
               value={formData.cadastralKey}
               onChange={(e) => handleChange('cadastralKey', e.target.value)}
-              required
             />
           </div>
           <div className="col-span-2">
@@ -382,7 +376,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
               type="number"
               value={formData.totalArea}
               onChange={(e) => handleChange('totalArea', e.target.value)}
-              required
             />
           </div>
 

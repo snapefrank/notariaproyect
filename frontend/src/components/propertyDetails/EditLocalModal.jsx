@@ -63,7 +63,7 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
                 }
             }
 
-            const response = await fetch(`${apiBase}/${API_URL}/${propertyId}/locals/${index}`, {
+            const response = await fetch(`${API_URL}/${propertyId}/locals/${index}`, {
                 method: 'PUT',
                 body: formData,
             });
@@ -71,7 +71,7 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
             if (!response.ok) throw new Error('No se pudo actualizar el local.');
 
             // Aquí traemos de nuevo la propiedad actualizada
-            const refreshed = await fetch(`${apiBase}/${API_URL}/${propertyId}`);
+            const refreshed = await fetch(`${API_URL}/${propertyId}`);
             if (!refreshed.ok) throw new Error('No se pudo obtener la propiedad actualizada');
             const updatedProperty = await refreshed.json();
 

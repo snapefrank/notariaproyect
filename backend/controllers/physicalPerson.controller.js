@@ -357,6 +357,8 @@ function parseNestedFormData(body) {
   return result;
 }
 
+
+
 function deleteFiles(filePaths = []) {
   filePaths.forEach(file => {
     if (file && fs.existsSync(file)) {
@@ -398,34 +400,6 @@ const deletePhysicalPersonDocument = async (req, res) => {
       }
     }
 
-    // 📄 3. Eliminar de seguros médicos
-    if (!eliminado && Array.isArray(person.datosMedicos)) {
-      person.datosMedicos.forEach(seguro => {
-        if (Array.isArray(seguro.archivoSeguro)) {
-          const index = seguro.archivoSeguro.findIndex(file => file.includes(docId));
-          if (index !== -1) {
-            if (fs.existsSync(seguro.archivoSeguro[index])) fs.unlinkSync(seguro.archivoSeguro[index]);
-            seguro.archivoSeguro.splice(index, 1);
-            eliminado = true;
-          }
-        }
-      });
-    }
-
-    // 📄 4. Eliminar de créditos financieros
-    if (!eliminado && Array.isArray(person.creditos)) {
-      person.creditos.forEach(credito => {
-        if (Array.isArray(credito.archivoCredito)) {
-          const index = credito.archivoCredito.findIndex(file => file.includes(docId));
-          if (index !== -1) {
-            if (fs.existsSync(credito.archivoCredito[index])) fs.unlinkSync(credito.archivoCredito[index]);
-            credito.archivoCredito.splice(index, 1);
-            eliminado = true;
-          }
-        }
-      });
-    }
-
     if (!eliminado) {
       return res.status(404).json({ message: 'Documento no encontrado en esta persona física' });
     }
@@ -439,6 +413,52 @@ const deletePhysicalPersonDocument = async (req, res) => {
   }
 };
 
+// ✅ Nueva función independiente para eliminar archivos de seguros o créditos
+const deletePhysicalPersonFileFromArray = async (req, res) => {
+  try {
+    const { id, type, mainIndex, fileIndex } = req.params;
+    const person = await PhysicalPerson.findById(id);
+    if (!person) return res.status(404).json({ error: 'Persona no encontrada' });
+
+    let filePath = '';
+
+    if (type === 'insurance') {
+      const archivo = person.datosMedicos?.[mainIndex]?.archivoSeguro?.[fileIndex];
+
+      if (!archivo) return res.status(404).json({ error: 'Archivo de seguro no encontrado' });
+
+      filePath = typeof archivo === 'string' ? archivo : archivo.url || archivo.archivo || '';
+      person.datosMedicos[mainIndex].archivoSeguro.splice(fileIndex, 1);
+
+    } else if (type === 'credit') {
+      const archivo = person.creditos?.[mainIndex]?.archivoCredito?.[fileIndex];
+
+      if (!archivo) return res.status(404).json({ error: 'Archivo de crédito no encontrado' });
+
+      filePath = typeof archivo === 'string' ? archivo : archivo.url || archivo.archivo || '';
+      person.creditos[mainIndex].archivoCredito.splice(fileIndex, 1);
+
+    } else {
+      return res.status(400).json({ error: 'Tipo no válido' });
+    }
+
+    // ✅ Elimina el archivo físico si existe
+    if (filePath && fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+      console.log('✅ Archivo físico eliminado:', filePath);
+    } else {
+      console.warn('⚠️ Ruta inválida o archivo no existe:', filePath);
+    }
+
+    await person.save();
+    res.json({ message: 'Archivo eliminado correctamente' });
+
+  } catch (error) {
+    console.error('❌ Error al eliminar archivo anidado:', error);
+    res.status(500).json({ error: 'Error al eliminar archivo anidado' });
+  }
+};
+
 
 
 module.exports = {
@@ -448,5 +468,6 @@ module.exports = {
   updatePhysicalPerson,
   deletePhysicalPerson,
   uploadDocuments,
-  deletePhysicalPersonDocument
+  deletePhysicalPersonDocument,
+  deletePhysicalPersonFileFromArray 
 };

@@ -32,6 +32,7 @@ import {
   updateMoralPerson,
   deleteMoralPerson
 } from '@/lib/moralPerson.api';
+import { deleteMoralPersonCreditFile } from '@/lib/moralPerson.api';
 
 const MoralPersonDetails = () => {
   const { id } = useParams();
@@ -41,6 +42,8 @@ const MoralPersonDetails = () => {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const BACKEND_URL = import.meta.env.VITE_API_URL;
+  const [confirmDelete, setConfirmDelete] = useState({ open: false, creditIndex: null, fileIndex: null });
+
 
   useEffect(() => {
     const fetchPerson = async () => {
@@ -76,6 +79,17 @@ const MoralPersonDetails = () => {
       console.error('Error al eliminar persona moral:', error);
     }
   };
+
+  const handleDeleteCreditFile = async () => {
+    try {
+      await deleteMoralPersonCreditFile(id, confirmDelete.creditIndex, confirmDelete.fileIndex);
+      const updated = await getMoralPersonById(id);
+      setPerson(updated);
+      setConfirmDelete({ open: false, creditIndex: null, fileIndex: null });
+    } catch (error) {
+      console.error('Error al eliminar archivo de crédito:', error);
+    }
+  }
 
   if (isLoading) return <LoadingSpinner />;
   if (!person) return <NotFoundMessage onBack={() => navigate('/personas-morales')} />;
@@ -157,6 +171,13 @@ const MoralPersonDetails = () => {
                                   a.click();
                                   document.body.removeChild(a);
                                 }}>Descargar</Button>
+                                <Button
+                                  variant="destructive"
+                                  size="sm"
+                                  onClick={() => setConfirmDelete({ open: true, creditIndex: index, fileIndex: i })}
+                                >
+                                  Eliminar
+                                </Button>
                               </div>
                             </div>
                           );
@@ -203,6 +224,26 @@ const MoralPersonDetails = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={confirmDelete.open} onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}>
+  <AlertDialogContent>
+    <AlertDialogHeader>
+      <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+      <AlertDialogDescription>
+        Esta acción eliminará el archivo seleccionado del crédito financiero.
+      </AlertDialogDescription>
+    </AlertDialogHeader>
+    <AlertDialogFooter>
+      <AlertDialogCancel>Cancelar</AlertDialogCancel>
+      <AlertDialogAction
+        className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+        onClick={handleDeleteCreditFile}
+      >
+        Eliminar
+      </AlertDialogAction>
+    </AlertDialogFooter>
+  </AlertDialogContent>
+</AlertDialog>
+
     </div>
   );
 };

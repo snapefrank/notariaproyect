@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const associationSchema = new mongoose.Schema({
-  nombre: { type: String, required: true }, // Nombre de la asociación
+  nombre: { type: String}, // Nombre de la asociación
   apoderadoLegal: { type: String },         // Apoderado legal
   numeroEscritura: { type: String },        // Número de escritura
   fechaEscritura: { type: Date },           // Fecha de escritura

@@ -1,8 +1,8 @@
   const mongoose = require('mongoose');
 
   const moralPersonSchema = new mongoose.Schema({
-    nombre: { type: String, required: true },
-    rfc: { type: String, required: true, unique: true },
+    nombre: { type: String},
+    rfc: { type: String},
     regimenFiscal: { type: String },
     domicilioFiscal: { type: String },
     fechaConstitucion: { type: Date },

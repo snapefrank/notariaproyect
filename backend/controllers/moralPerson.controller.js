@@ -250,3 +250,33 @@ function parseNestedFormData(body) {
   return result;
 }
 
+// ✅ ELIMINAR UN DOCUMENTO DE CRÉDITO EN PERSONA MORAL
+exports.deleteMoralPersonCreditFile = async (req, res) => {
+  try {
+    const { id, creditIndex, fileIndex } = req.params;
+
+    const person = await MoralPerson.findById(id);
+    if (!person) return res.status(404).json({ message: 'Persona moral no encontrada' });
+
+    const credito = person.creditos[creditIndex];
+    if (!credito) return res.status(404).json({ message: 'Crédito no encontrado' });
+
+    const filePath = credito.archivoCredito[fileIndex];
+    if (!filePath) return res.status(404).json({ message: 'Archivo no encontrado' });
+
+    const fs = require('fs');
+    const path = require('path');
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    credito.archivoCredito.splice(fileIndex, 1);
+    await person.save();
+
+    res.json({ message: '✅ Archivo eliminado correctamente' });
+  } catch (error) {
+    console.error('❌ Error al eliminar archivo de crédito en persona moral:', error);
+    res.status(500).json({ message: 'Error interno', error: error.message });
+  }
+};
+

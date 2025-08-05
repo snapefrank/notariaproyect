@@ -21,5 +21,8 @@ router.delete('/:id', physicalPersonController.deletePhysicalPerson);
 // ✅ Eliminar un documento específico de una persona física
 router.delete('/:id/document/:docId', physicalPersonController.deletePhysicalPersonDocument);
 
+// 🆕 Ruta para eliminar archivo de seguro/crédito
+router.delete('/:id/nested-doc/:type/:mainIndex/:fileIndex', physicalPersonController.deletePhysicalPersonFileFromArray);
+
 
 module.exports = router;

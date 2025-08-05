@@ -242,33 +242,33 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="nombres">Nombres</Label>
-            <Input id="nombres" name="nombres" value={formData.nombres} onChange={handleChange} required />
+            <Input id="nombres" name="nombres" value={formData.nombres} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="apellidoPaterno">Apellido Paterno</Label>
-            <Input id="apellidoPaterno" name="apellidoPaterno" value={formData.apellidoPaterno} onChange={handleChange} required />
+            <Input id="apellidoPaterno" name="apellidoPaterno" value={formData.apellidoPaterno} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
-            <Input id="apellidoMaterno" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange} required />
+            <Input id="apellidoMaterno" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange}/>
           </div>
           <div>
             <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
-            <Input type="date" id="fechaNacimiento" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} required />
+            <Input type="date" id="fechaNacimiento" name="fechaNacimiento" value={formData.fechaNacimiento} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="rfc">RFC</Label>
-            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} required />
+            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange}/>
             <Input type="file" name="rfcFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
           <div>
             <Label htmlFor="curp">CURP</Label>
-            <Input id="curp" name="curp" value={formData.curp} onChange={handleChange} required />
+            <Input id="curp" name="curp" value={formData.curp} onChange={handleChange}/>
             <Input type="file" name="curpFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
           <div>
             <Label htmlFor="nss">NSS</Label>
-            <Input id="nss" name="nss" value={formData.nss} onChange={handleChange} required />
+            <Input id="nss" name="nss" value={formData.nss} onChange={handleChange}/>
             <Input type="file" name="nssFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
           <div className="col-span-2">
@@ -288,7 +288,7 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
 
           <div>
             <Label htmlFor="direccion">Dirección</Label>
-            <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange} required />
+            <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange}/>
           </div>
           <div>
             <Label htmlFor="sexo">Sexo</Label>

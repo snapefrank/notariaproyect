@@ -186,11 +186,11 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           {/* Información básica */}
           <div>
             <Label htmlFor="nombre">Nombre o Razón Social</Label>
-            <Input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} required />
+            <Input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange}/>
           </div>
           <div>
             <Label htmlFor="rfc">RFC</Label>
-            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} required />
+            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange}  />
             <Input
               type="file"
               name="rfcFile"
@@ -201,15 +201,15 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           </div>
           <div>
             <Label htmlFor="regimenFiscal">Régimen Fiscal</Label>
-            <Input id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} required />
+            <Input id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange}  />
           </div>
           <div>
             <Label htmlFor="domicilioFiscal">Domicilio Fiscal</Label>
-            <Input id="domicilioFiscal" name="domicilioFiscal" value={formData.domicilioFiscal} onChange={handleChange} required />
+            <Input id="domicilioFiscal" name="domicilioFiscal" value={formData.domicilioFiscal} onChange={handleChange}/>
           </div>
           <div>
             <Label htmlFor="fechaConstitucion">Fecha de Constitución</Label>
-            <Input type="date" id="fechaConstitucion" name="fechaConstitucion" value={formData.fechaConstitucion} onChange={handleChange} required />
+            <Input type="date" id="fechaConstitucion" name="fechaConstitucion" value={formData.fechaConstitucion} onChange={handleChange} />
           </div>
           <Input
             type="file"

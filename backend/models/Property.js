@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 
 // Esquema para cada local dentro del inmueble
 const localSchema = new mongoose.Schema({
-  name: { type: String, required: true },                // Nombre del local
+  name: { type: String},                // Nombre del local
   tenant: { type: String },                              // Arrendatario
   rentStartDate: { type: Date },                         // Inicio de renta
   rentEndDate: { type: Date },                           // Fin de renta
@@ -13,7 +13,7 @@ const localSchema = new mongoose.Schema({
 }, { _id: false });
 
 const propertySchema = new mongoose.Schema({
-  name: { type: String, required: true },                // Nombre de la propiedad
+  name: { type: String},                // Nombre de la propiedad
   propietario: {
     type: mongoose.Schema.Types.ObjectId,
     refPath: 'tipoPropietario',
@@ -29,18 +29,18 @@ const propertySchema = new mongoose.Schema({
   owner: { type: String }, // Puedes dejarlo para mostrar el nombre directamente si quieres
   valor_total: { type: Number },                         // Valor total del inmueble
   usufruct: { type: String },                            // Usufructo
-  deedNumber: { type: String, required: true },          // Número de escritura
-  deedDate: { type: Date, required: true },              // Fecha de escritura
+  deedNumber: { type: String},          // Número de escritura
+  deedDate: { type: Date},              // Fecha de escritura
   deed: {
     archivos: [String], nombrePersonalizado: String
   },      // Archivo de escritura
-  notary: { type: String, required: true },              // Notaría
-  cadastralKey: { type: String, required: true },        // Clave catastral
+  notary: { type: String},              // Notaría
+  cadastralKey: { type: String},        // Clave catastral
   location: { type: String },            // Ubicación en google maps
 
-  totalArea: { type: Number, required: true },           // Superficie total
+  totalArea: { type: Number},           // Superficie total
 
-  type: { type: String, enum: ['residential', 'commercial', 'industrial', 'land'], required: true },
+  type: { type: String, enum: ['residential', 'commercial', 'industrial', 'land']},
 
   // Gravamen
   hasEncumbrance: { type: Boolean, default: false },

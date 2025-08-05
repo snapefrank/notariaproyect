@@ -23,5 +23,9 @@ router.delete('/:id/document/:docId', moralPersonController.deleteMoralPersonDoc
 
 router.delete('/:id/rfc', moralPersonController.deleteMoralPersonRfc);
 
+// ✅ Eliminar archivo individual de crédito en persona moral
+router.delete('/:id/credit-file/:creditIndex/:fileIndex', moralPersonController.deleteMoralPersonCreditFile);
+
+
 
 module.exports = router;

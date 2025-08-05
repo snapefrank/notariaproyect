@@ -1,15 +1,15 @@
 const mongoose = require('mongoose');
 
 const physicalPersonSchema = new mongoose.Schema({
-  nombres: { type: String, required: true },
-  apellidoPaterno: { type: String, required: true },
-  apellidoMaterno: { type: String, required: true },
-  fechaNacimiento: { type: Date, required: true },
-  rfc: { type: String, required: true },
-  curp: { type: String, required: true },
-  nss: { type: String, required: true },
-  direccion: { type: String, required: true },
-  sexo: { type: String, enum: ['M', 'F'], required: true },
+  nombres: { type: String},
+  apellidoPaterno: { type: String},
+  apellidoMaterno: { type: String},
+  fechaNacimiento: { type: Date},
+  rfc: { type: String},
+  curp: { type: String},
+  nss: { type: String},
+  direccion: { type: String},
+  sexo: { type: String, enum: ['M', 'F']},
 
   documentos: {
     rfc: { type: String },

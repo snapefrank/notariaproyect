@@ -59,6 +59,8 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
       ]
     }));
   };
+  // [{ file: File, nombre: string }]
+  const [additionalDocsUI, setAdditionalDocsUI] = useState([]);
   const removeCredito = (index) => {
     setFormData((prev) => {
       const nuevos = [...prev.creditos];
@@ -158,6 +160,9 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         Object.entries(value).forEach(([docKey, fileOrFiles]) => {
           if (!fileOrFiles) return;
 
+          // Evita duplicar 'adicional': lo enviamos desde additionalDocsUI
+          if (docKey === 'additionalDocs') return;
+
           if (Array.isArray(fileOrFiles)) {
             fileOrFiles.forEach((f) => data.append(docKey, f));
           } else {
@@ -169,6 +174,17 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         data.append(key, value);
       }
     });
+    // Documentos adicionales con nombre editable (coincide con el backend)
+    if (additionalDocsUI.length > 0) {
+      additionalDocsUI.forEach((doc) => {
+        if (doc?.file) {
+          // Archivo (el backend espera fieldname 'adicional')
+          data.append('adicional', doc.file);
+          // Nombre (el backend acepta additionalDocsNames[] o string)
+          data.append('additionalDocsNames[]', doc.nombre?.trim() || '');
+        }
+      });
+    }
 
     onSubmit(data);
   };
@@ -186,11 +202,11 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           {/* Información básica */}
           <div>
             <Label htmlFor="nombre">Nombre o Razón Social</Label>
-            <Input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange}/>
+            <Input id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="rfc">RFC</Label>
-            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange}  />
+            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} />
             <Input
               type="file"
               name="rfcFile"
@@ -201,24 +217,56 @@ const MoralPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           </div>
           <div>
             <Label htmlFor="regimenFiscal">Régimen Fiscal</Label>
-            <Input id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange}  />
+            <Input id="regimenFiscal" name="regimenFiscal" value={formData.regimenFiscal} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="domicilioFiscal">Domicilio Fiscal</Label>
-            <Input id="domicilioFiscal" name="domicilioFiscal" value={formData.domicilioFiscal} onChange={handleChange}/>
+            <Input id="domicilioFiscal" name="domicilioFiscal" value={formData.domicilioFiscal} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="fechaConstitucion">Fecha de Constitución</Label>
             <Input type="date" id="fechaConstitucion" name="fechaConstitucion" value={formData.fechaConstitucion} onChange={handleChange} />
           </div>
-          <Input
-            type="file"
-            id="adicional"
-            name="adicional"
-            multiple
-            accept="application/pdf"
-            onChange={handleChange}
-          />
+          <div className="col-span-2">
+            <Label htmlFor="adicional">Documentos adicionales</Label>
+            <Input
+              type="file"
+              id="adicional"
+              name="adicional"
+              multiple
+              accept="application/pdf"
+              onChange={(e) => {
+                const files = Array.from(e.target.files || []);
+                setAdditionalDocsUI(files.map(f => ({ file: f, nombre: '' })));
+                // No guardamos en formData.documentos.additionalDocs para evitar duplicar
+              }}
+            />
+
+            {additionalDocsUI.length > 0 && (
+              <div className="mt-3 space-y-3">
+                {additionalDocsUI.map((doc, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+                    <div className="text-sm text-gray-600 truncate">
+                      Archivo: <span className="font-medium">{doc.file?.name}</span>
+                    </div>
+                    <div>
+                      <Label className="text-sm">Nombre para mostrar</Label>
+                      <Input
+                        placeholder="Ej. Acta Constitutiva"
+                        value={doc.nombre}
+                        onChange={(e) => {
+                          const updated = [...additionalDocsUI];
+                          updated[idx].nombre = e.target.value;
+                          setAdditionalDocsUI(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
 
 
         </div>

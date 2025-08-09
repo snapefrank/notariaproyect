@@ -52,9 +52,19 @@ exports.createMoralPerson = async (req, res) => {
       });
     }
     const rfcFileObj = filesArray.find(f => f.fieldname === 'rfcFile');
-    const additionalDocs = filesArray
-      .filter(f => f.fieldname === 'adicional')
-      .map(f => f.path);
+    const norm = (p) => String(p || '').replace(/\\/g, '/');
+
+    const extraFiles = filesArray.filter(f => f.fieldname === 'adicional');
+
+    // Nombres desde el form (acepta array o string)
+    let extraNames = req.body['additionalDocsNames[]'] ?? req.body.additionalDocsNames ?? [];
+    if (!Array.isArray(extraNames)) extraNames = [extraNames];
+
+    const additionalDocs = extraFiles.map((file, idx) => ({
+      nombre: (extraNames[idx] && String(extraNames[idx]).trim()) || file.originalname,
+      url: norm(file.path)
+    }));
+
     const newPerson = new MoralPerson({
       nombre: parsedBody.nombre,
       rfc: parsedBody.rfc,
@@ -95,14 +105,26 @@ exports.updateMoralPerson = async (req, res) => {
       person.rfcFile = rfcFileObj.path;
     }
 
-    // Documentos adicionales (suma en lugar de reemplazo)
-    const nuevosDocs = filesArray
-      .filter(f => f.fieldname === 'adicional')
-      .map(f => f.path);
+    const norm = (p) => String(p || '').replace(/\\/g, '/');
+
+    const extraFilesU = filesArray.filter(f => f.fieldname === 'adicional');
+
+    // Nombres desde el form
+    let extraNamesU = req.body['additionalDocsNames[]'] ?? req.body.additionalDocsNames ?? [];
+    if (!Array.isArray(extraNamesU)) extraNamesU = [extraNamesU];
+
+    const nuevosDocs = extraFilesU.map((file, idx) => ({
+      nombre: (extraNamesU[idx] && String(extraNamesU[idx]).trim()) || file.originalname,
+      url: norm(file.path)
+    }));
 
     if (nuevosDocs.length > 0) {
-      person.additionalDocs = [...(person.additionalDocs || []), ...nuevosDocs];
+      person.additionalDocs = [
+        ...(Array.isArray(person.additionalDocs) ? person.additionalDocs : []),
+        ...nuevosDocs
+      ];
     }
+
 
     // Créditos financieros (conserva archivos si ya existen)
     const nuevosCreditos = [];

@@ -60,13 +60,20 @@ const createPhysicalPerson = async (req, res) => {
       if (file.fieldname === 'escritura') escrituraPath = file.path;
       if (file.fieldname === 'adicional') adicionalPath = file.path;
     });
-    // Procesar documentos personales adicionales
-    const documentosAdicionales = filesArray
-      .filter(file => file.fieldname === 'additionalDocs')
-      .map(file => ({
-        nombre: file.originalname,
-        url: file.path
-      }));
+
+    // Procesar documentos personales adicionales con NOMBRE editable
+    const norm = (p) => p.replace(/\\/g, '/'); // para Windows -> Linux
+    const extraFiles = filesArray.filter(f => f.fieldname === 'additionalDocs');
+
+    // Acepta: documentosAdicionalesNombres[] (array) o documentosAdicionalesNombres (string)
+    let extraNames = req.body['documentosAdicionalesNombres[]'] ?? req.body.documentosAdicionalesNombres ?? [];
+    if (!Array.isArray(extraNames)) extraNames = [extraNames];
+
+    const documentosAdicionales = extraFiles.map((file, idx) => ({
+      nombre: (extraNames[idx] && String(extraNames[idx]).trim()) || file.originalname,
+      url: norm(file.path)
+    }));
+
 
 
     // Procesar seguros médicos
@@ -208,13 +215,25 @@ const updatePhysicalPerson = async (req, res) => {
       }
     });
     person.documentos = documentos;
-    // Procesar nuevos documentos personales adicionales
-    const nuevosDocs = filesArray
-      .filter(file => file.fieldname === 'additionalDocs')
-      .map(file => ({
-        nombre: file.originalname,
-        url: file.path
-      }));
+
+    // Procesar nuevos documentos personales adicionales con NOMBRE editable
+    const norm = (p) => p.replace(/\\/g, '/');
+    const extraFilesU = filesArray.filter(f => f.fieldname === 'additionalDocs');
+
+    let extraNamesU = req.body['documentosAdicionalesNombres[]'] ?? req.body.documentosAdicionalesNombres ?? [];
+    if (!Array.isArray(extraNamesU)) extraNamesU = [extraNamesU];
+
+    const nuevosDocs = extraFilesU.map((file, idx) => ({
+      nombre: (extraNamesU[idx] && String(extraNamesU[idx]).trim()) || file.originalname,
+      url: norm(file.path)
+    }));
+
+    // Conservar anteriores y agregar nuevos
+    person.documentosAdicionales = [
+      ...(Array.isArray(person.documentosAdicionales) ? person.documentosAdicionales : []),
+      ...nuevosDocs
+    ];
+
 
     // Conservar los anteriores (si los hay) y agregar nuevos
     person.documentosAdicionales = [
@@ -469,5 +488,5 @@ module.exports = {
   deletePhysicalPerson,
   uploadDocuments,
   deletePhysicalPersonDocument,
-  deletePhysicalPersonFileFromArray 
+  deletePhysicalPersonFileFromArray
 };

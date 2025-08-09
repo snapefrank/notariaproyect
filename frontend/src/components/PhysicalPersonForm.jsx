@@ -61,6 +61,7 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
   });
   const [insuranceFile, setInsuranceFile] = useState([]);
   const [creditFiles, setCreditFiles] = useState([]);
+  // [{ file: File, nombre: string }]
   const [additionalPersonalDocs, setAdditionalPersonalDocs] = useState([]);
   const [tieneSeguro, setTieneSeguro] = useState(false);
   const [tieneCredito, setTieneCredito] = useState(false);
@@ -186,9 +187,6 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         data.append(key, val ?? '');
       }
     });
-
-
-
     // Agrega los archivos RFC/CURP/NSS directamente
     if (docFiles.rfcFile) data.append('rfcFile', docFiles.rfcFile);
     if (docFiles.curpFile) data.append('curpFile', docFiles.curpFile);
@@ -211,13 +209,22 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
         });
       }
     });
+    // Documentos adicionales con NOMBRE editable
     if (additionalPersonalDocs.length > 0) {
-      additionalPersonalDocs.forEach((file, index) => {
-        if (file) {
-          data.append(`additionalDocs`, file);
+      additionalPersonalDocs.forEach((doc) => {
+        if (doc?.file) {
+          // archivo
+          data.append('additionalDocs', doc.file);
+          // nombre amigable (si viene vacío, el backend usará originalname como fallback)
+          if (doc.nombre && doc.nombre.trim() !== '') {
+            data.append('documentosAdicionalesNombres[]', doc.nombre.trim());
+          } else {
+            data.append('documentosAdicionalesNombres[]', '');
+          }
         }
       });
     }
+
 
 
 
@@ -250,7 +257,7 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           </div>
           <div>
             <Label htmlFor="apellidoMaterno">Apellido Materno</Label>
-            <Input id="apellidoMaterno" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange}/>
+            <Input id="apellidoMaterno" name="apellidoMaterno" value={formData.apellidoMaterno} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="fechaNacimiento">Fecha de Nacimiento</Label>
@@ -258,17 +265,17 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
           </div>
           <div>
             <Label htmlFor="rfc">RFC</Label>
-            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange}/>
+            <Input id="rfc" name="rfc" value={formData.rfc} onChange={handleChange} />
             <Input type="file" name="rfcFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
           <div>
             <Label htmlFor="curp">CURP</Label>
-            <Input id="curp" name="curp" value={formData.curp} onChange={handleChange}/>
+            <Input id="curp" name="curp" value={formData.curp} onChange={handleChange} />
             <Input type="file" name="curpFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
           <div>
             <Label htmlFor="nss">NSS</Label>
-            <Input id="nss" name="nss" value={formData.nss} onChange={handleChange}/>
+            <Input id="nss" name="nss" value={formData.nss} onChange={handleChange} />
             <Input type="file" name="nssFile" accept=".pdf,.jpg,.png" onChange={handleDocFileChange} className="mt-1" />
           </div>
           <div className="col-span-2">
@@ -280,15 +287,44 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
               multiple
               accept=".pdf,.jpg,.jpeg,.png"
               onChange={(e) => {
-                const files = Array.from(e.target.files);
-                setAdditionalPersonalDocs(files);
+                const files = Array.from(e.target.files || []);
+                // Creamos objetos {file, nombre: ''} por cada archivo nuevo
+                const mapped = files.map((f) => ({ file: f, nombre: '' }));
+                setAdditionalPersonalDocs(mapped);
               }}
             />
+
+            {/* UI para capturar el nombre de cada archivo seleccionado */}
+            {additionalPersonalDocs.length > 0 && (
+              <div className="mt-3 space-y-3">
+                {additionalPersonalDocs.map((doc, idx) => (
+                  <div key={idx} className="grid grid-cols-1 md:grid-cols-2 gap-2 items-center">
+                    <div className="text-sm text-gray-600 truncate">
+                      {/* Vista del nombre del archivo físico */}
+                      Archivo: <span className="font-medium">{doc.file?.name}</span>
+                    </div>
+                    <div>
+                      <Label className="text-sm">¿Cómo deseas nombrar este documento?</Label>
+                      <Input
+                        placeholder="Ej. INE por ambos lados"
+                        value={doc.nombre}
+                        onChange={(e) => {
+                          const updated = [...additionalPersonalDocs];
+                          updated[idx].nombre = e.target.value;
+                          setAdditionalPersonalDocs(updated);
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
 
           <div>
             <Label htmlFor="direccion">Dirección</Label>
-            <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange}/>
+            <Input id="direccion" name="direccion" value={formData.direccion} onChange={handleChange} />
           </div>
           <div>
             <Label htmlFor="sexo">Sexo</Label>

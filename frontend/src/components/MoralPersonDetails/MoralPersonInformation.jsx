@@ -5,6 +5,25 @@ import { Button } from '@/components/ui/button';
 import { apiBase } from '@/lib/constants';
 import axios from 'axios';
 
+
+// --- helpers seguros para rutas (string u objeto { url }) ---
+const getUrl = (p) => {
+  if (!p) return '';
+  if (typeof p === 'string') return p;
+  if (typeof p === 'object' && typeof p.url === 'string') return p.url;
+  return '';
+};
+
+const normPath = (p = '') => String(p).replace(/\\/g, '/');
+const ensureLeadingSlash = (p = '') => (p.startsWith('/') ? p : `/${p}`);
+
+const buildFileUrl = (p) => {
+  const raw = getUrl(p);
+  if (!raw) return '';
+  const normalized = ensureLeadingSlash(normPath(raw));
+  return `${apiBase}${normalized}`;
+};
+
 const MoralPersonInformation = ({ person, onRefresh }) => {
   const formatDate = (isoString) => {
     if (!isoString) return 'No especificada';
@@ -16,12 +35,10 @@ const MoralPersonInformation = ({ person, onRefresh }) => {
     });
   };
 
-  const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
-
   const handleDeleteDocument = async (filePath) => {
     if (!filePath) return alert('❌ Archivo no encontrado');
 
-    const docId = filePath.split('/').pop();
+    const docId = normPath(filePath).split('/').pop();
 
     if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
 
@@ -39,6 +56,7 @@ const MoralPersonInformation = ({ person, onRefresh }) => {
       alert('❌ Hubo un error al eliminar el documento');
     }
   };
+
 
 
   return (
@@ -121,35 +139,46 @@ const MoralPersonInformation = ({ person, onRefresh }) => {
             </div>
           </div>
 
-          {/* Documentos Adicionales */}
-          {person.additionalDocs?.length > 0 && (
+          {Array.isArray(person.additionalDocs) && person.additionalDocs.length > 0 && (
             <div>
               <h3 className="text-sm font-medium text-muted-foreground mb-1">Documentos Adicionales</h3>
               <ul className="space-y-2">
-                {person.additionalDocs.map((docPath, index) => (
-                  <li key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
-                    <span>Documento {index + 1}</span>
-                    <div className="flex gap-2">
-                      <a href={buildFileUrl(docPath)} target="_blank" rel="noopener noreferrer">
-                        <Button variant="outline" size="sm">
-                          <FileText className="h-4 w-4 mr-1" />
-                          Ver archivo
+                {person.additionalDocs.map((doc, index) => {
+                  const url = getUrl(doc);
+                  if (!url) return null;
+
+                  const label = (typeof doc === 'object' && doc?.nombre)
+                    ? doc.nombre
+                    : `Documento ${index + 1}`;
+
+                  const href = buildFileUrl(doc);
+
+                  return (
+                    <li key={index} className="flex justify-between items-center p-3 bg-gray-50 rounded-md">
+                      <span className="truncate">{label}</span>
+                      <div className="flex gap-2">
+                        <a href={href} target="_blank" rel="noopener noreferrer">
+                          <Button variant="outline" size="sm">
+                            <FileText className="h-4 w-4 mr-1" />
+                            Ver archivo
+                          </Button>
+                        </a>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => handleDeleteDocument(url)} // le pasamos string plano
+                          className="bg-red-600 text-white"
+                        >
+                          🗑
                         </Button>
-                      </a>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => handleDeleteDocument(docPath)}
-                        className="bg-red-600 text-white"
-                      >
-                        🗑
-                      </Button>
-                    </div>
-                  </li>
-                ))}
+                      </div>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}
+
         </CardContent>
       </Card>
     </div>

@@ -13,8 +13,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
-  const logoUrl = "https://storage.googleapis.com/hostinger-horizons-assets-prod/90f9b128-8767-4a3a-9236-41e435352062/d0251411dd7004bdf40efa49621e0612.png";
-
+  const logoUrl = "/logo.png";
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsLoading(true);

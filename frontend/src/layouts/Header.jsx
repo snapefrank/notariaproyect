@@ -53,7 +53,7 @@ const Header = () => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const logoUrl = "https://storage.googleapis.com/hostinger-horizons-assets-prod/90f9b128-8767-4a3a-9236-41e435352062/d0251411dd7004bdf40efa49621e0612.png";
+  const logoUrl = "/logo.png";
   const { reminders } = useReminders();
   const urgentCount = reminders.filter(r => r.severity === 'high').length;
   const [showReminders, setShowReminders] = useState(false);

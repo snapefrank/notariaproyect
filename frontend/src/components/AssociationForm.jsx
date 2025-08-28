@@ -55,15 +55,18 @@ const AssociationForm = ({ initialData = {}, onSubmit, onCancel }) => {
 
     if (deedFile) data.append('deedFile', deedFile);
     if (rfcFile) data.append('rfcFile', rfcFile);
-    if (additionalFiles.length > 0) {
-      additionalFiles.forEach(file => data.append('additionalFiles', file));
-    }
+additionalFiles.forEach(({ file, nombre }, index) => {
+  data.append(`additionalFiles`, file);
+  data.append(`additionalFileNames`, nombre || `Documento ${index + 1}`);
+});
 
     onSubmit(data);
   };
-
   const handleAddAdditionalFiles = (e) => {
-    const newFiles = Array.from(e.target.files);
+    const newFiles = Array.from(e.target.files).map(file => ({
+      file,
+      nombre: ''
+    }));
     setAdditionalFiles(prev => [...prev, ...newFiles]);
   };
 
@@ -161,6 +164,24 @@ const AssociationForm = ({ initialData = {}, onSubmit, onCancel }) => {
             accept=".pdf,.jpg,.jpeg,.png"
             onChange={handleAddAdditionalFiles}
           />
+          {additionalFiles.map((fileObj, index) => (
+            <div key={index} className="mt-2">
+              <Label>Nombre del documento {index + 1}</Label>
+              <Input
+                type="text"
+                placeholder="Ej. Contrato social"
+                value={fileObj.nombre}
+                onChange={(e) => {
+                  const updated = [...additionalFiles];
+                  updated[index].nombre = e.target.value;
+                  setAdditionalFiles(updated);
+                }}
+                className="mb-1"
+              />
+              <p className="text-sm text-gray-500">{fileObj.file.name}</p>
+            </div>
+          ))}
+
 
           {/* Mostrar archivos existentes */}
           {existingAdditionalFiles.length > 0 && (

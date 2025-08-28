@@ -17,8 +17,11 @@ const storage = multer.diskStorage({
     else if (file.fieldname.startsWith('localRentContract_')) cb(null, 'uploads/locals/contracts/');
     else if (file.fieldname === 'contract') cb(null, 'uploads/locals/contracts/');
     else if (file.fieldname === 'localPhotos') cb(null, 'uploads/locals/photos/');
+    else if (file.fieldname === 'localExtraDocs') cb(null, 'uploads/locals/extra-docs/');
+    else if (file.fieldname.startsWith('localExtraDocs_')) cb(null, 'uploads/locals/extra-docs/');
 
     else cb(null, 'uploads/');
+
   },
 
   filename: (req, file, cb) => {
@@ -37,6 +40,7 @@ const folders = [
   'uploads/properties/rent-contracts',
   'uploads/locals/photos',
   'uploads/locals/contracts',
+  'uploads/locals/extra-docs',
 ];
 
 // Generador de campos dinámicos para locales
@@ -45,9 +49,11 @@ const generateLocalFields = (max = 20) => {
   for (let i = 0; i < max; i++) {
     fields.push({ name: `localRentContract_${i}`, maxCount: 1 });
     fields.push({ name: `localPhotos_${i}`, maxCount: 10 });
+    // +++ NUEVO:
+    fields.push({ name: `localExtraDocs_${i}`, maxCount: 10 });
   }
   return fields;
-};
+}
 
 folders.forEach(folder => {
   if (!fs.existsSync(folder)) fs.mkdirSync(folder, { recursive: true });
@@ -118,6 +124,7 @@ router.post(
   upload.fields([
     { name: 'contract', maxCount: 1 },
     { name: 'localPhotos', maxCount: 10 },
+    { name: 'localExtraDocs', maxCount: 10 },
   ]),
   controller.addLocalToProperty
 );
@@ -128,6 +135,7 @@ router.put(
   upload.fields([
     { name: 'contract', maxCount: 1 },
     { name: 'localPhotos', maxCount: 10 },
+    { name: 'localExtraDocs', maxCount: 10 },
   ]),
   controller.updateLocalInProperty
 );

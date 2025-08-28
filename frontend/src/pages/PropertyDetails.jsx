@@ -271,6 +271,8 @@ const PropertyDetails = () => {
               <p><strong>Costo de renta:</strong> ${local.rentCost}</p>
               <p><strong>Inicio de renta:</strong> {local.rentStartDate?.substring(0, 10)}</p>
               <p><strong>Fin de renta:</strong> {local.rentEndDate?.substring(0, 10)}</p>
+              <p><strong>Clave catastral:</strong> {local.cadastralKey}</p>
+
               {local.rentContractUrl && (
                 <div className="mt-4">
                   <h4 className="text-sm font-semibold text-muted-foreground mb-1">Contrato de Renta</h4>
@@ -307,7 +309,54 @@ const PropertyDetails = () => {
                   </div>
                 </div>
               )}
-
+              {local.extraDocs?.archivos?.length > 0 && (
+                <div className="mt-4">
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-1">Documentos adicionales</h4>
+                  {local.extraDocs.archivos.map((archivo, idx) => {
+                    const nombre = local.extraDocs.nombresPersonalizados?.[idx] || `Documento adicional ${idx + 1}`;
+                    const url = `${apiBase}/uploads/locals/extra-docs/${archivo}`;
+                    return (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between bg-gray-50 p-3 rounded-md mb-2"
+                      >
+                        <span className="font-medium text-sm">{nombre}</span>
+                        <div className="flex items-center space-x-2">
+                          <Button size="sm" variant="outline" onClick={() => setPdfData({ url, title: nombre })}>
+                            Visualizar
+                          </Button>
+                          <Button
+                            size="sm"
+                            onClick={() => {
+                              const a = document.createElement("a");
+                              a.href = url;
+                              a.download = nombre;
+                              a.target = "_blank";
+                              a.rel = "noopener noreferrer";
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                            }}
+                          >
+                            Descargar
+                          </Button>
+                          {
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="text-red-500 hover:bg-red-100"
+                              title="Eliminar documento"
+                              onClick={() => handleDeleteLocalExtraDoc(property._id, index, archivo)}
+                            >
+                              🗑
+                            </Button>
+                          }
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
 
               {local.photos && local.photos.length > 0 && (
                 <div className="pt-4 border-t mt-4">

@@ -227,19 +227,24 @@ const updatePhysicalPerson = async (req, res) => {
       nombre: (extraNamesU[idx] && String(extraNamesU[idx]).trim()) || file.originalname,
       url: norm(file.path)
     }));
+    // Merge de documentos adicionales (sin duplicar)
+    const existentes = Array.isArray(person.documentosAdicionales)
+      ? person.documentosAdicionales
+      : [];
 
-    // Conservar anteriores y agregar nuevos
-    person.documentosAdicionales = [
-      ...(Array.isArray(person.documentosAdicionales) ? person.documentosAdicionales : []),
-      ...nuevosDocs
-    ];
+    let merged = [...existentes, ...nuevosDocs];
 
+    // (Opcional pero recomendado) de-dup por url+nombre
+    const seen = new Set();
+    merged = merged.filter(d => {
+      const key = `${d?.url || ''}|${d?.nombre || ''}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
 
-    // Conservar los anteriores (si los hay) y agregar nuevos
-    person.documentosAdicionales = [
-      ...(person.documentosAdicionales || []),
-      ...nuevosDocs
-    ];
+    person.documentosAdicionales = merged;
+
 
     const nuevosSeguros = [];
 

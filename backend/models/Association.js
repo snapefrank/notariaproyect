@@ -11,7 +11,12 @@ const associationSchema = new mongoose.Schema({
   // Archivos
   deedFile: { type: String, default: '' },         // Escritura (PDF)
   rfcFile: { type: String, default: '' },          // RFC (PDF)
-  additionalFiles: [{ type: String }],             // Otros documentos
+  additionalFiles: [
+  {
+    nombre: { type: String },
+    url: { type: String }
+  }
+],
 
   createdAt: { type: Date, default: Date.now },
   updatedAt: { type: Date, default: Date.now }

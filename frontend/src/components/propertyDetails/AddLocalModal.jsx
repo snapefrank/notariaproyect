@@ -20,6 +20,9 @@ const AddLocalModal = ({ open, onClose, propertyId, onLocalAdded }) => {
         rentEndDate: '',
         rentContractFile: null,
         photos: [],
+        cadastralKey: '',
+        localExtraDocName: '',
+        localExtraDocFile: null,
     });
 
     const handleChange = (field, value) => {
@@ -40,6 +43,21 @@ const AddLocalModal = ({ open, onClose, propertyId, onLocalAdded }) => {
         formData.append('rentCost', localData.rentCost);
         formData.append('rentStartDate', localData.rentStartDate);
         formData.append('rentEndDate', localData.rentEndDate);
+
+        // ✅ Nueva clave catastral (texto)
+        if (localData.cadastralKey) {
+            formData.append('cadastralKey', localData.cadastralKey);
+        }
+
+        // ✅ Documento adicional con nombre (un archivo)
+        if (localData.localExtraDocName) {
+            formData.append('localExtraDocName', localData.localExtraDocName);
+        }
+        if (localData.localExtraDocFile) {
+            formData.append('localExtraDocs', localData.localExtraDocFile);
+            console.log('📎 ExtraDoc adjuntado:', localData.localExtraDocFile.name, '=>', localData.localExtraDocName || '(sin nombre)');
+        }
+
 
         if (localData.rentContractFile?.[0]) {
             formData.append('contract', localData.rentContractFile[0]);
@@ -103,6 +121,15 @@ const AddLocalModal = ({ open, onClose, propertyId, onLocalAdded }) => {
                         <Input type="number" value={localData.rentCost} onChange={(e) => handleChange('rentCost', e.target.value)} />
                     </div>
                     <div>
+                        <Label>Clave catastral</Label>
+                        <Input
+                            value={localData.cadastralKey}
+                            onChange={(e) => handleChange('cadastralKey', e.target.value)}
+                            placeholder="Ej. 12-34-56-789-000"
+                        />
+                    </div>
+
+                    <div>
                         <Label>Inicio de renta</Label>
                         <Input type="date" value={localData.rentStartDate} onChange={(e) => handleChange('rentStartDate', e.target.value)} />
                     </div>
@@ -123,6 +150,26 @@ const AddLocalModal = ({ open, onClose, propertyId, onLocalAdded }) => {
                     <div className="col-span-2">
                         <Label>Fotos del local</Label>
                         <Input type="file" multiple accept="image/*" onChange={(e) => handleFileChange('photos', e.target.files)} />
+                    </div>
+                    <div className="col-span-2">
+                        <Label>Documento adicional</Label>
+                        <Input
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            onChange={(e) => handleFileChange('localExtraDocFile', e.target.files?.[0] || null)}
+                        />
+
+                        {/* Mostrar campo de nombre si hay archivo cargado */}
+                        {localData.localExtraDocFile && (
+                            <div className="mt-2">
+                                <Label>Nombre del documento</Label>
+                                <Input
+                                    value={localData.localExtraDocName}
+                                    onChange={(e) => handleChange('localExtraDocName', e.target.value)}
+                                    placeholder={`Ej. ${localData.localExtraDocFile.name}`}
+                                />
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div className="flex justify-end gap-2 pt-4">

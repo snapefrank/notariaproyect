@@ -15,6 +15,18 @@ exports.createAssociation = async (req, res) => {
   try {
     console.log('BODY:', req.body);
     console.log('FILES:', req.files);
+    let additionalFiles = [];
+
+if (req.files?.additionalFiles?.length) {
+  const nombres = Array.isArray(req.body.additionalFileNames)
+    ? req.body.additionalFileNames
+    : [req.body.additionalFileNames]; // Maneja un solo nombre también
+
+  additionalFiles = req.files.additionalFiles.map((file, index) => ({
+    nombre: nombres[index] || `Documento ${index + 1}`,
+    url: 'uploads/associations/extra-docs/' + file.filename
+  }));
+}
 
     const newAssociation = new Association({
       nombre: req.body.nombre,
@@ -31,10 +43,7 @@ exports.createAssociation = async (req, res) => {
       rfcFile: req.files?.rfcFile?.[0]
         ? 'uploads/associations/rfc/' + req.files.rfcFile[0].filename
         : '',
-
-      additionalFiles: req.files?.additionalFiles?.map(file =>
-        'uploads/associations/extra-docs/' + file.filename
-      ) || [],
+        additionalFiles,
 
     });
 
@@ -72,17 +81,25 @@ exports.updateAssociation = async (req, res) => {
       association.rfcFile = 'uploads/associations/rfc/' + req.files.rfcFile[0].filename;
     }
 
-    if (req.files?.additionalFiles?.length) {
-      const nuevosArchivos = req.files.additionalFiles.map(file =>
-        'uploads/associations/extra-docs/' + file.filename
-      );
+if (req.files?.additionalFiles?.length) {
+  const nuevosArchivos = [];
+  const nombres = Array.isArray(req.body.additionalFileNames)
+    ? req.body.additionalFileNames
+    : [req.body.additionalFileNames];
 
-      // Suma los nuevos a los anteriores
-      association.additionalFiles = [
-        ...(association.additionalFiles || []),
-        ...nuevosArchivos
-      ];
-    }
+  req.files.additionalFiles.forEach((file, index) => {
+    nuevosArchivos.push({
+      nombre: nombres[index] || `Documento ${association.additionalFiles.length + index + 1}`,
+      url: 'uploads/associations/extra-docs/' + file.filename
+    });
+  });
+
+  association.additionalFiles = [
+    ...(association.additionalFiles || []),
+    ...nuevosArchivos
+  ];
+}
+
 
 
     const updated = await association.save();
@@ -176,7 +193,7 @@ exports.deleteAdditionalFile = async (req, res) => {
     }
 
     // 📄 Borrar archivo físicamente
-    const filePath = path.resolve(association.additionalFiles[index]);
+    const filePath = path.resolve(association.additionalFiles[index].url);
     if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
 
     // ❌ Eliminar del array

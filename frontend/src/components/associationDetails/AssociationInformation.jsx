@@ -96,27 +96,27 @@ const AssociationInformation = ({ association, onRefresh }) => {
               )}
 
               {/* Documentos adicionales */}
-              {association.additionalFiles && association.additionalFiles.length > 0 && (
-                <div className="p-4 border rounded-md">
-                  <p className="text-sm font-medium mb-2">Documentos adicionales</p>
-                  <div className="space-y-2">
-                    {association.additionalFiles.map((filePath, index) => (
-                      <div key={index} className="flex justify-between items-center">
-                        <div className="flex items-center">
-                          <FileText className="h-4 w-4 text-primary mr-2" />
-                          <span className="text-sm">Documento {index + 1}</span>
-                        </div>
-                        <div className="space-x-2">
-                          <a href={`${apiBase}/${filePath}`} target="_blank" rel="noopener noreferrer">
-                            <Button variant="outline" size="sm">Ver</Button>
-                          </a>
-                          <Button variant="destructive" size="sm" onClick={() => deleteAdditionalFile(index)}>🗑</Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
+{association.additionalFiles.map((fileObj, index) => (
+  <div key={index} className="flex justify-between items-center">
+    <div className="flex items-center">
+      <FileText className="h-4 w-4 text-primary mr-2" />
+      <span className="text-sm">
+        {fileObj.nombre || `Documento ${index + 1}`}
+      </span>
+    </div>
+    <div className="space-x-2">
+      <a
+        href={`${apiBase}/${fileObj.url}`}
+        target="_blank"
+        rel="noopener noreferrer"
+      >
+        <Button variant="outline" size="sm">Ver</Button>
+      </a>
+      <Button variant="destructive" size="sm" onClick={() => deleteAdditionalFile(index)}>🗑</Button>
+    </div>
+  </div>
+))}
+
             </div>
           </div>
         )}

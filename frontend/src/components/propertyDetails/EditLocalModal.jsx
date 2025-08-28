@@ -21,6 +21,9 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
         rentEndDate: '',
         contract: null,
         localPhotos: [],
+        cadastralKey: '',
+        localExtraDocName: '',
+        localExtraDocs: null,
     });
 
     useEffect(() => {
@@ -34,9 +37,14 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
                 rentEndDate: local.rentEndDate?.substring(0, 10) || '',
                 contract: null,
                 localPhotos: [],
+                // ✅ NUEVO:
+                cadastralKey: local.cadastralKey || '',
+                localExtraDocName: '',
+                localExtraDocs: null,
             });
         }
     }, [local]);
+
 
     const handleChange = (e) => {
         const { name, value, files } = e.target;
@@ -56,6 +64,20 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
             formData.append('rentCost', form.rentCost);
             formData.append('rentStartDate', form.rentStartDate);
             formData.append('rentEndDate', form.rentEndDate);
+
+            // ✅ Clave catastral
+            if (form.cadastralKey) {
+                formData.append('cadastralKey', form.cadastralKey);
+            }
+
+            // ✅ Documento adicional (nombre + archivo) — se ANEXA
+            if (form.localExtraDocName) {
+                formData.append('localExtraDocName', form.localExtraDocName);
+            }
+            if (form.localExtraDocs?.[0]) {
+                formData.append('localExtraDocs', form.localExtraDocs[0]);
+            }
+
             if (form.contract?.[0]) formData.append('contract', form.contract[0]);
             if (form.localPhotos?.length > 0) {
                 for (const file of form.localPhotos) {
@@ -108,6 +130,11 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
                         <Input name="rentCost" type="number" value={form.rentCost} onChange={handleChange} />
                     </div>
                     <div>
+                        <Label>Clave catastral</Label>
+                        <Input name="cadastralKey" value={form.cadastralKey} onChange={handleChange} placeholder="Ej. 12-34-56-789-000" />
+                    </div>
+
+                    <div>
                         <Label>Inicio de renta</Label>
                         <Input name="rentStartDate" type="date" value={form.rentStartDate} onChange={handleChange} />
                     </div>
@@ -123,6 +150,24 @@ const EditLocalModal = ({ open, onClose, propertyId, local, index, onLocalUpdate
                         <Label>Nuevas fotos del local (opcional)</Label>
                         <Input name="localPhotos" type="file" multiple accept="image/*" onChange={handleChange} />
                     </div>
+                    <div>
+                        <Label>Nombre del documento adicional</Label>
+                        <Input
+                            name="localExtraDocName"
+                            value={form.localExtraDocName}
+                            onChange={handleChange}
+                            placeholder="Ej. Licencia de uso de suelo"
+                            className="mb-2"
+                        />
+                        <Label>Documento adicional</Label>
+                        <Input
+                            name="localExtraDocs"
+                            type="file"
+                            accept=".pdf,.jpg,.jpeg,.png,.webp"
+                            onChange={handleChange}
+                        />
+                    </div>
+
 
                     <div className="flex justify-end gap-2 pt-4">
                         <Button variant="secondary" onClick={onClose}>Cancelar</Button>

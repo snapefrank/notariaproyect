@@ -734,3 +734,48 @@ exports.deleteLocalContract = async (req, res) => {
     res.status(500).json({ message: 'Error al eliminar contrato del local', error: error.message });
   }
 };
+// DELETE: Eliminar un documento adicional (extraDoc) de un local
+exports.deleteLocalExtraDoc = async (req, res) => {
+  try {
+    const { propertyId, index, filename } = req.params;
+    const localIndex = parseInt(index);
+
+    const property = await Property.findById(propertyId);
+    if (!property) return res.status(404).json({ message: 'Inmueble no encontrado' });
+
+    if (isNaN(localIndex) || localIndex < 0 || localIndex >= property.locals.length) {
+      return res.status(400).json({ message: 'Índice de local inválido' });
+    }
+
+    const local = property.locals[localIndex];
+    const extraDocs = local.extraDocs || { archivos: [], nombresPersonalizados: [] };
+
+    const fileIndex = extraDocs.archivos.indexOf(filename);
+    if (fileIndex === -1) {
+      return res.status(404).json({ message: 'Archivo no encontrado en documentos adicionales' });
+    }
+
+    // 🔹 Eliminar archivo del array y su nombre personalizado correspondiente
+    extraDocs.archivos.splice(fileIndex, 1);
+    if (Array.isArray(extraDocs.nombresPersonalizados)) {
+      extraDocs.nombresPersonalizados.splice(fileIndex, 1);
+    }
+
+    // 🔹 Eliminar físicamente el archivo
+    const filePath = path.join('backend/uploads/locals/extra-docs', filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    // 🔹 Guardar cambios
+    property.locals[localIndex].extraDocs = extraDocs;
+    property.updatedAt = new Date();
+    await property.save();
+
+    res.json({ message: '✅ Documento adicional eliminado correctamente', property });
+  } catch (error) {
+    console.error('❌ Error al eliminar documento adicional de local:', error);
+    res.status(500).json({ message: 'Error al eliminar documento adicional de local', error: error.message });
+  }
+};
+

@@ -155,5 +155,9 @@ router.delete('/:propertyId/locals/:index/photos/:filename', controller.deleteLo
 // 🗑 Eliminar contrato de un local
 router.delete('/:propertyId/locals/:index/contract', controller.deleteLocalContract);
 
+// 🗑 Eliminar documento adicional (extraDoc) de un local
+router.delete('/:propertyId/locals/:index/extra-docs/:filename', controller.deleteLocalExtraDoc);
+
+
 
 module.exports = router;

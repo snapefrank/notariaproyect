@@ -233,6 +233,26 @@ const PropertyDetails = () => {
     }
   };
 
+  const handleDeleteLocalExtraDoc = async (propertyId, localIndex, filename) => {
+  if (!window.confirm("¿Seguro que deseas eliminar este documento adicional?")) return;
+
+  try {
+    const response = await fetch(`${API_URL}/${propertyId}/locals/${localIndex}/extra-docs/${filename}`, {
+      method: "DELETE",
+    });
+
+    if (!response.ok) throw new Error("Error al eliminar el documento adicional");
+
+    const updatedProperty = await response.json();
+    setProperty(updatedProperty.property);
+
+    alert("✅ Documento eliminado correctamente");
+  } catch (error) {
+    console.error("❌ Error al eliminar documento adicional:", error);
+    alert("No se pudo eliminar el documento");
+  }
+};
+
 
 
   return (

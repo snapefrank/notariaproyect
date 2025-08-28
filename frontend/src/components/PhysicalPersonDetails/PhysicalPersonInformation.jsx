@@ -96,35 +96,263 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
         </CardHeader>
 
         <CardContent className="space-y-6">
-          {/* RFC */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
-            {person.documentos?.rfc ? (
-              <DocumentItem label="RFC" filePath={person.documentos.rfc} />
-            ) : (
-              <div className="p-3 bg-gray-50 rounded-md">No especificado</div>
-            )}
-          </div>
+{/* RFC */}
+<div>
+  <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
+  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+    <span>{person.rfc || 'No especificado'}</span>
+    {person.documentos?.rfc && (
+      <div className="space-x-2 flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(person.documentos.rfc), title: 'RFC' })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(person.documentos.rfc);
+            a.download = 'RFC';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(person.documentos.rfc)}
+          className="bg-red-600 text-white"
+        >
+          🗑
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
 
-          {/* CURP */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">CURP</h3>
-            {person.documentos?.curp ? (
-              <DocumentItem label="CURP" filePath={person.documentos.curp} />
-            ) : (
-              <div className="p-3 bg-gray-50 rounded-md">No especificado</div>
-            )}
-          </div>
+{/* CURP */}
+<div>
+  <h3 className="text-sm font-medium text-muted-foreground mb-1">CURP</h3>
+  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+    <span>{person.curp || 'No especificado'}</span>
+    {person.documentos?.curp && (
+      <div className="space-x-2 flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(person.documentos.curp), title: 'CURP' })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(person.documentos.curp);
+            a.download = 'CURP';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(person.documentos.curp)}
+          className="bg-red-600 text-white"
+        >
+          🗑
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
 
-          {/* NSS */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">NSS</h3>
-            {person.documentos?.nss ? (
-              <DocumentItem label="NSS" filePath={person.documentos.nss} />
-            ) : (
-              <div className="p-3 bg-gray-50 rounded-md">No especificado</div>
-            )}
-          </div>
+{/* NSS */}
+<div>
+  <h3 className="text-sm font-medium text-muted-foreground mb-1">NSS</h3>
+  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+    <span>{person.nss || 'No especificado'}</span>
+    {person.documentos?.nss && (
+      <div className="space-x-2 flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(person.documentos.nss), title: 'NSS' })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(person.documentos.nss);
+            a.download = 'NSS';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(person.documentos.nss)}
+          className="bg-red-600 text-white"
+        >
+          🗑
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+{/* RFC */}
+<div>
+  <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
+  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+    <span>{person.rfc || 'No especificado'}</span>
+    {person.documentos?.rfc && (
+      <div className="space-x-2 flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(person.documentos.rfc), title: 'RFC' })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(person.documentos.rfc);
+            a.download = 'RFC';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(person.documentos.rfc)}
+          className="bg-red-600 text-white"
+        >
+          🗑
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+
+{/* CURP */}
+<div>
+  <h3 className="text-sm font-medium text-muted-foreground mb-1">CURP</h3>
+  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+    <span>{person.curp || 'No especificado'}</span>
+    {person.documentos?.curp && (
+      <div className="space-x-2 flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(person.documentos.curp), title: 'CURP' })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(person.documentos.curp);
+            a.download = 'CURP';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(person.documentos.curp)}
+          className="bg-red-600 text-white"
+        >
+          🗑
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+
+{/* NSS */}
+<div>
+  <h3 className="text-sm font-medium text-muted-foreground mb-1">NSS</h3>
+  <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
+    <span>{person.nss || 'No especificado'}</span>
+    {person.documentos?.nss && (
+      <div className="space-x-2 flex items-center">
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setPdfData({ url: buildFileUrl(person.documentos.nss), title: 'NSS' })}
+        >
+          Visualizar
+        </Button>
+        <Button
+          variant="default"
+          size="sm"
+          onClick={() => {
+            const a = document.createElement('a');
+            a.href = buildFileUrl(person.documentos.nss);
+            a.download = 'NSS';
+            a.target = '_blank';
+            a.rel = 'noopener noreferrer';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+          }}
+        >
+          Descargar
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          onClick={() => handleDeleteDocument(person.documentos.nss)}
+          className="bg-red-600 text-white"
+        >
+          🗑
+        </Button>
+      </div>
+    )}
+  </div>
+</div>
+
 
           {/* Fecha de Nacimiento */}
           <div>

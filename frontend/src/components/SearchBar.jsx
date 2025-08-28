@@ -5,17 +5,17 @@ import { Button } from '@/components/ui/button';
 
 const SearchBar = ({ onSearch, placeholder = "Buscar..." }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  
+
   const handleSearch = (e) => {
     e.preventDefault();
     onSearch(searchTerm);
   };
-  
+
   const handleClear = () => {
     setSearchTerm('');
     onSearch('');
   };
-  
+
   return (
     <form onSubmit={handleSearch} className="relative flex w-full max-w-md">
       <div className="relative w-full">
@@ -24,7 +24,10 @@ const SearchBar = ({ onSearch, placeholder = "Buscar..." }) => {
           type="text"
           placeholder={placeholder}
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            onSearch(e.target.value); // ← esta línea permite búsqueda en tiempo real
+          }}
           className="w-full pl-10 pr-10"
         />
         {searchTerm && (

@@ -96,11 +96,17 @@ const PropertiesPage = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(property =>
-        property.name.toLowerCase().includes(term) ||
-        property.address.toLowerCase().includes(term) ||
-        property.description?.toLowerCase().includes(term)
-      );
+      filtered = filtered.filter(property => {
+        const name = property?.name || '';
+        const address = property?.address || '';
+        const description = property?.description || '';
+        return (
+          name.toLowerCase().includes(term) ||
+          address.toLowerCase().includes(term) ||
+          description.toLowerCase().includes(term)
+        );
+      });
+
     }
 
     if (typeFilter !== 'all') {

@@ -50,10 +50,11 @@ const propertySchema = new mongoose.Schema({
   type: { type: String, enum: ['residential', 'commercial', 'industrial', 'land'] },
 
   // Gravamen
-  hasEncumbrance: { type: Boolean, default: false },
-  encumbranceInstitution: { type: String },
-  encumbranceAmount: { type: Number },
-  encumbranceDate: { type: Date },
+  encumbrances: [{
+    institution: { type: String, required: true },  // Institución que otorga el gravamen
+    amount: { type: Number, required: true },       // Monto del gravamen
+    date: { type: Date, required: true }            // Fecha del gravamen
+  }],
 
   // Datos de renta general (si aplica al inmueble completo)
   isRented: { type: Boolean, default: false },

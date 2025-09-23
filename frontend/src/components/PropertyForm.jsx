@@ -29,10 +29,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     cadastralKey: initialData.cadastralKey || '',
     location: initialData.location || '',
     totalArea: initialData.totalArea || '',
-    hasEncumbrance: initialData.hasEncumbrance || 'no',
-    encumbranceInstitution: initialData.encumbranceInstitution || '',
-    encumbranceAmount: initialData.encumbranceAmount || '',
-    encumbranceDate: initialData.encumbranceDate || '',
+    encumbrances: initialData.encumbrances || [],
     isRented: initialData.isRented || 'no',
     tenant: initialData.tenant || '',
     rentedArea: initialData.rentedArea || '',
@@ -54,9 +51,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
   const [extraDocsCustomNames, setExtraDocsCustomNames] = useState([]);
   const [hasExtraDocs, setHasExtraDocs] = useState(false);
   const [rentContractCustomName, setRentContractCustomName] = useState('');
-
-
-
+  const [hasRentContractFile, setHasRentContractFile] = useState(false);
 
   // Autocompletado para propietario
   const [ownerQuery, setOwnerQuery] = useState(
@@ -161,7 +156,7 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     }
 
     Object.entries(formData).forEach(([key, value]) => {
-      if (['owner', 'deedCustomName'].includes(key)) return; // ❌ omitimos aquí
+      if (['owner', 'deedCustomName', 'encumbrances'].includes(key)) return; // ✅ agregamos 'encumbrances' aquí también
       const isNumberField = ['valor_total', 'totalArea', 'rentedArea', 'rentCost', 'encumbranceAmount'].includes(key);
       const cleanedValue = isNumberField
         ? value === '' || isNaN(Number(value)) ? '' : Number(value)
@@ -191,8 +186,6 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
     extraDocsCustomNames.forEach(name => {
       data.append('extraDocsCustomNames[]', name);
     });
-
-
 
     data.append('locals', JSON.stringify(locales.map(({ photos, rentContractFile, ...rest }) => rest)));
 
@@ -229,8 +222,43 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
       data.set('deedDate', formData.deedDate);
     }
 
+    // ✅ Primero defines y limpias la variable
+    const cleanEncumbrances = formData.encumbrances.map(gravamen => ({
+      institution: gravamen.institution.trim(),
+      amount: gravamen.amount ? parseFloat(gravamen.amount) : 0,
+      date: gravamen.date.trim(),
+    })).filter(g => g.institution && g.amount && g.date);
+
+    // 🔍 Imprime en consola antes de enviar (para validar que se envía bien)
+    console.log('🔍 encumbrances (serializados):', JSON.stringify(cleanEncumbrances, null, 2));
+
+    // ✅ Luego la utilizas en FormData
+    data.append('encumbrances', JSON.stringify(cleanEncumbrances));
+
     onSubmit(data);
   };
+
+  const handleEncumbranceChange = (index, field, value) => {
+    const updated = formData.encumbrances.map((encumbrance, idx) =>
+      idx === index ? { ...encumbrance, [field]: value.toString() } : encumbrance
+    );
+    setFormData(prev => ({ ...prev, encumbrances: updated }));
+  };
+
+
+  const addEncumbrance = () => {
+    setFormData(prev => ({
+      ...prev,
+      encumbrances: [...prev.encumbrances, { institution: '', amount: '', date: '' }],
+    }));
+  };
+
+  const removeEncumbrance = (index) => {
+    const updated = [...formData.encumbrances];
+    updated.splice(index, 1);
+    setFormData(prev => ({ ...prev, encumbrances: updated }));
+  };
+
 
   return (
     <motion.div
@@ -379,21 +407,54 @@ const PropertyForm = ({ initialData = {}, onSubmit, onCancel }) => {
             />
           </div>
 
-          <div>
-            <Label>¿Cuenta con gravamen?</Label>
-            <Select
-              value={formData.hasEncumbrance}
-              onValueChange={(value) => handleChange('hasEncumbrance', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Seleccione una opción" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="yes">Sí</SelectItem>
-                <SelectItem value="no">No</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="col-span-2 space-y-2">
+            {formData.encumbrances.map((gravamen, index) => (
+              <div className="flex flex-col gap-2 border rounded-md p-3 bg-gray-50">
+                <div className="flex flex-col gap-1">
+                  <Label>Institución</Label>
+                  <Input
+                    placeholder="Institución del gravamen"
+                    value={gravamen.institution}
+                    onChange={(e) => handleEncumbranceChange(index, 'institution', e.target.value)}
+                  />
+
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <Label>Monto</Label>
+                  <Input
+                    type="number"
+                    placeholder="Monto del gravamen"
+                    value={gravamen.amount}
+                    onChange={(e) => handleEncumbranceChange(index, 'amount', e.target.value)}
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <Label>Fecha</Label>
+                  <Input
+                    type="date"
+                    value={gravamen.date}
+                    onChange={(e) => handleEncumbranceChange(index, 'date', e.target.value)}
+                  />
+                </div>
+
+                <Button
+                  type="button"
+                  variant="destructive"
+                  onClick={() => removeEncumbrance(index)}
+                  className="mt-2 w-full"
+                >
+                  Eliminar
+                </Button>
+              </div>
+
+            ))}
+            <Button type="button" onClick={addEncumbrance}>
+              + Agregar Gravamen
+            </Button>
           </div>
+
 
           {formData.hasEncumbrance === 'yes' && (
             <>

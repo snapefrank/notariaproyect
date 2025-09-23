@@ -6,8 +6,8 @@ const parseMaybeJSON = (v) => {
   if (typeof v !== 'string') return v;
   try { return JSON.parse(v); } catch { return v; }
 };
-const dedupStrings = (arr=[]) => Array.from(new Set(arr.filter(Boolean)));
-const alignNamesWithFiles = (names=[], filesLen=0) => {
+const dedupStrings = (arr = []) => Array.from(new Set(arr.filter(Boolean)));
+const alignNamesWithFiles = (names = [], filesLen = 0) => {
   const out = [...names];
   while (out.length < filesLen) out.push('');
   return out.slice(0, filesLen);
@@ -82,28 +82,28 @@ exports.createProperty = async (req, res) => {
     const fotosFinales = Array.from(new Set([...imagenesExistentes, ...nuevasFotos]));
 
     // ✅ Procesar locales con archivos
-// ✅ Procesar locales con archivos
-const locals = JSON.parse(body.locals || '[]').map((local, index) => {
-  const localPhotos = files?.[`localPhotos_${index}`]?.map(f => f.filename) || [];
-  const rentContractFile = files?.[`localRentContract_${index}`]?.[0]?.filename || '';
+    // ✅ Procesar locales con archivos
+    const locals = JSON.parse(body.locals || '[]').map((local, index) => {
+      const localPhotos = files?.[`localPhotos_${index}`]?.map(f => f.filename) || [];
+      const rentContractFile = files?.[`localRentContract_${index}`]?.[0]?.filename || '';
 
-  // ✅ NUEVO: extra docs por local (batch)
-  const extraDocsFiles = files?.[`localExtraDocs_${index}`]?.map(f => f.filename) || [];
-  const extraDocNames   = alignNamesWithFiles(getLocalExtraDocNamesByIndex(body, index), extraDocsFiles.length);
+      // ✅ NUEVO: extra docs por local (batch)
+      const extraDocsFiles = files?.[`localExtraDocs_${index}`]?.map(f => f.filename) || [];
+      const extraDocNames = alignNamesWithFiles(getLocalExtraDocNamesByIndex(body, index), extraDocsFiles.length);
 
-  return {
-    ...local,
-    photos: Array.from(new Set(localPhotos)),
-    rentContractUrl: rentContractFile || '',
-    // ✅ NUEVO: clave catastral del local
-    cadastralKey: local.cadastralKey || local.cadastralkey || '',
-    // ✅ NUEVO: documentos adicionales del local
-    extraDocs: {
-      archivos: extraDocsFiles,
-      nombresPersonalizados: extraDocNames
-    }
-  };
-});
+      return {
+        ...local,
+        photos: Array.from(new Set(localPhotos)),
+        rentContractUrl: rentContractFile || '',
+        // ✅ NUEVO: clave catastral del local
+        cadastralKey: local.cadastralKey || local.cadastralkey || '',
+        // ✅ NUEVO: documentos adicionales del local
+        extraDocs: {
+          archivos: extraDocsFiles,
+          nombresPersonalizados: extraDocNames
+        }
+      };
+    });
 
     locals.forEach((local, i) => {
       console.log(`📄 Local ${i + 1}: contrato recibido =>`, local.rentContractUrl || '❌ NO RECIBIDO');
@@ -119,6 +119,21 @@ const locals = JSON.parse(body.locals || '[]').map((local, index) => {
       }
     }
     const deedCustomName = body.deedCustomName || '';
+    // ✅ Procesar múltiples gravámenes al crear inmueble
+    let encumbrances = [];
+    try {
+      encumbrances = body.encumbrances ? JSON.parse(body.encumbrances) : [];
+      encumbrances = encumbrances.map(e => ({
+        institution: e.institution,
+        amount: parseFloat(e.amount) || 0, // aquí también garantizamos número
+        date: normalizeDate(e.date)
+      })).filter(enc => enc.institution && enc.amount && enc.date);
+    } catch (err) {
+      console.warn('⚠️ Error parseando gravámenes:', err);
+      return res.status(400).json({ message: "Formato inválido en gravámenes", error: err.message });
+    }
+
+
 
     const newProperty = new Property({
       name: body.name,
@@ -137,10 +152,7 @@ const locals = JSON.parse(body.locals || '[]').map((local, index) => {
       cadastralKey: body.cadastralKey,
       location: Array.isArray(body.location) ? body.location[0] : String(body.location).trim(),
       totalArea: body.totalArea,
-      hasEncumbrance: body.hasEncumbrance,
-      encumbranceInstitution: body.encumbranceInstitution,
-      encumbranceAmount: body.encumbranceAmount,
-      encumbranceDate: normalizeDate(body.encumbranceDate),
+      encumbrances,
       isRented: body.isRented,
       tenant: body.tenant,
       rentedArea: body.rentedArea,
@@ -237,44 +249,44 @@ exports.updateProperty = async (req, res) => {
       body.rentContractCustomName || existing.rentContractCustomName || '';
 
 
-// ✅ Combinar locales (fotos, contrato, clave catastral, extra docs)
-const incomingLocals = JSON.parse(body.locals || '[]');
-const nuevosLocales = incomingLocals.map((local, index) => {
-  // Fotos
-  const nuevasFotosLocal = files?.[`localPhotos_${index}`]?.map(f => f.filename) || [];
-  const fotosAnteriores  = existing.locals?.[index]?.photos || [];
-  const fotosFinales     = Array.from(new Set([...fotosAnteriores, ...nuevasFotosLocal]));
+    // ✅ Combinar locales (fotos, contrato, clave catastral, extra docs)
+    const incomingLocals = JSON.parse(body.locals || '[]');
+    const nuevosLocales = incomingLocals.map((local, index) => {
+      // Fotos
+      const nuevasFotosLocal = files?.[`localPhotos_${index}`]?.map(f => f.filename) || [];
+      const fotosAnteriores = existing.locals?.[index]?.photos || [];
+      const fotosFinales = Array.from(new Set([...fotosAnteriores, ...nuevasFotosLocal]));
 
-  // Contrato
-  const rentContractFile =
-    files?.[`localRentContract_${index}`]?.[0]?.filename ||
-    existing.locals?.[index]?.rentContractUrl ||
-    '';
+      // Contrato
+      const rentContractFile =
+        files?.[`localRentContract_${index}`]?.[0]?.filename ||
+        existing.locals?.[index]?.rentContractUrl ||
+        '';
 
-  // ✅ NUEVO: extra docs por local (merge sin perder existentes)
-  const prevExtraDocs  = existing.locals?.[index]?.extraDocs || { archivos: [], nombresPersonalizados: [] };
-  const newExtraFiles  = files?.[`localExtraDocs_${index}`]?.map(f => f.filename) || [];
-  const newExtraNames  = alignNamesWithFiles(getLocalExtraDocNamesByIndex(body, index), newExtraFiles.length);
+      // ✅ NUEVO: extra docs por local (merge sin perder existentes)
+      const prevExtraDocs = existing.locals?.[index]?.extraDocs || { archivos: [], nombresPersonalizados: [] };
+      const newExtraFiles = files?.[`localExtraDocs_${index}`]?.map(f => f.filename) || [];
+      const newExtraNames = alignNamesWithFiles(getLocalExtraDocNamesByIndex(body, index), newExtraFiles.length);
 
-  const mergedArchivos = dedupStrings([...(prevExtraDocs.archivos || []), ...newExtraFiles]);
-  const mergedNombres  = [...(prevExtraDocs.nombresPersonalizados || []), ...newExtraNames];
-  // Ajusta tamaños si hay desbalance (no obligatorio; será útil si quieres forzar paridad)
-  while (mergedNombres.length < mergedArchivos.length) mergedNombres.push('');
-  if (mergedNombres.length > mergedArchivos.length) mergedNombres.length = mergedArchivos.length;
+      const mergedArchivos = dedupStrings([...(prevExtraDocs.archivos || []), ...newExtraFiles]);
+      const mergedNombres = [...(prevExtraDocs.nombresPersonalizados || []), ...newExtraNames];
+      // Ajusta tamaños si hay desbalance (no obligatorio; será útil si quieres forzar paridad)
+      while (mergedNombres.length < mergedArchivos.length) mergedNombres.push('');
+      if (mergedNombres.length > mergedArchivos.length) mergedNombres.length = mergedArchivos.length;
 
-  return {
-    ...local,
-    photos: fotosFinales,
-    rentContractUrl: rentContractFile,
-    // ✅ NUEVO: conserva si no vino, o usa la del body si se actualiza
-    cadastralKey: (local.cadastralKey ?? local.cadastralkey) ?? existing.locals?.[index]?.cadastralKey ?? '',
-    // ✅ NUEVO: merge de extra docs
-    extraDocs: {
-      archivos: mergedArchivos,
-      nombresPersonalizados: mergedNombres
-    }
-  };
-});
+      return {
+        ...local,
+        photos: fotosFinales,
+        rentContractUrl: rentContractFile,
+        // ✅ NUEVO: conserva si no vino, o usa la del body si se actualiza
+        cadastralKey: (local.cadastralKey ?? local.cadastralkey) ?? existing.locals?.[index]?.cadastralKey ?? '',
+        // ✅ NUEVO: merge de extra docs
+        extraDocs: {
+          archivos: mergedArchivos,
+          nombresPersonalizados: mergedNombres
+        }
+      };
+    });
 
 
     let propietario = undefined;
@@ -296,6 +308,27 @@ const nuevosLocales = incomingLocals.map((local, index) => {
       propietario = undefined; // no se usa si es personalizado
     }
 
+    // ✅ Procesar múltiples gravámenes al actualizar inmueble
+    let encumbrances = [];
+    try {
+      if (typeof body.encumbrances === 'string') {
+        encumbrances = JSON.parse(body.encumbrances);
+      } else if (Array.isArray(body.encumbrances)) {
+        encumbrances = body.encumbrances;
+      }
+
+      encumbrances = encumbrances.map(e => ({
+        institution: e.institution?.trim() || '',
+        amount: parseFloat(e.amount) || 0,
+        date: normalizeDate(e.date)
+      })).filter(enc => enc.institution && enc.amount && enc.date);
+    } catch (err) {
+      console.warn('⚠️ Error parseando gravámenes:', err);
+      return res.status(400).json({ message: "Formato inválido en gravámenes", error: err.message });
+    }
+
+
+
     const updated = await Property.findByIdAndUpdate(
       id,
       {
@@ -315,10 +348,7 @@ const nuevosLocales = incomingLocals.map((local, index) => {
         cadastralKey: body.cadastralKey,
         location: Array.isArray(body.location) ? body.location[0] : body.location ? String(body.location).trim() : '',
         totalArea: parseOptionalFloat(body.totalArea),
-        hasEncumbrance: body.hasEncumbrance,
-        encumbranceInstitution: body.encumbranceInstitution,
-        encumbranceAmount: parseOptionalFloat(body.encumbranceAmount),
-        encumbranceDate: normalizeDate(body.encumbranceDate),
+        encumbrances,
         status: body.status,
         soldDate: normalizeDate(body.soldDate),
         soldNote: body.soldNote,
@@ -396,11 +426,11 @@ exports.addLocalToProperty = async (req, res) => {
     } = req.body;
 
     const contractFile = req.files?.contract?.[0]?.filename || '';
-    const localPhotos  = req.files?.localPhotos?.map(f => f.filename) || [];
+    const localPhotos = req.files?.localPhotos?.map(f => f.filename) || [];
 
     // ✅ NUEVO: extra docs (endpoint individual)
     const extraDocsFiles = req.files?.localExtraDocs?.map(f => f.filename) || [];
-    const extraDocNames  = alignNamesWithFiles(getLocalExtraDocNamesSingle(req.body), extraDocsFiles.length);
+    const extraDocNames = alignNamesWithFiles(getLocalExtraDocNamesSingle(req.body), extraDocsFiles.length);
 
     const newLocal = {
       name,
@@ -458,7 +488,7 @@ exports.updateLocalInProperty = async (req, res) => {
 
     // Fotos: anexar a las existentes si llegan nuevas
     const nuevasFotos = files?.localPhotos?.map(f => f.filename) || [];
-    const fotosFinal  = Array.from(new Set([...(currentLocal.photos || []), ...nuevasFotos]));
+    const fotosFinal = Array.from(new Set([...(currentLocal.photos || []), ...nuevasFotos]));
 
     // Contrato: si no llegó uno nuevo, conservar existente
     const newContract = files?.contract?.[0]?.filename || currentLocal.rentContractUrl || '';

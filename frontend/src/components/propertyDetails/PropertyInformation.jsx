@@ -43,30 +43,30 @@ const PropertyInformation = ({ property }) => {
 
 
   const handleDeletePhoto = async (photoName) => {
-  if (!window.confirm('¿Seguro que deseas eliminar esta foto?')) return;
+    if (!window.confirm('¿Seguro que deseas eliminar esta foto?')) return;
 
-  try {
-    await axios.delete(`${apiBase}/api/properties/${property._id}/photo/${photoName}`);
-    alert('✅ Foto eliminada correctamente');
-    window.location.reload();
-  } catch (err) {
-    console.error('❌ Error al eliminar foto:', err);
-    alert('❌ Hubo un error al eliminar la foto');
-  }
-};
+    try {
+      await axios.delete(`${apiBase}/api/properties/${property._id}/photo/${photoName}`);
+      alert('✅ Foto eliminada correctamente');
+      window.location.reload();
+    } catch (err) {
+      console.error('❌ Error al eliminar foto:', err);
+      alert('❌ Hubo un error al eliminar la foto');
+    }
+  };
 
-const handleDeleteDocument = async (docName) => {
-  if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
+  const handleDeleteDocument = async (docName) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
 
-  try {
-    await axios.delete(`${apiBase}/api/properties/${property._id}/document/${docName}`);
-    alert('✅ Documento eliminado correctamente');
-    window.location.reload();
-  } catch (err) {
-    console.error('❌ Error al eliminar documento:', err);
-    alert('❌ Hubo un error al eliminar el documento');
-  }
-};
+    try {
+      await axios.delete(`${apiBase}/api/properties/${property._id}/document/${docName}`);
+      alert('✅ Documento eliminado correctamente');
+      window.location.reload();
+    } catch (err) {
+      console.error('❌ Error al eliminar documento:', err);
+      alert('❌ Hubo un error al eliminar el documento');
+    }
+  };
 
   const formatLocalDate = (dateStr) => {
     if (!dateStr) return 'No especificado';
@@ -129,16 +129,22 @@ const handleDeleteDocument = async (docName) => {
           </div>
 
           <Info label="Superficie Total" value={`${totalArea} m²`} />
-          <Info label="¿Cuenta con Gravamen?" value={hasEncumbrance ? 'Sí' : 'No'} />
         </div>
 
-        {hasEncumbrance && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4 border-t">
-            <Info label="Institución del Gravamen" value={encumbranceInstitution} />
-            <Info label="Monto del Gravamen" value={`$${Number(encumbranceAmount).toLocaleString()}`} />
-            <Info label="Fecha del Gravamen" value={formatLocalDate(encumbranceDate)} />
-          </div>
-        )}
+        <div className="pt-6 border-t space-y-2">
+          <h3 className="text-base font-semibold">Gravámenes</h3>
+          {property.encumbrances?.length > 0 ? (
+            property.encumbrances.map((gravamen, index) => (
+              <div key={gravamen._id || index} className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-100 rounded-md p-3 mb-2">
+                <Info label="Institución del Gravamen" value={gravamen.institution} />
+                <Info label="Monto del Gravamen" value={`$${gravamen.amount.toLocaleString('es-MX')}`} />
+                <Info label="Fecha del Gravamen" value={formatLocalDate(gravamen.date)} />
+              </div>
+            ))
+          ) : (
+            <div className="font-medium">No hay gravámenes registrados.</div>
+          )}
+        </div>
 
         {isRented && (
           <div className="pt-6 border-t space-y-2">

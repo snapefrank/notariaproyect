@@ -115,7 +115,9 @@ const AssetCard = ({ asset, assetType, onEdit, onDelete }) => {
 
       <div className="flex items-center gap-2">
         {getIcon()}
-        <CardTitle className="text-xl line-clamp-1">{getTitle()}</CardTitle>
+       <CardTitle className={`text-xl ${assetType === 'property' ? '' : 'line-clamp-1'}`}>
+  {getTitle()}
+</CardTitle>
       </div>
       <CardDescription className="mt-1">{getSubtitle()}</CardDescription>
     </div>

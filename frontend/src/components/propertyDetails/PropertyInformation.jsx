@@ -70,12 +70,10 @@ const PropertyInformation = ({ property }) => {
 
   const formatLocalDate = (dateStr) => {
     if (!dateStr) return 'No especificado';
-    const date = new Date(dateStr);
-    const year = date.getFullYear();
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const day = date.getDate().toString().padStart(2, '0');
+    const [year, month, day] = dateStr.split('T')[0].split('-');
     return `${day}/${month}/${year}`;
   };
+
 
   return (
     <Card>

@@ -190,34 +190,48 @@ const path = require('path');
 exports.deleteMoralPersonDocument = async (req, res) => {
   try {
     const { id, docId } = req.params;
-
     const person = await MoralPerson.findById(id);
+
     if (!person) {
       return res.status(404).json({ message: 'Persona moral no encontrada' });
     }
 
-    // 🔍 Buscar documento en additionalDocs (ruta exacta)
-    const docIndex = person.additionalDocs.findIndex(d => d.endsWith(docId));
+    // Buscar documento en el array additionalDocs
+    const docIndex = person.additionalDocs.findIndex(d => {
+      if (typeof d === 'string') return d.endsWith(docId);
+      if (typeof d === 'object' && d.url) return d.url.includes(docId);
+      return false;
+    });
+
     if (docIndex === -1) {
       return res.status(404).json({ message: 'Documento no encontrado' });
     }
 
-    // 🗑 Borrar archivo físico del servidor
-    const filePath = path.join(person.additionalDocs[docIndex]);
+    // Obtener ruta del archivo físico
+    const filePath =
+      typeof person.additionalDocs[docIndex] === 'string'
+        ? person.additionalDocs[docIndex]
+        : person.additionalDocs[docIndex].url;
+
+    // Eliminar archivo del servidor si existe
     if (fs.existsSync(filePath)) {
       fs.unlinkSync(filePath);
     }
 
-    // 📦 Borrar del arreglo en la base de datos
+    // Eliminar referencia del arreglo
     person.additionalDocs.splice(docIndex, 1);
     await person.save();
 
     res.json({ message: '✅ Documento eliminado correctamente' });
   } catch (error) {
     console.error('❌ Error al eliminar documento de persona moral:', error);
-    res.status(500).json({ message: 'Error interno al eliminar documento', error: error.message });
+    res.status(500).json({
+      message: 'Error interno al eliminar documento',
+      error: error.message,
+    });
   }
 };
+
 exports.deleteMoralPersonRfc = async (req, res) => {
   try {
     const { id } = req.params;

@@ -45,6 +45,9 @@ const PhysicalPersonDetails = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [pdfData, setPdfData] = useState({ url: null, title: null });
   const BACKEND_URL = import.meta.env.VITE_API_URL;
+  const [isDeleteDocDialogOpen, setIsDeleteDocDialogOpen] = useState(false);
+  const [pendingDeleteDoc, setPendingDeleteDoc] = useState(null);
+
 
 
 
@@ -121,7 +124,8 @@ const PhysicalPersonDetails = () => {
   };
 
   const handleDeleteDocument = async ({ docId, type = null, mainIndex = null, fileIndex = null }) => {
-    if (!window.confirm('¿Deseas eliminar este archivo? Esta acción no se puede deshacer.')) return;
+    setPendingDeleteDoc({ docId, type, mainIndex, fileIndex });
+    setIsDeleteDocDialogOpen(true);
 
     try {
       let deleteUrl;
@@ -145,8 +149,31 @@ const PhysicalPersonDetails = () => {
     }
   };
 
+  const confirmDeleteDocument = async () => {
+    if (!pendingDeleteDoc) return;
+    const { docId, type, mainIndex, fileIndex } = pendingDeleteDoc;
 
+    try {
+      let deleteUrl;
+      if (type && mainIndex !== null && fileIndex !== null) {
+        deleteUrl = `${BACKEND_URL}/api/physical-persons/${id}/nested-doc/${type}/${mainIndex}/${fileIndex}`;
+      } else {
+        deleteUrl = `${BACKEND_URL}/api/physical-persons/${id}/document/${docId}`;
+      }
 
+      const response = await fetch(deleteUrl, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Error al eliminar documento');
+
+      const updated = await fetchPhysicalPersonById(id);
+      setPerson(updated);
+    } catch (error) {
+      console.error('❌ Error al eliminar documento:', error);
+      alert('Error al eliminar el documento. Intente nuevamente.');
+    } finally {
+      setIsDeleteDocDialogOpen(false);
+      setPendingDeleteDoc(null);
+    }
+  };
 
   if (isLoading) return <LoadingSpinner />;
   if (!person) return <NotFoundMessage onBack={() => navigate('/personas-fisicas')} />;
@@ -407,6 +434,26 @@ const PhysicalPersonDetails = () => {
           ></iframe>
         </DialogContent>
       </Dialog>
+      <AlertDialog open={isDeleteDocDialogOpen} onOpenChange={setIsDeleteDocDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. ¿Desea eliminar este documento?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteDocument}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
 
     </div>
   );

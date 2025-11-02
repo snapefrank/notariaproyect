@@ -4,6 +4,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { apiBase } from '@/lib/constants';
 import axios from 'axios';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/components/ui/use-toast';
 
 
 // --- helpers seguros para rutas (string u objeto { url }) ---
@@ -35,28 +46,39 @@ const MoralPersonInformation = ({ person, onRefresh }) => {
     });
   };
 
-  const handleDeleteDocument = async (filePath) => {
-    if (!filePath) return alert('❌ Archivo no encontrado');
+  const { toast } = useToast();
 
-    const docId = normPath(filePath).split('/').pop();
+  const [confirmDelete, setConfirmDelete] = React.useState({
+    open: false,
+    targetUrl: null
+  });
 
-    if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
+const handleDeleteDocument = async () => {
+  if (!confirmDelete.targetUrl) return;
+  const filePath = confirmDelete.targetUrl;
+  const docId = normPath(filePath).split('/').pop();
 
-    try {
-      await axios.delete(`${apiBase}/api/moral-persons/${person._id}/document/${docId}`);
-      alert('✅ Documento eliminado correctamente');
+  try {
+    await axios.delete(`${apiBase}/api/moral-persons/${person._id}/document/${docId}`);
+    setConfirmDelete({ open: false, targetUrl: null });
 
-      if (onRefresh) {
-        onRefresh(); // 🔄 refresca datos
-      } else {
-        window.location.reload();
-      }
-    } catch (err) {
-      console.error('❌ Error al eliminar documento:', err);
-      alert('❌ Hubo un error al eliminar el documento');
-    }
-  };
+    toast({
+      title: 'Documento eliminado',
+      description: 'El documento se eliminó correctamente.',
+    });
 
+    if (onRefresh) onRefresh();
+  } catch (err) {
+    console.error('❌ Error al eliminar documento:', err);
+    setConfirmDelete({ open: false, targetUrl: null });
+
+    toast({
+      title: 'Error al eliminar',
+      description: 'Hubo un problema al eliminar el documento.',
+      variant: 'destructive',
+    });
+  }
+};
 
 
   return (
@@ -166,8 +188,8 @@ const MoralPersonInformation = ({ person, onRefresh }) => {
                         <Button
                           size="sm"
                           variant="destructive"
-                          onClick={() => handleDeleteDocument(url)} // le pasamos string plano
                           className="bg-red-600 text-white"
+                          onClick={() => setConfirmDelete({ open: true, targetUrl: url })}
                         >
                           🗑
                         </Button>
@@ -181,6 +203,28 @@ const MoralPersonInformation = ({ person, onRefresh }) => {
 
         </CardContent>
       </Card>
+      <AlertDialog
+        open={confirmDelete.open}
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará el documento seleccionado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteDocument}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

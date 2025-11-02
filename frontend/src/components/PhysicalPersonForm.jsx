@@ -371,33 +371,36 @@ const PhysicalPersonForm = ({ initialData = null, onSubmit, onCancel }) => {
 
             {formData.datosMedicos.map((seguro, index) => (
               <div key={index} className="grid grid-cols-1 sm:grid-cols-2 gap-4 border rounded p-3 mb-4">
-                {Object.entries(seguro).map(([key, value]) => (
-                  <div key={key}>
-                    <Label htmlFor={`datosMedicos.${index}.${key}`}>
-                      {{
-                        tipoSangre: 'Tipo de Sangre',
-                        aseguradora: 'Aseguradora',
-                        tipoSeguro: 'Tipo de Seguro',
-                        beneficiarios: 'Beneficiarios',
-                        fechaInicioVigencia: 'Inicio de Vigencia',
-                        fechaVencimiento: 'Vencimiento',
-                        numeroPoliza: 'Número de Póliza',
-                        prima: 'Prima'
-                      }[key] || key}
-                    </Label>
-                    <Input
-                      type={key.includes('fecha') ? 'date' : 'text'}
-                      id={`datosMedicos.${index}.${key}`}
-                      name={`datosMedicos.${index}.${key}`}
-                      value={value}
-                      onChange={(e) => {
-                        const updated = [...formData.datosMedicos];
-                        updated[index][key] = e.target.value;
-                        setFormData(prev => ({ ...prev, datosMedicos: updated }));
-                      }}
-                    />
-                  </div>
-                ))}
+                {Object.entries(seguro)
+                  .filter(([key]) => key !== '_id' && key !== 'archivoSeguro') // 👈 oculta esos campos
+                  .map(([key, value]) => (
+                    <div key={key}>
+                      <Label htmlFor={`datosMedicos.${index}.${key}`}>
+                        {{
+                          tipoSangre: 'Tipo de Sangre',
+                          aseguradora: 'Aseguradora',
+                          tipoSeguro: 'Tipo de Seguro',
+                          beneficiarios: 'Beneficiarios',
+                          fechaInicioVigencia: 'Inicio de Vigencia',
+                          fechaVencimiento: 'Vencimiento',
+                          numeroPoliza: 'Número de Póliza',
+                          prima: 'Prima'
+                        }[key] || key}
+                      </Label>
+                      <Input
+                        type={key.includes('fecha') ? 'date' : 'text'}
+                        id={`datosMedicos.${index}.${key}`}
+                        name={`datosMedicos.${index}.${key}`}
+                        value={value}
+                        onChange={(e) => {
+                          const updated = [...formData.datosMedicos];
+                          updated[index][key] = e.target.value;
+                          setFormData(prev => ({ ...prev, datosMedicos: updated }));
+                        }}
+                      />
+                    </div>
+                  ))}
+                  
                 <div className="col-span-2">
                   <Label>Archivo del Seguro</Label>
                   <Input

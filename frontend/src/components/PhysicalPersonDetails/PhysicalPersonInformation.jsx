@@ -4,6 +4,18 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { apiBase } from '@/lib/constants';
 import axios from 'axios';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
+} from '@/components/ui/alert-dialog';
+import { useToast } from '@/components/ui/use-toast';
+
 
 
 const PhysicalPersonInformation = ({ person, onRefresh }) => {
@@ -22,27 +34,42 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
       year: 'numeric'
     });
   };
-  const handleDeleteDocument = async (filePath) => {
-    if (!filePath) return alert('❌ Archivo no encontrado');
 
-    // Sacar el nombre real del archivo (docId)
+  const { toast } = useToast();
+
+  const [confirmDelete, setConfirmDelete] = useState({
+    open: false,
+    targetUrl: null
+  });
+
+  const handleDeleteDocument = async () => {
+    if (!confirmDelete.targetUrl) return;
+
+    const filePath = confirmDelete.targetUrl;
     const docId = filePath.split('/').pop();
-
-    if (!window.confirm('¿Seguro que deseas eliminar este documento?')) return;
 
     try {
       await axios.delete(`${apiBase}/api/physical-persons/${person._id}/document/${docId}`);
-      alert('✅ Documento eliminado correctamente');
+      setConfirmDelete({ open: false, targetUrl: null });
 
-      // 🔄 Refrescar datos en el padre
-      if (onRefresh) {
-        await onRefresh(); // 🔄 Solo refresca los datos desde el backend
-      }
+      toast({
+        title: 'Documento eliminado',
+        description: 'El documento se eliminó correctamente.',
+      });
+
+      if (onRefresh) await onRefresh();
     } catch (err) {
       console.error('❌ Error al eliminar documento:', err);
-      alert('❌ Hubo un error al eliminar el documento');
+      setConfirmDelete({ open: false, targetUrl: null });
+
+      toast({
+        title: 'Error al eliminar documento',
+        description: 'No se pudo eliminar el archivo. Intenta nuevamente.',
+        variant: 'destructive',
+      });
     }
   };
+
 
   const buildFileUrl = (path) => `${apiBase}${path.startsWith('/') ? '' : '/'}${path}`;
 
@@ -78,11 +105,12 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
         <Button
           size="sm"
           variant="destructive"
-          onClick={() => handleDeleteDocument(filePath)}
           className="bg-red-600 text-white"
+          onClick={() => setConfirmDelete({ open: true, targetUrl: filePath })}
         >
           🗑
         </Button>
+
       </div>
     </div>
   );
@@ -129,8 +157,8 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleDeleteDocument(person.documentos.rfc)}
                     className="bg-red-600 text-white"
+                    onClick={() => setConfirmDelete({ open: true, targetUrl: person.documentos.rfc })}
                   >
                     🗑
                   </Button>
@@ -172,8 +200,8 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleDeleteDocument(person.documentos.curp)}
                     className="bg-red-600 text-white"
+                    onClick={() => setConfirmDelete({ open: true, targetUrl: person.documentos.curp })}
                   >
                     🗑
                   </Button>
@@ -215,8 +243,8 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
                   <Button
                     size="sm"
                     variant="destructive"
-                    onClick={() => handleDeleteDocument(person.documentos.nss)}
                     className="bg-red-600 text-white"
+                    onClick={() => setConfirmDelete({ open: true, targetUrl: person.documentos.nss })}
                   >
                     🗑
                   </Button>
@@ -224,136 +252,6 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
               )}
             </div>
           </div>
-          {/* RFC */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">RFC</h3>
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-              <span>{person.rfc || 'No especificado'}</span>
-              {person.documentos?.rfc && (
-                <div className="space-x-2 flex items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPdfData({ url: buildFileUrl(person.documentos.rfc), title: 'RFC' })}
-                  >
-                    Visualizar
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = buildFileUrl(person.documentos.rfc);
-                      a.download = 'RFC';
-                      a.target = '_blank';
-                      a.rel = 'noopener noreferrer';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }}
-                  >
-                    Descargar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteDocument(person.documentos.rfc)}
-                    className="bg-red-600 text-white"
-                  >
-                    🗑
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* CURP */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">CURP</h3>
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-              <span>{person.curp || 'No especificado'}</span>
-              {person.documentos?.curp && (
-                <div className="space-x-2 flex items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPdfData({ url: buildFileUrl(person.documentos.curp), title: 'CURP' })}
-                  >
-                    Visualizar
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = buildFileUrl(person.documentos.curp);
-                      a.download = 'CURP';
-                      a.target = '_blank';
-                      a.rel = 'noopener noreferrer';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }}
-                  >
-                    Descargar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteDocument(person.documentos.curp)}
-                    className="bg-red-600 text-white"
-                  >
-                    🗑
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* NSS */}
-          <div>
-            <h3 className="text-sm font-medium text-muted-foreground mb-1">NSS</h3>
-            <div className="flex items-center justify-between bg-gray-50 p-3 rounded-md">
-              <span>{person.nss || 'No especificado'}</span>
-              {person.documentos?.nss && (
-                <div className="space-x-2 flex items-center">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => setPdfData({ url: buildFileUrl(person.documentos.nss), title: 'NSS' })}
-                  >
-                    Visualizar
-                  </Button>
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      const a = document.createElement('a');
-                      a.href = buildFileUrl(person.documentos.nss);
-                      a.download = 'NSS';
-                      a.target = '_blank';
-                      a.rel = 'noopener noreferrer';
-                      document.body.appendChild(a);
-                      a.click();
-                      document.body.removeChild(a);
-                    }}
-                  >
-                    Descargar
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => handleDeleteDocument(person.documentos.nss)}
-                    className="bg-red-600 text-white"
-                  >
-                    🗑
-                  </Button>
-                </div>
-              )}
-            </div>
-          </div>
-
-
           {/* Fecha de Nacimiento */}
           <div>
             <h3 className="text-sm font-medium text-muted-foreground mb-1">Fecha de Nacimiento</h3>
@@ -409,6 +307,28 @@ const PhysicalPersonInformation = ({ person, onRefresh }) => {
           ></iframe>
         </DialogContent>
       </Dialog>
+      <AlertDialog
+        open={confirmDelete.open}
+        onOpenChange={(open) => setConfirmDelete(prev => ({ ...prev, open }))}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Está seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción eliminará el documento seleccionado permanentemente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={handleDeleteDocument}
+            >
+              Eliminar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

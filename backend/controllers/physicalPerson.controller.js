@@ -135,6 +135,25 @@ const createPhysicalPerson = async (req, res) => {
         });
       });
     }
+    // 🔹 Limpieza de posibles _id inválidos antes de guardar
+    if (Array.isArray(body.datosMedicos)) {
+      body.datosMedicos = body.datosMedicos.map(dm => {
+        if (dm && (dm._id === '' || typeof dm._id !== 'string' || dm._id.length !== 24)) {
+          delete dm._id;
+        }
+        return dm;
+      });
+    }
+
+    if (Array.isArray(body.creditos)) {
+      body.creditos = body.creditos.map(cr => {
+        if (cr && (cr._id === '' || typeof cr._id !== 'string' || cr._id.length !== 24)) {
+          delete cr._id;
+        }
+        return cr;
+      });
+    }
+
     const newPerson = new PhysicalPerson({
       nombres: body.nombres,
       apellidoPaterno: body.apellidoPaterno,
@@ -172,6 +191,25 @@ const updatePhysicalPerson = async (req, res) => {
 
     const body = parseNestedFormData(req.body);
 
+    // 🔹 Limpieza de posibles _id inválidos antes de actualizar
+    if (Array.isArray(body.datosMedicos)) {
+      body.datosMedicos = body.datosMedicos.map(dm => {
+        if (dm && (dm._id === '' || typeof dm._id !== 'string' || dm._id.length !== 24)) {
+          delete dm._id;
+        }
+        return dm;
+      });
+    }
+
+    if (Array.isArray(body.creditos)) {
+      body.creditos = body.creditos.map(cr => {
+        if (cr && (cr._id === '' || typeof cr._id !== 'string' || cr._id.length !== 24)) {
+          delete cr._id;
+        }
+        return cr;
+      });
+    }
+    
     if (typeof body.creditos === 'string') {
       try {
         body.creditos = JSON.parse(body.creditos);

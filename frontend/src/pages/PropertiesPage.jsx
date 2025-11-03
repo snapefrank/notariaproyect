@@ -48,6 +48,17 @@ const PropertiesPage = () => {
   const [propertyToDelete, setPropertyToDelete] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
+  const [ownerFilter, setOwnerFilter] = useState('Todos');
+
+  const activeProps = Array.isArray(properties)
+    ? properties.filter(p => p.status === 'active')
+    : [];
+
+  const uniqueOwners = [
+    'Todos',
+    ...new Set(activeProps.map((p) => p.owner || 'Sin propietario'))
+  ];
+
 
   const handleSearch = (query) => {
     setSearchTerm(query);
@@ -181,31 +192,74 @@ const PropertiesPage = () => {
             </SelectContent>
           </Select>
         </div>
+
+        {uniqueOwners.length > 2 && (
+          <div className="w-48">
+            <Select value={ownerFilter} onValueChange={setOwnerFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="Propietario" />
+              </SelectTrigger>
+              <SelectContent>
+                {uniqueOwners.map((owner) => (
+                  <SelectItem key={owner} value={owner}>
+                    {owner}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        )}
       </div>
 
       {filteredProperties().length > 0 ? (
-        <motion.div
-          variants={containerVariants}
-          initial="hidden"
-          animate="visible"
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
-        >
-          {filteredProperties().map((property) => (
-            <AssetCard
-              key={property._id}
-              asset={property}
-              assetType="property"
-              onEdit={handleEditProperty}
-              onDelete={handleDeleteClick}
-              extraActions={
-                <Button onClick={() => handleSellProperty(property._id)}>
-                  Vender
-                </Button>
-              }
-            />
-          ))}
-        </motion.div>
+        (() => {
+          const filteredByOwner = ownerFilter === 'Todos'
+            ? filteredProperties()
+            : filteredProperties().filter(p => (p.owner || 'Sin propietario') === ownerFilter);
+
+          const grouped = filteredByOwner.reduce((acc, prop) => {
+
+            const key = prop.owner || "Sin propietario";
+            if (!acc[key]) acc[key] = [];
+            acc[key].push(prop);
+            return acc;
+          }, {});
+          return (
+            <div className="space-y-10">
+              {Object.entries(grouped).map(([owner, props]) => (
+                <section key={owner}>
+                  <h2 className="text-2xl font-bold mb-4 border-b pb-2 text-gray-800">
+                    🏢 {owner}
+                  </h2>
+
+                  <motion.div
+                    variants={containerVariants}
+                    initial="hidden"
+                    animate="visible"
+                    className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+                  >
+                    {props.map((property) => (
+                      <AssetCard
+                        key={property._id}
+                        asset={property}
+                        assetType="property"
+                        onEdit={handleEditProperty}
+                        onDelete={handleDeleteClick}
+                        extraActions={
+                          <Button onClick={() => handleSellProperty(property._id)}>
+                            Vender
+                          </Button>
+                        }
+                      />
+                    ))}
+                  </motion.div>
+                </section>
+              ))}
+            </div>
+          );
+        })()
       ) : (
+
         <div className="text-center py-12">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-muted mb-4">
             <Filter className="h-8 w-8 text-muted-foreground" />
@@ -225,6 +279,7 @@ const PropertiesPage = () => {
             Limpiar filtros
           </Button>
         </div>
+
       )}
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>

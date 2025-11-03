@@ -402,7 +402,6 @@ exports.updatePropertyContract = async (id, contractPath) => {
   return { ...updated.toObject(), id: updated._id.toString() };
 };
 // POST: Agregar un nuevo local a un inmueble existente
-// POST: Agregar un nuevo local a un inmueble existente
 exports.addLocalToProperty = async (req, res) => {
   try {
     const { propertyId } = req.params;
@@ -422,16 +421,36 @@ exports.addLocalToProperty = async (req, res) => {
       rentCost,
       rentStartDate,
       rentEndDate,
-      cadastralKey // ✅ NUEVO
+      cadastralKey,
+      hasEncumbrance,       // ✅ Nuevo
+      localEncumbrances,    // ✅ Nuevo (JSON string)
     } = req.body;
 
     const contractFile = req.files?.contract?.[0]?.filename || '';
     const localPhotos = req.files?.localPhotos?.map(f => f.filename) || [];
 
-    // ✅ NUEVO: extra docs (endpoint individual)
+    // ✅ Extra docs (igual que antes)
     const extraDocsFiles = req.files?.localExtraDocs?.map(f => f.filename) || [];
     const extraDocNames = alignNamesWithFiles(getLocalExtraDocNamesSingle(req.body), extraDocsFiles.length);
 
+    // ✅ Parseo de gravámenes si existen
+    let parsedEncumbrances = [];
+    try {
+      if (localEncumbrances) {
+        const raw = JSON.parse(localEncumbrances);
+        if (Array.isArray(raw)) {
+          parsedEncumbrances = raw.map(e => ({
+            institution: e.institution || '',
+            amount: parseFloat(e.amount) || 0,
+            date: normalizeDate(e.date),
+          })).filter(e => e.institution && e.amount && e.date);
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Error parseando localEncumbrances:', err.message);
+    }
+
+    // ✅ Crear nuevo local con campos de gravamen incluidos
     const newLocal = {
       name,
       tenant,
@@ -441,12 +460,15 @@ exports.addLocalToProperty = async (req, res) => {
       rentEndDate: normalizeDate(rentEndDate),
       rentContractUrl: contractFile,
       photos: Array.from(new Set(localPhotos)),
-      // ✅ NUEVO:
       cadastralKey: cadastralKey || '',
       extraDocs: {
         archivos: extraDocsFiles,
         nombresPersonalizados: extraDocNames
-      }
+      },
+
+      // 👇 NUEVO
+      hasEncumbrance: String(hasEncumbrance) === 'true',
+      encumbrances: parsedEncumbrances,
     };
 
     property.locals.push(newLocal);
@@ -461,7 +483,6 @@ exports.addLocalToProperty = async (req, res) => {
 };
 
 
-// PUT: Actualizar un local existente por índice
 // PUT: Actualizar un local existente por índice
 exports.updateLocalInProperty = async (req, res) => {
   try {
@@ -481,19 +502,21 @@ exports.updateLocalInProperty = async (req, res) => {
       rentCost,
       rentStartDate,
       rentEndDate,
-      cadastralKey // ✅ NUEVO
+      cadastralKey,
+      hasEncumbrance,       // ✅ Nuevo
+      localEncumbrances,    // ✅ Nuevo
     } = req.body;
 
     const currentLocal = property.locals[localIndex];
 
-    // Fotos: anexar a las existentes si llegan nuevas
+    // Fotos
     const nuevasFotos = files?.localPhotos?.map(f => f.filename) || [];
     const fotosFinal = Array.from(new Set([...(currentLocal.photos || []), ...nuevasFotos]));
 
-    // Contrato: si no llegó uno nuevo, conservar existente
+    // Contrato
     const newContract = files?.contract?.[0]?.filename || currentLocal.rentContractUrl || '';
 
-    // ✅ NUEVO: extra docs (endpoint individual) — merge
+    // Extra docs
     const prevExtra = currentLocal.extraDocs || { archivos: [], nombresPersonalizados: [] };
     const newExtraFiles = files?.localExtraDocs?.map(f => f.filename) || [];
     const newExtraNames = alignNamesWithFiles(getLocalExtraDocNamesSingle(req.body), newExtraFiles.length);
@@ -502,6 +525,23 @@ exports.updateLocalInProperty = async (req, res) => {
     const mergedNames = [...(prevExtra.nombresPersonalizados || []), ...newExtraNames];
     while (mergedNames.length < mergedFiles.length) mergedNames.push('');
     if (mergedNames.length > mergedFiles.length) mergedNames.length = mergedFiles.length;
+
+    // ✅ Parseo de gravámenes actualizados
+    let parsedEncumbrances = [];
+    try {
+      if (localEncumbrances) {
+        const raw = JSON.parse(localEncumbrances);
+        if (Array.isArray(raw)) {
+          parsedEncumbrances = raw.map(e => ({
+            institution: e.institution || '',
+            amount: parseFloat(e.amount) || 0,
+            date: normalizeDate(e.date),
+          })).filter(e => e.institution && e.amount && e.date);
+        }
+      }
+    } catch (err) {
+      console.warn('⚠️ Error parseando localEncumbrances:', err.message);
+    }
 
     const updatedLocal = {
       name: (name ?? currentLocal.name),
@@ -512,12 +552,17 @@ exports.updateLocalInProperty = async (req, res) => {
       rentEndDate: normalizeDate(rentEndDate) ?? currentLocal.rentEndDate,
       rentContractUrl: newContract,
       photos: fotosFinal,
-      // ✅ NUEVO:
       cadastralKey: (cadastralKey ?? currentLocal.cadastralKey) || '',
       extraDocs: {
         archivos: mergedFiles,
         nombresPersonalizados: mergedNames
-      }
+      },
+
+      // 👇 NUEVO
+      hasEncumbrance: String(hasEncumbrance) === 'true',
+      encumbrances: parsedEncumbrances.length > 0
+        ? parsedEncumbrances
+        : currentLocal.encumbrances || [],
     };
 
     property.locals[localIndex] = updatedLocal;
@@ -530,7 +575,6 @@ exports.updateLocalInProperty = async (req, res) => {
     res.status(500).json({ message: 'Error al actualizar local', error: error.message });
   }
 };
-
 
 // DELETE: Eliminar un local por índice
 exports.deleteLocalFromProperty = async (req, res) => {

@@ -234,24 +234,24 @@ const PropertyDetails = () => {
   };
 
   const handleDeleteLocalExtraDoc = async (propertyId, localIndex, filename) => {
-  if (!window.confirm("¿Seguro que deseas eliminar este documento adicional?")) return;
+    if (!window.confirm("¿Seguro que deseas eliminar este documento adicional?")) return;
 
-  try {
-    const response = await fetch(`${API_URL}/${propertyId}/locals/${localIndex}/extra-docs/${filename}`, {
-      method: "DELETE",
-    });
+    try {
+      const response = await fetch(`${API_URL}/${propertyId}/locals/${localIndex}/extra-docs/${filename}`, {
+        method: "DELETE",
+      });
 
-    if (!response.ok) throw new Error("Error al eliminar el documento adicional");
+      if (!response.ok) throw new Error("Error al eliminar el documento adicional");
 
-    const updatedProperty = await response.json();
-    setProperty(updatedProperty.property);
+      const updatedProperty = await response.json();
+      setProperty(updatedProperty.property);
 
-    alert("✅ Documento eliminado correctamente");
-  } catch (error) {
-    console.error("❌ Error al eliminar documento adicional:", error);
-    alert("No se pudo eliminar el documento");
-  }
-};
+      alert("✅ Documento eliminado correctamente");
+    } catch (error) {
+      console.error("❌ Error al eliminar documento adicional:", error);
+      alert("No se pudo eliminar el documento");
+    }
+  };
 
 
 
@@ -292,6 +292,20 @@ const PropertyDetails = () => {
               <p><strong>Inicio de renta:</strong> {local.rentStartDate?.substring(0, 10)}</p>
               <p><strong>Fin de renta:</strong> {local.rentEndDate?.substring(0, 10)}</p>
               <p><strong>Clave catastral:</strong> {local.cadastralKey}</p>
+
+              {/* 🏦 Sección de gravámenes del local */}
+              {local.hasEncumbrance && local.encumbrances?.length > 0 && (
+                <div className="mt-4 border-t pt-3">
+                  <h4 className="font-semibold text-gray-800 mb-2">Gravámenes del Local</h4>
+                  {local.encumbrances.map((g, i) => (
+                    <div key={i} className="mb-2 bg-gray-50 p-3 rounded-md shadow-sm">
+                      <p><strong>Institución:</strong> {g.institution}</p>
+                      <p><strong>Monto:</strong> ${g.amount?.toLocaleString('es-MX')}</p>
+                      <p><strong>Fecha:</strong> {new Date(g.date).toLocaleDateString('es-MX')}</p>
+                    </div>
+                  ))}
+                </div>
+              )}
 
               {local.rentContractUrl && (
                 <div className="mt-4">
